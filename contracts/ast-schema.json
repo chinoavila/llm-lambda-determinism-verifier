@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llm-lambda-determinism-verifier.local/contracts/ast-schema.json",
+  "$comment": "PLACEHOLDER — a definir el Día 0 entre los 3 desarrolladores (ver specs/roadmap.md). Describe el AST STLC en JSON que el LLM emite y que engine/ deserializa (Literal, Var, BinaryOp, IfThenElse, Lam, App).",
+  "title": "STLC AST (placeholder)",
+  "type": "object"
+}

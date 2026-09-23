@@ -1,0 +1,23 @@
+services:
+  engine:
+    build:
+      context: .
+      dockerfile: docker/engine.Dockerfile
+    volumes:
+      - ./engine:/workspace/engine
+      - ./contracts:/workspace/contracts:ro
+    working_dir: /workspace/engine
+    command: ["cabal", "test"]
+
+  pipeline:
+    build:
+      context: .
+      dockerfile: docker/pipeline.Dockerfile
+    volumes:
+      - ./pipeline:/workspace/pipeline
+      - ./contracts:/workspace/contracts:ro
+      - ./out:/workspace/out
+    working_dir: /workspace/pipeline
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-}
+    command: ["sh", "-c", "mypy . && pytest"]

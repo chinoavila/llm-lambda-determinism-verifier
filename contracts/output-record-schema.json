@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llm-lambda-determinism-verifier.local/contracts/output-record-schema.json",
+  "$comment": "PLACEHOLDER — a definir el Día 0 entre los 3 desarrolladores (ver specs/roadmap.md). Un objeto por línea (JSON Lines): grupo, caso, etapa alcanzada, desenlace, error si lo hubo.",
+  "title": "Registro de salida del pipeline (placeholder)",
+  "type": "object"
+}

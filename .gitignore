@@ -1,0 +1,23 @@
+# Python
+.venv*/
+.env*/
+__pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+*.egg-info/
+
+# Haskell / Cabal / Stack
+dist-newstyle/
+.stack-work/
+*.hi
+*.o
+
+# Editores / SO
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Secretos y salidas de corridas (fuera de alcance de este repositorio; ver specs/mission.md)
+.env
+out/

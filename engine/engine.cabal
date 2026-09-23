@@ -1,0 +1,29 @@
+cabal-version:      2.4
+name:                engine
+version:             0.1.0.0
+build-type:          Simple
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    hs-source-dirs:   src
+    exposed-modules:  Engine.Types
+    build-depends:    base >=4.14 && <5, aeson >=2.0
+    default-language: GHC2021
+
+executable engine
+    import:           warnings
+    hs-source-dirs:   app
+    main-is:          Main.hs
+    build-depends:    base >=4.14 && <5, engine, aeson >=2.0, bytestring
+    default-language: GHC2021
+
+test-suite engine-test
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Spec.hs
+    build-depends:    base >=4.14 && <5, engine, hspec >=2.9, QuickCheck >=2.14
+    default-language: GHC2021
