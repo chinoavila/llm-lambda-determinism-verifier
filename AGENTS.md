@@ -12,7 +12,7 @@ MVP de laboratorio: un pipeline que valida reglas de negocio generadas por un LL
 docker compose up --build
 ```
 
-Esto builda y corre los gates (`cabal test` para `engine/`, `mypy` + `pytest` para `pipeline/`). Ver [`README.md`](README.md) para más comandos.
+Esto corre el build y los gates (`cabal test` para `engine/`, `mypy` + `pytest` para `pipeline/`). Ver [`README.md`](README.md) para más comandos.
 
 ## Reglas que importan
 

@@ -85,7 +85,7 @@ Está terminado cuando alguien puede clonar el repositorio, configurar credencia
 # Copiar credenciales del LLM (no commitear .env)
 Copy-Item .env.example .env
 
-# Buildar y correr los gates de los dos componentes
+# Correr el build y los gates de los dos componentes
 docker compose up --build
 
 # Iterar sobre un solo componente

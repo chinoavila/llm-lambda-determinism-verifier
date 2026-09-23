@@ -55,7 +55,7 @@
 
 | Servicio | Imagen base | Rol |
 |---|---|---|
-| `engine` | `haskell:9.6-slim` | Builda y testea C-1: `docker compose run --rm engine cabal test` |
+| `engine` | `haskell:9.6-slim` | Corre build y tests C-1: `docker compose run --rm engine cabal test` |
 | `pipeline` | `python:3.12-slim` | Instala C-2/C-3 y corre gates: `docker compose run --rm pipeline sh -c "mypy . && pytest"` |
 
 `docker-compose.yml` monta `engine/`, `pipeline/` y `contracts/` como volúmenes, así que los cambios de código no requieren rebuild de imagen (solo si cambian dependencias). `docker compose up --build` corre ambos servicios y sus gates en un solo paso.
