@@ -59,7 +59,7 @@ envErrorMessage (InvalidEnvName x) = "nombre inválido en --env: " ++ show x
 envErrorMessage (InvalidEnvValue x) =
   "valor de " ++ show x ++ " en --env: se esperaba entero de 64 bits, booleano o cadena"
 
--- FP[Funciones puras] FP[Composición] FP[Orden superior] FP[Excepcioness] FP[Inferencia de tipos]
+-- FP[Funciones puras] FP[Composición] FP[Orden superior] FP[Excepciones] FP[Inferencia de tipos]
 -- | Primero exige JSON sintácticamente válido; después, la forma del AST.
 parseProgram :: BL.ByteString -> Either ParseError Program
 parseProgram bytes = case eitherDecode bytes of
@@ -75,7 +75,7 @@ parseProgram bytes = case eitherDecode bytes of
 literalMismatchTag :: String
 literalMismatchTag = "LITERAL_TYPE_MISMATCH"
 
--- FP[Orden superior] FP[Tuplas] FP[Excepcioness] FP[Currificación]
+-- FP[Orden superior] FP[Tuplas] FP[Excepciones] FP[Currificación]
 -- | Deduce los datos del caso desde @--env@. Γ es @fmap literalType@ del
 -- resultado: el tipo sale del valor, nunca de cómo lo usa la regla.
 envFromJSON :: Value -> Either EnvError (Env LiteralValue)
