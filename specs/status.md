@@ -25,7 +25,7 @@ Los tres componentes están implementados y verificados en Docker.
   - Baseline 1;
   - Baseline 2 con `ast` y `mypy --strict`.
 
-**El comando de punta a punta existe** (`python -m pipeline run`, servicio `run` de `docker compose up`) y está probado sobre las 15 fixtures con un LLM falso y el engine, el sandbox y mypy reales. **Falta la primera corrida con el LLM real**, que requiere credenciales y consume cuota.
+**El MVP cumple el criterio de cierre del roadmap:** `docker compose up --build` corre los gates y los tres grupos de punta a punta sobre las fixtures con el LLM real. Primera corrida el 2026-09-26 (Groq): 45 registros conformes al contrato, sin errores del LLM, repartidos entre los tres modelos del pool.
 
 ## 2. Contra el contenido exigido por la guía
 
@@ -39,7 +39,7 @@ Los tres componentes están implementados y verificados en Docker.
 | Algoritmos | ✅ | Chequeo de tipos por síntesis (los `Lam` vienen anotados), promoción numérica solo en operadores, evaluación *big-step* con llamada por valor y cortocircuito, aritmética racional exacta con límites |
 | Código fuente | ✅ | `engine/` (Haskell), `pipeline/` (Python) |
 | Ejemplos de ejecución | ✅ | 15 fixtures en [`contracts/fixtures/`](../contracts/fixtures/), ejecutadas por la CLI real en los tests del engine y del pipeline |
-| Resultados preliminares | ⚠️ Solo sobre fixtures | La comparación de los tres grupos sobre las fixtures está en los tests (ver §4). Todavía no hay una corrida con un LLM real; el comando ya existe. El experimento en sí queda fuera del alcance de este repo |
+| Resultados preliminares | ⚠️ Solo sobre fixtures | La comparación de los tres grupos sobre las fixtures está en los tests (ver §4). Hay una primera corrida real sobre las fixtures (verificación del pipeline, no experimento). El experimento en sí queda fuera del alcance de este repo |
 
 ## 3. Contra la tabla de conceptos de programación funcional del curso
 
@@ -73,12 +73,11 @@ Sale de los tests, no de un experimento. El engine bloquea antes de ejecutar lo 
 | 014 (`monto / 12`) | `Decimal` exacto | `float` (no exacto) | `Decimal` exacto |
 | 011 (división por cero) | `runtime_error` controlado | `ZeroDivisionError` | — |
 
-## 5. Pendiente para cerrar el MVP
+## 5. Pendiente (el MVP ya cumple el criterio de cierre)
 
-1. La primera corrida con el LLM real: `docker compose up --build` con `.env` completo. Es lo único que falta para el criterio de cierre del roadmap.
-2. Revisar los prompts de `build_messages` en equipo: son provisorios.
-3. Confirmar con el equipo los contratos del Día 0, que ya están implementados en `develop`.
-4. Opcional: la propiedad QuickCheck de *type soundness* del Día 4 del carril A.
+1. Confirmar con el equipo los contratos del Día 0, que ya están implementados en `develop`.
+2. Revisar los prompts de `build_messages` en equipo: son provisorios. En la primera corrida, 3 respuestas de los baselines trajeron los saltos de línea escapados dos veces (`\\n` en vez de `\n` dentro del JSON) y terminaron en `SyntaxError`. El pipeline no repara la salida (es un resultado válido), pero el prompt podría influir en esto; decidirlo en equipo.
+3. Opcional: la propiedad QuickCheck de *type soundness* del Día 4 del carril A.
 
 ## 6. Cómo mantener este documento
 

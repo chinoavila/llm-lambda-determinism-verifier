@@ -31,9 +31,9 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 ## Carril B — `pipeline/` orquestador (C-2, Python)
 
 - [x] Día 1-2: cliente de LLM con salida estructurada (no partir de `prototype/gemini_mockup_pipeline.py`, no es normativo); ruteo por grupo.
-- [ ] Día 3: integración por subproceso con el binario de `engine/` (contrato de CLI del Día 0); primer caso de punta a punta. — *integración por subproceso hecha (`run_engine`); falta el primer caso de punta a punta con el LLM real.*
+- [x] Día 3: integración por subproceso con el binario de `engine/` (contrato de CLI del Día 0); primer caso de punta a punta. — *`run_engine`; primera corrida real el 2026-09-26.*
 - [x] Día 4: registro JSON Lines según el contrato; persistencia de la respuesta cruda del LLM sin transformar. — *ver [`specs/orquestador.md`](./orquestador.md).*
-- [x] Día 5: correr los tres grupos sobre las fixtures del Día 0 con un solo comando. — *`python -m pipeline run` (servicio `run`); probado de punta a punta con un LLM falso sobre las 15 fixtures, falta la primera corrida con el LLM real.*
+- [x] Día 5: correr los tres grupos sobre las fixtures del Día 0 con un solo comando. — *`python -m pipeline run` (servicio `run`).*
 
 **Listo cuando:** un comando corre el grupo Tratamiento de punta a punta y escribe el archivo de registros.
 
@@ -48,7 +48,7 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 
 ## Día 5 (tarde, los 3 juntos)
 
-- [ ] `docker compose up --build` corre los tres grupos de punta a punta sobre las fixtures compartidas y produce el archivo de registros. — *implementado (servicio `run`); falta verificarlo con credenciales reales.*
+- [x] `docker compose up --build` corre los tres grupos de punta a punta sobre las fixtures compartidas y produce el archivo de registros. — *verificado el 2026-09-26 con Groq: 45 registros conformes al contrato, sin errores del LLM (`run_id` `20260926T210233Z-2f35c5`).*
 - [x] Actualizar el `README.md` con cualquier paso real que haya cambiado desde el Día 0.
 
 **Criterio de cierre del MVP:** alguien clona el repo, corre `docker compose up --build`, y sin escribir código adicional obtiene el pipeline corriendo sobre los tres grupos.
