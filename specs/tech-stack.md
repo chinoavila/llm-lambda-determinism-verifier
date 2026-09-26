@@ -50,6 +50,7 @@
 - **Prohibido** reparar, reintentar o normalizar silenciosamente la salida del LLM antes de registrarla.
 - **Prohibido** agregar código de agregación, cálculo de métricas, estadística o graficación — incluidas dependencias como `pandas` o `matplotlib`.
 - **Prohibido** agregar dependencias que no sirvan directamente a C-1, C-2 o C-3.
+- **Prohibido** que un agente de IA lea, busque, modifique o ejecute algo fuera de la raíz del repositorio (carpetas hermanas o superiores incluidas). Si falta contexto que no está en el repo, por ejemplo material de la cátedra, se le pide al desarrollador que lo pegue o lo agregue al repo; no se lo busca afuera. Única excepción: el directorio temporal propio de la sesión del agente.
 - **Prohibido** hardcodear rutas absolutas de una máquina o usuario específico (por ejemplo `C:\Users\...` o `/home/...`) en código, configuración o Dockerfiles. Toda ruta debe ser relativa al repositorio o resolverse en tiempo de ejecución (variables de entorno, `argv`, working directory).
 
 ## 5. Entorno de laboratorio (Docker Compose)
