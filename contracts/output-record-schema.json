@@ -1,14 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://llm-lambda-determinism-verifier.local/contracts/output-record-schema.json",
-  "$comment": "Un objeto por línea (JSON Lines), uno por caso y grupo. Un Result de tipo Decimal lleva el valor como texto decimal canónico (ver contracts/README.md §3), para no perder exactitud en un número JSON. Es registro, no medición: no incluye resultado esperado ni comparaciones. 'duration_ms' lo mide el orquestador desde que lanza el subproceso (engine o sandbox) hasta que termina; excluye la llamada al LLM y es null solo si outcome = llm_error.",
+  "$comment": "Un objeto por línea (JSON Lines), uno por escenario de cada generación. Una generación es una llamada al LLM, identificada por (run_id, case_id, group, repetition); produce exactamente un registro por escenario del caso, en el orden del caso. Un bloqueo (llm_error o blocked) se repite igual en todos los escenarios de la generación. Un Result de tipo Decimal lleva el valor como texto decimal canónico (ver contracts/README.md §3), para no perder exactitud en un número JSON. Es registro, no medición: no incluye resultado esperado ni comparaciones. 'duration_ms' lo mide el orquestador desde que lanza el subproceso (engine o sandbox) hasta que termina; excluye la llamada al LLM y es null solo si outcome = llm_error.",
   "title": "Registro de salida del pipeline",
   "type": "object",
   "properties": {
-    "schema_version": { "const": "1.0" },
+    "schema_version": { "const": "2.0" },
     "run_id": { "type": "string", "minLength": 1 },
     "case_id": { "type": "string", "minLength": 1 },
     "group": { "enum": ["treatment", "baseline1", "baseline2"] },
+    "repetition": { "type": "integer", "minimum": 1 },
+    "scenario_id": { "type": "string", "minLength": 1 },
     "model": { "type": "string", "minLength": 1 },
     "timestamp": { "type": "string", "format": "date-time" },
     "llm_raw": { "type": ["string", "null"] },
@@ -19,7 +21,7 @@
     "duration_ms": { "type": ["integer", "null"], "minimum": 0 }
   },
   "required": [
-    "schema_version", "run_id", "case_id", "group", "model", "timestamp",
+    "schema_version", "run_id", "case_id", "group", "repetition", "scenario_id", "model", "timestamp",
     "llm_raw", "outcome", "stage", "result", "error", "duration_ms"
   ],
   "additionalProperties": false,

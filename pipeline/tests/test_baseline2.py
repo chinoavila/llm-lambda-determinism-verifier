@@ -10,7 +10,13 @@ from typing import Any
 import pytest
 
 from pipeline.baselines import baseline2
-from pipeline.baselines.baseline2 import check_signature, data_preamble, run_baseline_2, run_mypy
+from pipeline.baselines.baseline2 import (
+    check_signature,
+    data_preamble,
+    run_baseline_2,
+    run_baseline_2_scenarios,
+    run_mypy,
+)
 from pipeline.orchestrator import build_messages, print_gamma
 
 FIXTURES = Path(__file__).parents[2] / "contracts" / "fixtures"
@@ -176,3 +182,35 @@ def test_fixtures_with_real_mypy_and_sandbox(name: str) -> None:
         assert verdict["result"] == expected and verdict["error"] is None
     else:
         assert verdict["error"] is not None and verdict["error"]["code"] == expected
+
+
+# --- Varios escenarios por generación (contracts/README.md §3) ------------------
+
+
+def test_scenarios_run_static_check_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    programs = no_sandbox(monkeypatch)
+    mypy_calls: list[str] = []
+
+    def fake_mypy(program: str) -> tuple[int, str]:
+        mypy_calls.append(program)
+        return 0, ""
+
+    monkeypatch.setattr(baseline2, "run_mypy", fake_mypy)
+    code = "def evaluate_rule(data: Data) -> bool:\n    return True\n"
+    envs = [{"credit_score": 750}, {"credit_score": 650}, {"credit_score": 700}]
+
+    timed = run_baseline_2_scenarios(raw(code), envs, GAMMA)
+
+    assert len(mypy_calls) == 1
+    assert len(programs) == 3
+    assert [v["outcome"] for v, _ in timed] == ["executed"] * 3
+    assert all(isinstance(ms, int) and ms >= 0 for _, ms in timed)
+
+
+def test_scenarios_repeat_static_block(monkeypatch: pytest.MonkeyPatch) -> None:
+    programs = no_sandbox(monkeypatch)
+    timed = run_baseline_2_scenarios("{roto", [{}, {}], GAMMA)
+
+    assert programs == []
+    assert [(v["outcome"], v["stage"]) for v, _ in timed] == [("blocked", "parse")] * 2
+    assert timed[0][1] == timed[1][1]

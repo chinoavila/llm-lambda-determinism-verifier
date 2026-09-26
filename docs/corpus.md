@@ -42,8 +42,8 @@ Extiende las fixtures de [`contracts/fixtures/`](../contracts/fixtures/) con la 
   "canonical_ast": { "expr": { "...": "AST del DSL" } },
   "canonical_python": "def evaluate_rule(data): ...",
   "scenarios": [
-    { "env": { "cuota": 1500.5, "ingreso_mensual": 5000, "tiene_morosidades": false }, "expected": { "type": "Bool", "value": false } },
-    { "env": { "cuota": 1499.5, "ingreso_mensual": 5000, "tiene_morosidades": false }, "expected": { "type": "Bool", "value": true } }
+    { "scenario_id": "S1", "env": { "cuota": 1500.5, "ingreso_mensual": 5000, "tiene_morosidades": false }, "expected": { "type": "Bool", "value": false } },
+    { "scenario_id": "S2", "env": { "cuota": 1499.5, "ingreso_mensual": 5000, "tiene_morosidades": false }, "expected": { "type": "Bool", "value": true } }
   ]
 }
 ```
@@ -102,13 +102,14 @@ Una base razonable:
 
 La temperatura se fija y se registra. Cherednichenko usa entre 0 y 0,3 para código; Goossens compara entre 0 y 1. Las métricas se fijan antes de correr el experimento (Cuconato [4]).
 
-## Qué le falta al pipeline para consumir el corpus
+## Cómo lo consume el pipeline
 
-Decisiones pendientes con el equipo, porque cambian `contracts/`:
+El formato de entrada es [`contracts/case-schema.json`](../contracts/case-schema.json) (§5 de `contracts/README.md`). El pipeline lee `case_id`, `description` y los `scenario_id` y `env` de cada escenario; el resto es del corpus.
 
-1. **Una generación contra N escenarios.** Para `pass@1`, la misma respuesta del LLM tiene que ejecutarse contra todos los escenarios de su regla. Hoy el pipeline la ejecuta con un solo `env`.
-2. **Repeticiones.** El registro no tiene un campo para numerarlas.
-3. **Categoría.** No hace falta en el registro: se une con el corpus por `case_id`.
+1. **Una generación contra N escenarios.** La misma respuesta del LLM se ejecuta contra el `env` de cada escenario y deja un registro por escenario con su `scenario_id` (registro versión `2.0`).
+2. **Repeticiones.** Cada ronda de triple llamada se numera en `repetition`; cuántas se hacen es configuración de la corrida.
+3. **Categoría.** No va en el registro: se une con el corpus por `case_id`.
+4. **Validaciones del corpus.** Antes de llamar al LLM, el orquestador exige `scenario_id` únicos y el mismo Γ en todos los escenarios; si no, aborta la corrida.
 
 Calcular `pass@1` y las demás métricas es trabajo del experimento, no del pipeline. El pipeline solo registra.
 

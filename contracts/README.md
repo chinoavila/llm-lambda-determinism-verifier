@@ -6,8 +6,9 @@ Punto de acuerdo obligatorio entre `engine/` (Haskell) y `pipeline/` (Python). S
 |---|---|---|---|
 | [`ast-schema.json`](./ast-schema.json) | Programa STLC que emite el LLM (grupo Tratamiento) | LLM (*structured output*) | `engine/` |
 | [`engine-verdict-schema.json`](./engine-verdict-schema.json) | Línea que el engine escribe en `stdout` | `engine/` | orquestador |
-| [`output-record-schema.json`](./output-record-schema.json) | Registro JSON Lines, uno por caso y grupo | orquestador y baselines | experimento posterior |
-| [`fixtures/`](./fixtures/) | Casos de punta a punta compartidos | — | tests de los tres carriles |
+| [`case-schema.json`](./case-schema.json) | Caso de entrada: una regla con sus escenarios de validación | corpus del experimento | orquestador |
+| [`output-record-schema.json`](./output-record-schema.json) | Registro JSON Lines, uno por escenario de cada generación | orquestador y baselines | experimento posterior |
+| [`fixtures/`](./fixtures/) | Casos de punta a punta compartidos (tests del engine y del pipeline) | — | tests de los tres carriles |
 
 ## 1. El DSL
 
@@ -146,7 +147,12 @@ Diagnóstico libre. El orquestador no lo parsea.
 
 ## 3. Registro de salida
 
-Un objeto por línea en [`output-record-schema.json`](./output-record-schema.json). Es registro, no medición: no incluye el resultado esperado ni comparaciones.
+Un objeto por línea en [`output-record-schema.json`](./output-record-schema.json) (versión `2.0`). Es registro, no medición: no incluye el resultado esperado ni comparaciones. `pass@1` lo calcula el experimento cruzando cada registro con el `expected` de su escenario en el corpus.
+
+- **Generación:** una llamada al LLM para un caso, un grupo y una repetición. Se identifica por `(run_id, case_id, group, repetition)`. `repetition` empieza en 1 y cuenta las llamadas de ese caso y grupo dentro de la corrida; cuántas repeticiones se hacen es configuración de la corrida, no del contrato.
+- **Un registro por escenario:** cada generación produce exactamente un registro por escenario del caso, en el orden del caso, con su `scenario_id`. La **misma** respuesta del LLM (`llm_raw`) se ejecuta contra el `env` de cada escenario: nunca se vuelve a llamar al LLM por escenario.
+- **Bloqueos repetidos:** `llm_error` y `blocked` no dependen de los valores del escenario (`parse`, `scope` y `typecheck` solo miran el texto y Γ, que es el mismo en todos los escenarios, §5). Por eso se repiten iguales en todos los registros de la generación. Para contar por generación hay que agrupar por la clave de arriba.
+- **`duration_ms` por escenario:** tiempo de lo que produjo ese registro. En el Tratamiento, la invocación del engine con el `env` de ese escenario. En Baseline 1, la ejecución en el sandbox. En Baseline 2, el análisis estático (se hace una vez por generación y se suma en cada escenario) más la ejecución de ese escenario.
 
 - **Tratamiento:** el orquestador copia `outcome`, `stage`, `result` y `error` del veredicto sin transformarlos. Exit 4 trae su propio veredicto `runtime_error`, que también se copia. Exit 70 ⇒ `outcome: "runtime_error"`, `stage: "execution"`, `error.code: "ENGINE_INTERNAL"`.
 - **Baselines:** mismo vocabulario de etapas. Baseline 1 llega siempre a `execution`; Baseline 2 recorre `parse` (`ast.parse`) → `typecheck` (mypy) → `execution`. `error.code` es el nombre de la excepción o herramienta (`SyntaxError`, `KeyError`, `mypy`). Un `decimal.Decimal` se registra como `Decimal` con su texto canónico; cualquier otro resultado que no sea `int`, `bool` o `str` (incluido `float`) se registra como `{"type": "Other", "value": repr(x)}`.
@@ -178,3 +184,23 @@ Un archivo por caso en [`fixtures/`](./fixtures/):
 | `rule-007` | JSON truncado | `parse`, `MALFORMED_JSON`, exit 1 |
 
 Los casos 001–005 vienen de [`prototype/guia_fixtures_pruebas.md`](../prototype/guia_fixtures_pruebas.md). `python_code` se copió tal cual de esa guía; el carril de baselines decide si le agrega la firma tipada que exige Baseline 2.
+
+## 5. Casos de entrada
+
+Lo que el orquestador recibe por cada regla del corpus, en [`case-schema.json`](./case-schema.json). Sigue la idea de las pruebas de decisión DMN: la regla viene con sus escenarios de validación.
+
+| Campo | Contenido | Lo usa |
+|---|---|---|
+| `case_id` | identificador de la regla | orquestador (va al registro) |
+| `description` | la regla en lenguaje natural (lo que recibe el LLM) | orquestador |
+| `scenarios[].scenario_id` | identificador del escenario, único dentro del caso | orquestador (va al registro) |
+| `scenarios[].env` | datos del escenario, tal como se pasan a `--env` y al sandbox | orquestador |
+| `scenarios[].expected` | resultado esperado, con la forma de `Result` | experimento |
+| otros (`category`, `domain`, `gamma`, `canonical_ast`, `canonical_python`) | los define el corpus ([`docs/corpus.md`](../docs/corpus.md)) | experimento |
+
+Antes de llamar al LLM, el orquestador valida lo que el schema no expresa, y si algo falla aborta la corrida (es un error del corpus, no del modelo):
+
+- los `scenario_id` no se repiten dentro del caso;
+- Γ, deducido por el engine (`--print-gamma`) del `env` de cada escenario, es **el mismo** en todos los escenarios. Ese Γ común es el que va en el prompt.
+
+Las fixtures de §4 son otra cosa: prueban el engine y el pipeline con una respuesta del LLM ya escrita (`llm_raw`) y un solo `env`.

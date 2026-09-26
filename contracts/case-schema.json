@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llm-lambda-determinism-verifier.local/contracts/case-schema.json",
+  "$comment": "Un caso de entrada del pipeline: una regla del corpus con sus escenarios de validación (estilo pruebas de decisión DMN). El pipeline lee solo case_id, description y scenarios[].scenario_id/env; el resto (category, domain, gamma, canonical_ast, canonical_python y expected) es del corpus y lo usa el experimento. Lo que el schema no expresa lo valida el orquestador antes de llamar al LLM: scenario_id únicos dentro del caso y el mismo Γ en todos los escenarios. Ver contracts/README.md §5 y docs/corpus.md.",
+  "title": "Caso de entrada (regla con escenarios)",
+  "type": "object",
+  "properties": {
+    "case_id": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "scenarios": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Scenario" } }
+  },
+  "required": ["case_id", "description", "scenarios"],
+  "additionalProperties": true,
+  "$defs": {
+    "Scenario": {
+      "type": "object",
+      "properties": {
+        "scenario_id": { "type": "string", "minLength": 1 },
+        "env": { "type": "object" },
+        "expected": { "$ref": "output-record-schema.json#/$defs/Result" }
+      },
+      "required": ["scenario_id", "env"],
+      "additionalProperties": false
+    }
+  }
+}

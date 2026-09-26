@@ -1,10 +1,11 @@
 """Orquestador del pipeline (C-2).
 
-Por caso: una llamada al LLM por grupo (Tratamiento, Baseline 1, Baseline 2),
-las tres sobre el mismo modelo asignado. El `outcome` de cada `LLMCall` decide
-el ruteo: si no es `ok`, el caso se registra como `llm_error` sin ejecutar
-nada; si es `ok`, la salida cruda va al runner del grupo (engine/ por
-subproceso o un baseline). Cada desenlace es un renglón JSON Lines según
+Por caso y repetición: una llamada al LLM por grupo (Tratamiento, Baseline 1,
+Baseline 2), todas sobre el mismo modelo asignado. El `outcome` de cada
+`LLMCall` decide el ruteo: si no es `ok`, la generación se registra como
+`llm_error` sin ejecutar nada; si es `ok`, la misma salida cruda va al runner
+del grupo contra el `env` de cada escenario del caso (engine/ por subproceso o
+un baseline). Un renglón JSON Lines por escenario, según
 contracts/output-record-schema.json.
 """
 
@@ -28,7 +29,7 @@ DEFAULT_ENGINE_CMD = (os.environ.get("ENGINE_BIN", "engine"),)
 GAMMA_TIMEOUT_SECONDS = 10.0
 ENGINE_TIMEOUT_SECONDS = 10.0
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "2.0"
 AST_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contracts" / "ast-schema.json"
 
 Group = Literal["treatment", "baseline1", "baseline2"]
@@ -61,6 +62,8 @@ class Record(TypedDict):
     run_id: str
     case_id: str
     group: Group
+    repetition: int
+    scenario_id: str
     model: str
     timestamp: str
     llm_raw: str | None
@@ -71,8 +74,18 @@ class Record(TypedDict):
     duration_ms: int | None
 
 
-# Recibe la salida cruda del LLM, los datos del caso (`env`) y Γ deducido por el engine.
-Runner = Callable[[str, Mapping[str, object], Mapping[str, str]], Verdict]
+# Ejecuta la salida cruda del LLM con los datos de UN escenario (`env`) y Γ del caso.
+ScenarioRunner = Callable[[str, Mapping[str, object], Mapping[str, str]], Verdict]
+
+# Veredicto de un escenario y su `duration_ms` (contracts/README.md §3).
+Timed = tuple[Verdict, int]
+
+# Ejecuta la MISMA salida del LLM contra el `env` de cada escenario, en orden.
+Runner = Callable[[str, Sequence[Mapping[str, object]], Mapping[str, str]], list[Timed]]
+
+
+class CaseError(Exception):
+    """El caso no respeta contracts/case-schema.json o §5: error del corpus, abortar la corrida."""
 
 
 class Completer(Protocol):
@@ -82,10 +95,74 @@ class Completer(Protocol):
 
 
 @dataclass(frozen=True)
+class Scenario:
+    scenario_id: str
+    env: Mapping[str, object]
+
+
+@dataclass(frozen=True)
 class Case:
     case_id: str
     description: str
-    env: Mapping[str, object]
+    scenarios: tuple[Scenario, ...]
+
+
+def load_case(data: Mapping[str, Any]) -> Case:
+    """Caso de entrada según contracts/case-schema.json; ignora los campos del corpus."""
+    case_id, description, scenarios = (
+        data.get("case_id"),
+        data.get("description"),
+        data.get("scenarios"),
+    )
+    if not isinstance(case_id, str) or not case_id:
+        raise CaseError("case_id debe ser un texto no vacío")
+    if not isinstance(description, str) or not description:
+        raise CaseError(f"{case_id}: description debe ser un texto no vacío")
+    if not isinstance(scenarios, list) or not scenarios:
+        raise CaseError(f"{case_id}: scenarios debe ser una lista no vacía")
+    parsed: list[Scenario] = []
+    for s in scenarios:
+        sid = s.get("scenario_id") if isinstance(s, dict) else None
+        env = s.get("env") if isinstance(s, dict) else None
+        if not isinstance(sid, str) or not sid or not isinstance(env, dict):
+            raise CaseError(f"{case_id}: cada escenario necesita scenario_id y env: {s!r}")
+        parsed.append(Scenario(sid, env))
+    ids = [s.scenario_id for s in parsed]
+    if len(set(ids)) != len(ids):
+        raise CaseError(f"{case_id}: scenario_id repetido en {ids}")
+    return Case(case_id, description, tuple(parsed))
+
+
+def case_gamma(case: Case, engine_cmd: Sequence[str] = DEFAULT_ENGINE_CMD) -> dict[str, str]:
+    """Γ común del caso: el engine lo deduce de cada escenario y tiene que coincidir."""
+    gammas = [print_gamma(s.env, engine_cmd) for s in case.scenarios]
+    for s, g in zip(case.scenarios, gammas):
+        if g != gammas[0]:
+            raise CaseError(
+                f"{case.case_id}: Γ de {s.scenario_id} ({g}) distinto de "
+                f"{case.scenarios[0].scenario_id} ({gammas[0]})"
+            )
+    return gammas[0]
+
+
+def elapsed_ms(started: float) -> int:
+    return round((time.monotonic() - started) * 1000)
+
+
+def per_scenario(runner: ScenarioRunner) -> Runner:
+    """Runner que ejecuta cada escenario por separado y cronometra cada uno."""
+
+    def run(
+        llm_raw: str, envs: Sequence[Mapping[str, object]], gamma: Mapping[str, str]
+    ) -> list[Timed]:
+        timed: list[Timed] = []
+        for env in envs:
+            started = time.monotonic()
+            verdict = runner(llm_raw, env, gamma)
+            timed.append((verdict, elapsed_ms(started)))
+        return timed
+
+    return run
 
 
 def print_gamma(
@@ -212,23 +289,29 @@ def build_messages(
 def route_call(
     call: LLMCall,
     runner: Runner,
-    env: Mapping[str, object],
+    scenarios: Sequence[Scenario],
     *,
     gamma: Mapping[str, str],
     run_id: str,
     case_id: str,
     group: Group,
-) -> Record:
-    """Rutea según `call.outcome`: si no es `ok`, `llm_error` sin ejecutar; si es `ok`, al runner."""
+    repetition: int,
+) -> list[Record]:
+    """Rutea según `call.outcome`: si no es `ok`, `llm_error` sin ejecutar; si es `ok`, al runner.
+
+    Siempre devuelve un registro por escenario, en el orden del caso.
+    """
 
     def record(
-        verdict: Verdict, llm_raw: str | None, duration_ms: int | None
+        scenario: Scenario, verdict: Verdict, llm_raw: str | None, duration_ms: int | None
     ) -> Record:
         return {
             "schema_version": SCHEMA_VERSION,
             "run_id": run_id,
             "case_id": case_id,
             "group": group,
+            "repetition": repetition,
+            "scenario_id": scenario.scenario_id,
             "model": call.model,
             "timestamp": datetime.now(UTC).isoformat(),
             "llm_raw": llm_raw,
@@ -247,12 +330,14 @@ def route_call(
             "result": None,
             "error": {"code": code, "message": message},
         }
-        return record(llm_error, None, None)
+        return [record(s, llm_error, None, None) for s in scenarios]
 
-    started = time.monotonic()
-    verdict = runner(call.content, env, gamma)
-    duration_ms = round((time.monotonic() - started) * 1000)
-    return record(verdict, call.content, duration_ms)
+    timed = runner(call.content, [s.env for s in scenarios], gamma)
+    if len(timed) != len(scenarios):
+        raise RuntimeError(
+            f"el runner de {group} devolvió {len(timed)} veredictos para {len(scenarios)} escenarios"
+        )
+    return [record(s, verdict, call.content, ms) for s, (verdict, ms) in zip(scenarios, timed)]
 
 
 def run_case(
@@ -262,22 +347,30 @@ def run_case(
     gamma: Mapping[str, str],
     *,
     run_id: str,
+    repetitions: int = 1,
 ) -> list[Record]:
-    """Triple llamada del caso: una por grupo, las tres con el mismo modelo asignado."""
+    """`repetitions` rondas de triple llamada (una por grupo), todas con el mismo modelo asignado.
+
+    Cada llamada es una generación: su salida se ejecuta contra todos los escenarios del caso.
+    """
+    if repetitions < 1:
+        raise ValueError("repetitions debe ser >= 1")
     records: list[Record] = []
-    for group in GROUPS:
-        call = assignment.complete(build_messages(group, case.description, gamma))
-        records.append(
-            route_call(
-                call,
-                runners[group],
-                case.env,
-                gamma=gamma,
-                run_id=run_id,
-                case_id=case.case_id,
-                group=group,
+    for repetition in range(1, repetitions + 1):
+        for group in GROUPS:
+            call = assignment.complete(build_messages(group, case.description, gamma))
+            records.extend(
+                route_call(
+                    call,
+                    runners[group],
+                    case.scenarios,
+                    gamma=gamma,
+                    run_id=run_id,
+                    case_id=case.case_id,
+                    group=group,
+                    repetition=repetition,
+                )
             )
-        )
     return records
 
 

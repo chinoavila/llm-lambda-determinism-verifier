@@ -14,7 +14,8 @@ import os
 import subprocess
 import sys
 import tempfile
-from collections.abc import Mapping
+import time
+from collections.abc import Mapping, Sequence
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -23,7 +24,7 @@ from pipeline.baselines.baseline1 import extract_code
 from pipeline.baselines.sandbox import DEFAULT_TIMEOUT_SECONDS, run_in_sandbox, to_verdict
 
 if TYPE_CHECKING:
-    from pipeline.orchestrator import Verdict
+    from pipeline.orchestrator import Timed, Verdict
 
 FUNCTION = "evaluate_rule"
 MYPY_TIMEOUT_SECONDS = 60.0
@@ -103,7 +104,39 @@ def run_baseline_2(
     *,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
 ) -> Verdict:
-    """Runner del grupo `baseline2`: `(llm_raw, env, gamma) -> Verdict`."""
+    """Un escenario: `(llm_raw, env, gamma) -> Verdict`."""
+    checked = check_static(llm_raw, gamma)
+    if not isinstance(checked, str):
+        return checked
+    return to_verdict(run_in_sandbox(checked, env, timeout=timeout))
+
+
+def run_baseline_2_scenarios(
+    llm_raw: str,
+    envs: Sequence[Mapping[str, object]],
+    gamma: Mapping[str, str],
+    *,
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
+) -> list[Timed]:
+    """Runner del grupo `baseline2`: análisis estático una vez por generación, ejecución por escenario.
+
+    `duration_ms` de cada escenario = análisis estático + su ejecución (contracts/README.md §3).
+    """
+    started = time.monotonic()
+    checked = check_static(llm_raw, gamma)
+    static_ms = round((time.monotonic() - started) * 1000)
+    if not isinstance(checked, str):
+        return [(checked, static_ms) for _ in envs]
+    timed: list[Timed] = []
+    for env in envs:
+        started = time.monotonic()
+        verdict = to_verdict(run_in_sandbox(checked, env, timeout=timeout))
+        timed.append((verdict, static_ms + round((time.monotonic() - started) * 1000)))
+    return timed
+
+
+def check_static(llm_raw: str, gamma: Mapping[str, str]) -> Verdict | str:
+    """Etapas parse y typecheck: el veredicto que bloquea, o el programa listo para ejecutar."""
     code = extract_code(llm_raw)
     if code is None:
         return blocked(
@@ -130,5 +163,4 @@ def run_baseline_2(
     returncode, output = mypy
     if returncode != 0:
         return blocked("typecheck", "mypy", output)
-
-    return to_verdict(run_in_sandbox(program, env, timeout=timeout))
+    return program

@@ -12,10 +12,17 @@ from pipeline.llm import Attempt, LLMCall, Outcome
 from pipeline.orchestrator import (
     GROUPS,
     Case,
+    CaseError,
     EngineError,
     Group,
+    Record,
+    Runner,
+    Scenario,
     Verdict,
     append_jsonl,
+    case_gamma,
+    load_case,
+    per_scenario,
     print_gamma,
     route_call,
     run_case,
@@ -73,18 +80,31 @@ class FakeAssignment:
         return self.calls.pop(0)
 
 
-def fixed_runner(verdict: Verdict, seen: list[str]) -> Any:
+def fixed_runner(verdict: Verdict, seen: list[Any]) -> Runner:
+    """Runner por escenario que siempre da `verdict` y anota (llm_raw, env) en `seen`."""
+
     def runner(llm_raw: str, env: Any, gamma: Any) -> Verdict:
-        seen.append(llm_raw)
+        seen.append((llm_raw, dict(env)))
         return verdict
 
-    return runner
+    return per_scenario(runner)
+
+
+SCENARIOS = (Scenario("s1", {"credit_score": 750}), Scenario("s2", {"credit_score": 650}))
+
+
+def route(call: LLMCall, runner: Runner, case_id: str = "c", group: Group = "treatment") -> list[Record]:
+    return route_call(
+        call, runner, SCENARIOS, gamma={}, run_id="r", case_id=case_id, group=group, repetition=1
+    )
 
 
 def assert_record_shape(record: Any) -> None:
     """Chequeo mínimo contra el contrato (sin dependencias de jsonschema)."""
     assert set(record) == set(RECORD_SCHEMA["required"])
-    assert record["schema_version"] == "1.0"
+    assert record["schema_version"] == "2.0"
+    assert isinstance(record["repetition"], int) and record["repetition"] >= 1
+    assert isinstance(record["scenario_id"], str) and record["scenario_id"]
     if record["outcome"] == "executed":
         assert record["result"] is not None and record["error"] is None
     else:
@@ -146,24 +166,32 @@ def test_print_gamma_missing_binary(tmp_path: Path) -> None:
 # --- Triple llamada por grupo ---------------------------------------------
 
 
+OK_VERDICT: Verdict = {
+    "outcome": "executed",
+    "stage": "execution",
+    "result": {"type": "Bool", "value": True},
+    "error": None,
+}
+
+
 def test_run_case_calls_llm_once_per_group_on_same_model() -> None:
-    ok_verdict: Verdict = {
-        "outcome": "executed",
-        "stage": "execution",
-        "result": {"type": "Bool", "value": True},
-        "error": None,
-    }
-    seen: dict[Group, list[str]] = {g: [] for g in GROUPS}
-    runners = {g: fixed_runner(ok_verdict, seen[g]) for g in GROUPS}
+    seen: dict[Group, list[Any]] = {g: [] for g in GROUPS}
+    runners = {g: fixed_runner(OK_VERDICT, seen[g]) for g in GROUPS}
     assignment = FakeAssignment(
         [llm_call(content='{"expr":1}'), llm_call(content='{"code":"b1"}'), llm_call(content='{"code":"b2"}')]
     )
-    case = Case("RULE-001", "Aprobar si credit_score > 700", {"credit_score": 750})
+    case = Case("RULE-001", "Aprobar si credit_score > 700", SCENARIOS)
 
     records = run_case(case, assignment, runners, {"credit_score": "Int"}, run_id="run-1")
 
-    assert [r["group"] for r in records] == ["treatment", "baseline1", "baseline2"]
-    assert seen == {"treatment": ['{"expr":1}'], "baseline1": ['{"code":"b1"}'], "baseline2": ['{"code":"b2"}']}
+    # Una generación por grupo, ejecutada contra los dos escenarios, en orden.
+    assert [(r["group"], r["scenario_id"]) for r in records] == [
+        ("treatment", "s1"), ("treatment", "s2"),
+        ("baseline1", "s1"), ("baseline1", "s2"),
+        ("baseline2", "s1"), ("baseline2", "s2"),
+    ]  # fmt: skip
+    assert seen["treatment"] == [('{"expr":1}', {"credit_score": 750}), ('{"expr":1}', {"credit_score": 650})]
+    assert [raw for raw, _ in seen["baseline2"]] == ['{"code":"b2"}', '{"code":"b2"}']
     assert len(assignment.messages) == 3
     for messages in assignment.messages:
         assert messages[-1] == {"role": "user", "content": case.description}
@@ -174,7 +202,25 @@ def test_run_case_calls_llm_once_per_group_on_same_model() -> None:
     assert "mypy" not in assignment.messages[1][0]["content"]
     for r in records:
         assert_record_shape(r)
-        assert (r["run_id"], r["case_id"], r["model"]) == ("run-1", "RULE-001", "m-big")
+        assert (r["run_id"], r["case_id"], r["model"], r["repetition"]) == ("run-1", "RULE-001", "m-big", 1)
+
+
+def test_run_case_repetitions_are_new_generations() -> None:
+    runners = {g: fixed_runner(OK_VERDICT, []) for g in GROUPS}
+    calls = [llm_call(content=f'{{"n":{i}}}') for i in range(6)]
+    assignment = FakeAssignment(calls)
+    case = Case("RULE-001", "regla", SCENARIOS)
+
+    records = run_case(case, assignment, runners, {}, run_id="r", repetitions=2)
+
+    assert len(assignment.messages) == 6  # 2 repeticiones x 3 grupos
+    assert [r["repetition"] for r in records] == [1] * 6 + [2] * 6
+    assert {r["llm_raw"] for r in records if r["repetition"] == 2 and r["group"] == "treatment"} == {'{"n":3}'}
+
+
+def test_run_case_rejects_zero_repetitions() -> None:
+    with pytest.raises(ValueError):
+        run_case(Case("c", "d", SCENARIOS), FakeAssignment([]), {}, {}, run_id="r", repetitions=0)
 
 
 # --- Ruteo a partir del outcome de LLMCall --------------------------------
@@ -183,50 +229,107 @@ def test_run_case_calls_llm_once_per_group_on_same_model() -> None:
 @pytest.mark.parametrize(
     "outcome", ["generation_failed", "quota_exhausted", "transport_error", "request_error"]
 )
-def test_route_call_llm_failure_is_llm_error_without_running(outcome: Outcome) -> None:
-    seen: list[str] = []
-    runner = fixed_runner({"outcome": "executed", "stage": "execution", "result": None, "error": None}, seen)
-
-    record = route_call(llm_call(outcome), runner, {}, gamma={}, run_id="r", case_id="c", group="baseline1")
+def test_route_call_llm_failure_is_llm_error_in_every_scenario(outcome: Outcome) -> None:
+    seen: list[Any] = []
+    records = route(llm_call(outcome), fixed_runner(OK_VERDICT, seen), group="baseline1")
 
     assert seen == []
-    assert record["outcome"] == "llm_error" and record["stage"] == "llm"
-    assert record["error"] is not None and record["error"]["code"] == outcome
-    assert_record_shape(record)
+    assert [r["scenario_id"] for r in records] == ["s1", "s2"]
+    for record in records:
+        assert record["outcome"] == "llm_error" and record["stage"] == "llm"
+        assert record["error"] is not None and record["error"]["code"] == outcome
+        assert_record_shape(record)
 
 
 def test_route_call_ok_without_content_is_llm_error() -> None:
-    seen: list[str] = []
-    runner = fixed_runner({"outcome": "executed", "stage": "execution", "result": None, "error": None}, seen)
-
-    record = route_call(llm_call("ok", None), runner, {}, gamma={}, run_id="r", case_id="c", group="treatment")
+    seen: list[Any] = []
+    records = route(llm_call("ok", None), fixed_runner(OK_VERDICT, seen))
 
     assert seen == []
-    assert record["error"] == {"code": "missing_content", "message": "status 200: None"}
-    assert_record_shape(record)
+    assert [r["error"] for r in records] == [{"code": "missing_content", "message": "status 200: None"}] * 2
+    for record in records:
+        assert_record_shape(record)
 
 
-def test_route_call_ok_copies_runner_verdict_and_raw_output() -> None:
+def test_route_call_same_raw_output_against_each_scenario() -> None:
     blocked: Verdict = {
         "outcome": "blocked",
         "stage": "typecheck",
         "result": None,
         "error": {"code": "BRANCH_MISMATCH", "message": "x"},
     }
-    seen: list[str] = []
-    record = route_call(
-        llm_call(content="{roto"), fixed_runner(blocked, seen), {}, gamma={}, run_id="r", case_id="c", group="treatment"
-    )
+    seen: list[Any] = []
+    records = route(llm_call(content="{roto"), fixed_runner(blocked, seen))
 
-    assert seen == ["{roto"]
-    assert record["llm_raw"] == "{roto"
-    assert (record["outcome"], record["stage"], record["result"], record["error"]) == (
-        blocked["outcome"],
-        blocked["stage"],
-        blocked["result"],
-        blocked["error"],
+    assert seen == [("{roto", {"credit_score": 750}), ("{roto", {"credit_score": 650})]
+    for record in records:
+        assert record["llm_raw"] == "{roto"
+        assert (record["outcome"], record["stage"], record["result"], record["error"]) == (
+            blocked["outcome"],
+            blocked["stage"],
+            blocked["result"],
+            blocked["error"],
+        )
+        assert_record_shape(record)
+
+
+def test_route_call_rejects_runner_with_wrong_count() -> None:
+    def short(llm_raw: str, envs: Any, gamma: Any) -> list[Any]:
+        return [(OK_VERDICT, 0)]
+
+    with pytest.raises(RuntimeError, match="1 veredictos para 2"):
+        route(llm_call(), short)
+
+
+# --- Casos de entrada (contracts/README.md §5) ------------------------------
+
+
+def test_load_case_reads_pipeline_fields_and_ignores_corpus_fields() -> None:
+    case = load_case(
+        {
+            "case_id": "RULE-042",
+            "category": 3,
+            "description": "regla",
+            "canonical_ast": {"expr": {}},
+            "scenarios": [
+                {"scenario_id": "a", "env": {"x": 1}, "expected": {"type": "Bool", "value": True}},
+                {"scenario_id": "b", "env": {"x": 2}},
+            ],
+        }
     )
-    assert_record_shape(record)
+    assert case == Case("RULE-042", "regla", (Scenario("a", {"x": 1}), Scenario("b", {"x": 2})))
+
+
+@pytest.mark.parametrize(
+    ("data", "match"),
+    [
+        ({"description": "d", "scenarios": [{"scenario_id": "a", "env": {}}]}, "case_id"),
+        ({"case_id": "c", "scenarios": [{"scenario_id": "a", "env": {}}]}, "description"),
+        ({"case_id": "c", "description": "d", "scenarios": []}, "no vacía"),
+        ({"case_id": "c", "description": "d", "scenarios": [{"env": {}}]}, "scenario_id y env"),
+        (
+            {"case_id": "c", "description": "d", "scenarios": [{"scenario_id": "a", "env": {}}] * 2},
+            "repetido",
+        ),
+    ],
+)
+def test_load_case_rejects_invalid_cases(data: dict[str, Any], match: str) -> None:
+    with pytest.raises(CaseError, match=match):
+        load_case(data)
+
+
+def test_case_gamma_requires_same_gamma_in_every_scenario(tmp_path: Path) -> None:
+    same = fake_engine(tmp_path, '{"x":"Int"}\n')
+    assert case_gamma(Case("c", "d", (Scenario("a", {"x": 1}), Scenario("b", {"x": 2}))), same) == {"x": "Int"}
+
+
+def test_case_gamma_rejects_different_gammas() -> None:
+    engine = ["engine"] if shutil.which("engine") else None
+    if engine is None:
+        pytest.skip("binario del engine no instalado")
+    case = Case("c", "d", (Scenario("a", {"x": 1}), Scenario("b", {"x": "uno"})))
+    with pytest.raises(CaseError, match="distinto"):
+        case_gamma(case, engine)
 
 
 # --- Runner del Tratamiento: engine por subproceso ------------------------
@@ -287,15 +390,15 @@ def test_run_engine_with_real_engine_matches_fixture(fixture: Path) -> None:
 
 def test_append_jsonl_writes_one_line_per_record_and_appends(tmp_path: Path) -> None:
     out = tmp_path / "out" / "records.jsonl"
-    first = route_call(llm_call("quota_exhausted"), fixed_runner(json.loads(EXECUTED), []), {}, gamma={}, run_id="r", case_id="c1", group="treatment")
-    second = route_call(llm_call(content="{\"expr\": \"ñ\"}"), fixed_runner(json.loads(EXECUTED), []), {}, gamma={}, run_id="r", case_id="c2", group="treatment")
+    first = route(llm_call("quota_exhausted"), fixed_runner(json.loads(EXECUTED), []), case_id="c1")
+    second = route(llm_call(content="{\"expr\": \"ñ\"}"), fixed_runner(json.loads(EXECUTED), []), case_id="c2")
 
-    append_jsonl(out, [first])
-    append_jsonl(out, [second])
+    append_jsonl(out, first)
+    append_jsonl(out, second)
 
     lines = out.read_bytes().decode("utf-8").split("\n")
-    assert lines[-1] == "" and len(lines) == 3
-    assert [json.loads(line) for line in lines[:2]] == [first, second]
-    assert "ñ" in lines[1]
-    for line in lines[:2]:
+    assert lines[-1] == "" and len(lines) == 5
+    assert [json.loads(line) for line in lines[:4]] == [*first, *second]
+    assert "ñ" in lines[2]
+    for line in lines[:4]:
         assert_record_shape(json.loads(line))
