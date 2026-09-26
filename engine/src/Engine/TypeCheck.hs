@@ -52,7 +52,7 @@ scopeCheck gamma e =
     [] -> Right ()
     (v : _) -> Left (UnboundVariable v)
 
--- FP[Tipos] FP[Igualaciones] FP[Recursión] FP[Funciones puras] FP[Funciones lambda] FP[Inmutabilidad] FP[Condicionales]
+-- FP[Tipos] FP[Igualaciones] FP[Recursión] FP[Funciones puras] FP[Funciones lambda] FP[Inmutabilidad] FP[Condicionales] FP[Currificación]
 -- | Γ ⊢ e : τ. Sintetiza el tipo; los parámetros de 'Lam' vienen anotados,
 -- así que no hace falta unificación.
 typeOf :: Env Type -> Expr -> Either CheckError Type

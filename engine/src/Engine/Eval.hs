@@ -29,7 +29,7 @@ data EvalError
   | StuckResult
   deriving (Show, Eq)
 
--- FP[Recursión] FP[Igualaciones] FP[Funciones puras] FP[Inmutabilidad] FP[Condicionales]
+-- FP[Recursión] FP[Igualaciones] FP[Funciones puras] FP[Inmutabilidad] FP[Condicionales] FP[Currificación]
 -- | ρ ⊢ e ⇓ v, con llamada por valor: en 'App' se evalúa el argumento antes
 -- de entrar al cuerpo. En 'IfThenElse' solo se evalúa la rama elegida.
 eval :: Env Value -> Expr -> Either EvalError Value

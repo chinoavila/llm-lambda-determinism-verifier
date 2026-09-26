@@ -75,7 +75,7 @@ parseProgram bytes = case eitherDecode bytes of
 literalMismatchTag :: String
 literalMismatchTag = "LITERAL_TYPE_MISMATCH"
 
--- FP[Orden superior] FP[Tuplas] FP[Excepcioness]
+-- FP[Orden superior] FP[Tuplas] FP[Excepcioness] FP[Currificación]
 -- | Deduce los datos del caso desde @--env@. Γ es @fmap literalType@ del
 -- resultado: el tipo sale del valor, nunca de cómo lo usa la regla.
 envFromJSON :: Value -> Either EnvError (Env LiteralValue)
@@ -143,7 +143,9 @@ instance FromJSON BinOp where
       Just op -> pure op
       Nothing -> fail ("operador desconocido: " ++ show s)
 
--- FP[Clases] FP[Patrones constantes]
+-- FP[Clases] FP[Patrones constantes] FP[Currificación]
+-- | Los constructores están currificados: @BinaryOp <$> op <*> l <*> r@ los
+-- aplica de a un argumento por vez.
 instance FromJSON Expr where
   parseJSON = withObject "Expr" $ \o -> do
     tag <- o .: "type" :: Parser String

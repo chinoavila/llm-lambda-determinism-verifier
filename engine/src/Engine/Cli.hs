@@ -83,8 +83,9 @@ validate env input = case parseProgram input of
     Left err -> Right (BlockedCheck err)
     Right _ -> Executed <$> evalProgram env prog
 
--- FP[Polimorfismo]
--- | Γ se deduce de los valores del caso.
+-- FP[Polimorfismo] FP[Currificación]
+-- | Γ se deduce de los valores del caso. Sin nombrar el argumento: @map@
+-- aplicado parcialmente a @fmap literalType@ ya es la función buscada.
 typesOf :: Env LiteralValue -> Env Type
 typesOf = map (fmap literalType)
 

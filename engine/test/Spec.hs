@@ -195,6 +195,10 @@ typeCheckSpec = describe "Engine.TypeCheck" $ do
         twice = Lam "f" (TArrow TBool TBool) (Lam "x" TBool (App (Var "f") (App (Var "f") (Var "x"))))
     it "funciones de orden superior dentro del DSL" $
       checkCode (App (App twice notB) (Var "has_defaults")) `shouldBe` Right TBool
+    -- FP[Currificación]
+    it "aplicación parcial en el DSL: twice notB : Bool → Bool" $ do
+      typeOf gamma twice `shouldBe` Right (TArrow (TArrow TBool TBool) (TArrow TBool TBool))
+      typeOf gamma (App twice notB) `shouldBe` Right (TArrow TBool TBool)
     it "el parámetro oculta a una variable de Γ con el mismo nombre" $
       checkCode (App (Lam "credit_score" TBool (Var "credit_score")) (bool True)) `shouldBe` Right TBool
     it "NOT_A_FUNCTION" $
@@ -245,6 +249,9 @@ evalSpec = describe "Engine.Eval" $ do
     it "funciones de orden superior dentro del DSL" $ do
       run' (App notB (Var "has_defaults")) `shouldBe` Right (VBool True)
       run' (App (App twice notB) (Var "has_defaults")) `shouldBe` Right (VBool False)
+    -- FP[Currificación]
+    it "aplicación parcial: twice notB es una clausura que espera el segundo argumento" $
+      fmap isClosure (eval [] (App twice notB)) `shouldBe` Right True
     it "el parámetro oculta a una variable del caso" $
       run' (App (Lam "credit_score" TBool (Var "credit_score")) (bool True)) `shouldBe` Right (VBool True)
     it "alcance léxico: una clausura usa el entorno donde se definió" $
