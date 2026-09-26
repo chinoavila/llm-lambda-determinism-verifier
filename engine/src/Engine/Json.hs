@@ -26,6 +26,7 @@ import Data.List (isInfixOf)
 import Engine.Env (Env)
 import Engine.Types
 
+-- FP[Tipos algebraicos]
 -- | Errores de la etapa @parse@. El texto es el mensaje de aeson, que incluye
 -- la ruta del nodo (por ejemplo @$.expr.left@).
 data ParseError
@@ -52,6 +53,7 @@ envErrorMessage (InvalidEnvName x) = "nombre inválido en --env: " ++ show x
 envErrorMessage (InvalidEnvValue x) =
   "valor de " ++ show x ++ " en --env: se esperaba entero de 64 bits, booleano o cadena"
 
+-- FP[Funciones puras] FP[Composición] FP[Orden superior] FP[Excepcioness] FP[Inferencia de tipos]
 -- | Primero exige JSON sintácticamente válido; después, la forma del AST.
 parseProgram :: BL.ByteString -> Either ParseError Program
 parseProgram bytes = case eitherDecode bytes of
@@ -67,6 +69,7 @@ parseProgram bytes = case eitherDecode bytes of
 literalMismatchTag :: String
 literalMismatchTag = "LITERAL_TYPE_MISMATCH"
 
+-- FP[Orden superior] FP[Tuplas] FP[Excepcioness]
 -- | Deduce los datos del caso desde @--env@. Γ es @fmap literalType@ del
 -- resultado: el tipo sale del valor, nunca de cómo lo usa la regla.
 envFromJSON :: Value -> Either EnvError (Env LiteralValue)
@@ -85,6 +88,7 @@ envValue (Bool b) = Just (VBool b)
 envValue v@(String _) = VString <$> parseMaybe parseJSON v
 envValue _ = Nothing
 
+-- FP[Patrones de listas] FP[map/filter/fold] FP[Inferencia de tipos] FP[Funciones totales]
 -- | @^[a-z_][A-Za-z0-9_]*$@
 validName :: Name -> Bool
 validName [] = False
@@ -92,12 +96,13 @@ validName (c : cs) = (isAsciiLower c || c == '_') && all rest cs
   where
     rest x = isAsciiLower x || isAsciiUpper x || isDigit x || x == '_'
 
+-- FP[Listas por comprensión] FP[null]
 -- | Rechaza cualquier clave que el contrato no permita en el nodo.
 onlyKeys :: [String] -> Object -> Parser ()
 onlyKeys allowed o =
-  case [k | k <- map Key.toString (KeyMap.keys o), k `notElem` allowed] of
-    [] -> pure ()
-    extra -> fail ("claves no permitidas: " ++ show extra)
+  unless (null extra) (fail ("claves no permitidas: " ++ show extra))
+  where
+    extra = [k | k <- map Key.toString (KeyMap.keys o), k `notElem` allowed]
 
 nameField :: Object -> Key.Key -> Parser Name
 nameField o k = do
@@ -105,11 +110,13 @@ nameField o k = do
   unless (validName x) (fail ("nombre inválido: " ++ show x))
   pure x
 
+-- FP[Clases] FP[Funciones anónimas]
 instance FromJSON Program where
   parseJSON = withObject "Program" $ \o -> do
     onlyKeys ["expr"] o
     Program <$> o .: "expr"
 
+-- FP[Clases] FP[Patrones constantes]
 instance FromJSON Type where
   parseJSON (String s) = case s of
     "Int" -> pure TInt
@@ -122,6 +129,7 @@ instance FromJSON Type where
         onlyKeys ["from", "to"] o
         TArrow <$> o .: "from" <*> o .: "to"
 
+-- FP[Listas por comprensión] FP[Polimorfismo]
 instance FromJSON BinOp where
   parseJSON v = do
     s <- parseJSON v :: Parser String
@@ -129,6 +137,7 @@ instance FromJSON BinOp where
       Just op -> pure op
       Nothing -> fail ("operador desconocido: " ++ show s)
 
+-- FP[Clases] FP[Patrones constantes]
 instance FromJSON Expr where
   parseJSON = withObject "Expr" $ \o -> do
     tag <- o .: "type" :: Parser String

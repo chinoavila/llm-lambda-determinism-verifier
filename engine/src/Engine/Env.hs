@@ -10,22 +10,26 @@ module Engine.Env
 
 import Engine.Types (Name)
 
+-- FP[Polimorfismo] FP[Tuplas]
 -- | Asociación nombre → dato. El binding más reciente queda al frente.
 type Env a = [(Name, a)]
 
 emptyEnv :: Env a
 emptyEnv = []
 
+-- FP[Inmutabilidad] FP[Funciones de listas]
 -- | Devuelve un entorno nuevo; el original no cambia. Un nombre repetido
 -- oculta al anterior.
 extend :: Name -> a -> Env a -> Env a
 extend x v env = (x, v) : env
 
+-- FP[Patrones de listas] FP[Tuplas] FP[Recursión] FP[Excepcioness] FP[Reducciones] FP[Funciones totales]
 lookupVar :: Name -> Env a -> Maybe a
 lookupVar _ [] = Nothing
 lookupVar x ((k, v) : rest)
   | x == k = Just v
   | otherwise = lookupVar x rest
 
+-- FP[map/filter/fold]
 names :: Env a -> [Name]
 names = map fst

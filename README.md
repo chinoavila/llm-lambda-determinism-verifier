@@ -100,6 +100,10 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"
 
 No hace falta instalar GHC ni Python localmente: todo corre dentro de los contenedores. Ver [`specs/roadmap.md`](specs/roadmap.md) para el plan día a día.
 
+## Aprender programación funcional con este repositorio
+
+El motor también sirve como material de aprendizaje: [`docs/guia-conceptos-fp.md`](docs/guia-conceptos-fp.md) indica dónde se aplica cada concepto del curso (tipos, patrones, recursión, clases, etc.) y cómo encontrarlo con `git grep -nF "FP[<concepto>]"`.
+
 ## Contexto académico
 
 El diseño del pipeline se basa en el trabajo *"Mitigación de incertidumbre probabilística en LLM aplicados a procesos determinísticos mediante cálculo lambda"* (Avila, Samaniego, Smulever — UNNE, Doctorado en Informática). Este repositorio implementa el modelo computacional ahí descrito; la investigación en sí no forma parte de él.

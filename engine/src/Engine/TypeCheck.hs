@@ -22,6 +22,7 @@ import Engine.Types
 data Stage = Scope | TypeCheck
   deriving (Show, Eq)
 
+-- FP[Tipos algebraicos]
 data CheckError
   = UnboundVariable Name
   | OperandMismatch BinOp Type Type
@@ -32,6 +33,7 @@ data CheckError
   | NonBaseResult Type
   deriving (Show, Eq)
 
+-- FP[Recursión] FP[Igualaciones] FP[Listas por comprensión] FP[map/filter/fold] FP[Funciones de listas]
 -- | Variables libres en orden de aparición (izquierda a derecha).
 freeVars :: Expr -> [Name]
 freeVars (Literal _) = []
@@ -41,13 +43,16 @@ freeVars (IfThenElse c t e) = concatMap freeVars [c, t, e]
 freeVars (Lam x _ body) = [v | v <- freeVars body, v /= x]
 freeVars (App f a) = freeVars f ++ freeVars a
 
--- | Falla con la primera variable libre que no está en Γ.
+-- FP[Evaluación perezosa] FP[Polimorfismo] FP[Patrones de listas] FP[Funciones totales]
+-- | Falla con la primera variable libre que no está en Γ. Por evaluación
+-- perezosa, la lista solo se calcula hasta encontrar esa primera variable.
 scopeCheck :: Env a -> Expr -> Either CheckError ()
 scopeCheck gamma e =
   case [v | v <- freeVars e, v `notElem` names gamma] of
     [] -> Right ()
     (v : _) -> Left (UnboundVariable v)
 
+-- FP[Tipos] FP[Igualaciones] FP[Recursión] FP[Funciones puras] FP[Funciones lambda] FP[Inmutabilidad] FP[Condicionales]
 -- | Γ ⊢ e : τ. Sintetiza el tipo; los parámetros de 'Lam' vienen anotados,
 -- así que no hace falta unificación.
 typeOf :: Env Type -> Expr -> Either CheckError Type
@@ -75,6 +80,7 @@ typeOf gamma (App f a) = do
       | otherwise -> Left (ArgumentMismatch param ta)
     _ -> Left (NotAFunction tf)
 
+-- FP[Patrones constantes]
 -- | Comparaciones sobre Int, @==@ sobre un mismo tipo base, lógicos sobre Bool.
 operandsOk :: BinOp -> Type -> Type -> Bool
 operandsOk Eq a b = a == b && isBase a
@@ -82,6 +88,7 @@ operandsOk And a b = a == TBool && b == TBool
 operandsOk Or a b = a == TBool && b == TBool
 operandsOk _ a b = a == TInt && b == TInt
 
+-- FP[Funciones puras]
 -- | Alcance, luego tipos, luego exige que el resultado sea un tipo base.
 checkProgram :: Env Type -> Program -> Either CheckError Type
 checkProgram gamma (Program e) = do

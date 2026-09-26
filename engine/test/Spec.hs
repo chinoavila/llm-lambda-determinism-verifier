@@ -29,6 +29,7 @@ utf8 = B.toLazyByteString . B.stringUtf8
 parse :: String -> Either ParseError Program
 parse = parseProgram . utf8
 
+-- FP[Composición]
 int :: Int -> Expr
 int = Literal . VInt
 
@@ -59,6 +60,7 @@ envSpec = describe "Engine.Env" $ do
     lookupVar "x" inner `shouldBe` Just TBool
     lookupVar "x" outer `shouldBe` Just TInt
 
+  -- FP[Funciones puras]
   it "lookupVar encuentra lo que extend agregó" $
     property $ \x (n :: Int) env ->
       lookupVar x (extend x n env) === Just n
@@ -97,6 +99,7 @@ jsonSpec = describe "Engine.Json" $ do
       codeOf (parse "{\"expr\":") `shouldBe` Left "MALFORMED_JSON"
       codeOf (parse "") `shouldBe` Left "MALFORMED_JSON"
 
+    -- FP[Funciones anónimas]
     it "INVALID_AST ante formas que el contrato no permite" $
       mapM_
         (\src -> codeOf (parse src) `shouldBe` Left "INVALID_AST")
@@ -179,6 +182,7 @@ typeCheckSpec = describe "Engine.TypeCheck" $ do
       checkProgram gamma (Program (IfThenElse (bool True) (int 500) (str "Rejected")))
         `shouldBe` Left (BranchMismatch TInt TString)
 
+  -- FP[Funciones lambda] FP[Orden superior]
   describe "Lam / App" $ do
     let notB = Lam "b" TBool (IfThenElse (Var "b") (bool False) (bool True))
         twice = Lam "f" (TArrow TBool TBool) (Lam "x" TBool (App (Var "f") (App (Var "f") (Var "x"))))
@@ -207,6 +211,7 @@ data Fixture = Fixture
   , fxExpect :: Either String String -- ^ código de error o tipo del resultado
   }
 
+-- FP[Condicionales]
 fixtureParser :: Value -> Parser Fixture
 fixtureParser = withObject "Fixture" $ \o -> do
   ev <- o .: "expected_verdict"
@@ -231,6 +236,7 @@ staticVerdict fx = case envFromJSON (fxEnv fx) of
     stageName Scope = "scope"
     stageName TypeCheck = "typecheck"
 
+-- FP[Listas por comprensión]
 fixturesSpec :: Spec
 fixturesSpec = describe "contracts/fixtures" $
   mapM_ fixtureCase ["rule-00" ++ show n ++ ".json" | n <- [1 .. 7 :: Int]]
