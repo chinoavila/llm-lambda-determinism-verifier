@@ -35,6 +35,19 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 - Runner de `baseline1`: `per_scenario(run_baseline_1)`. Extrae `code` de `llm_raw`; ignora `gamma`.
 - Runner de `baseline2`: `run_baseline_2_scenarios`. Hace `check_static` (parse y typecheck) **una vez por generación**; si bloquea, repite ese veredicto en todos los escenarios; si pasa, ejecuta cada escenario en el sandbox. `duration_ms` = análisis estático + ejecución del escenario. `run_baseline_2` es la versión de un escenario (tests). Ver `specs/sandbox.md`.
 
+## Comando de punta a punta (`python -m pipeline run`)
+
+- Código: `pipeline/pipeline/cli.py`; entrada `pipeline/pipeline/__main__.py`.
+- `python -m pipeline run [casos...] [--repetitions N] [--out-dir DIR] [--run-id ID]`. Sin casos, usa `contracts/fixtures/`. Un directorio aporta sus `*.json` en orden alfabético.
+- Acepta casos en formato `contracts/case-schema.json` y también fixtures (§4): `read_case` lee una fixture como caso de un único escenario `S1` (`FIXTURE_SCENARIO_ID`).
+- Antes de la primera llamada al LLM, `prepare` lee y valida **todos** los casos (formato, `case_id` sin repetir, Γ común con `case_gamma`). Un error ahí sale con código 1 sin llamar al LLM.
+- Sin la clave del LLM en el entorno (`MissingCredentials`, subclase de `ConfigError`), avisa por stderr y sale con 0: así `docker compose up` sigue sirviendo para correr los gates. Cualquier otro `ConfigError` sale con 1.
+- Por caso: `balancer.acquire()` (un modelo por caso), `run_case` con `RUNNERS` (`per_scenario(run_treatment)`, `per_scenario(run_baseline_1)`, `run_baseline_2_scenarios`) y `append_jsonl` apenas termina el caso.
+- Salida: `<out-dir>/<run_id>.jsonl`, por defecto `out/` en la raíz del repo (montado en el contenedor, fuera de Git). `run_id` = fecha y hora UTC + 6 hex (`new_run_id`).
+- `EngineError`, `SandboxError`, `StaticCheckError` y `NoModelAvailable` cortan la corrida con código 1; lo ya escrito queda. Son fallas del sistema, no desenlaces del modelo.
+- Los casos corren en secuencia. No agregar concurrencia sin revisar las cuotas del pool (`specs/llm-client.md`).
+- Test de punta a punta sin red: `tests/test_cli.py` responde con el `llm_raw` y el `python_code` de cada fixture y usa engine, sandbox y mypy reales.
+
 ## Errores del engine en validación
 
 - Exit 0 a 3: el veredicto debe tener exactamente las claves `outcome`, `stage`, `result` y `error`, y `stage` debe coincidir con el código de salida (0 execution, 1 parse, 2 scope, 3 typecheck). Si no, `EngineError`.
@@ -53,4 +66,3 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 
 - Los códigos `missing_content` y `TIMEOUT`, y el uso del `outcome` de `LLMCall` como `error.code`, son convenciones del orquestador. Todavía no figuran en `contracts/README.md` §3; moverlos ahí requiere avisar a los otros dos desarrolladores.
 - Los prompts de `build_messages` son provisorios: el equipo debe revisarlos antes de correr el experimento. Invariante que no se debe romper: los tres grupos reciben la misma información de tipos (`TYPES_NOTE`); el Tratamiento suma la semántica del DSL (`DSL_SEMANTICS`) y los baselines, el mapeo a tipos de Python (`PYTHON_TYPES_NOTE`).
-- El comando que carga los casos y corre todo de punta a punta (roadmap, Día 5) no existe todavía.

@@ -25,6 +25,10 @@ class ConfigError(Exception):
     """La configuración del LLM es inválida o incompleta."""
 
 
+class MissingCredentials(ConfigError):
+    """Falta la variable de entorno con la clave de un endpoint (`.env` sin completar)."""
+
+
 @dataclass(frozen=True)
 class Endpoint:
     """Un modelo servido por una API OpenAI-compatible."""
@@ -106,7 +110,7 @@ def _endpoint(raw: Mapping[str, Any], where: str, env: Mapping[str, str]) -> End
         var = _str(raw, "api_key_env", where)
         api_key = env.get(var) or None
         if api_key is None:
-            raise ConfigError(f"{where}: la variable de entorno {var} no está definida")
+            raise MissingCredentials(f"{where}: la variable de entorno {var} no está definida")
 
     params = raw.get("params", {})
     if not isinstance(params, dict):

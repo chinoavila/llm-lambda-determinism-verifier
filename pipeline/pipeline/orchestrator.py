@@ -31,6 +31,8 @@ GAMMA_TIMEOUT_SECONDS = 10.0
 ENGINE_TIMEOUT_SECONDS = 10.0
 
 SCHEMA_VERSION = "2.0"
+# Escenario único con el que se lee una fixture como caso (ver `read_case`).
+FIXTURE_SCENARIO_ID = "S1"
 AST_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contracts" / "ast-schema.json"
 
 Group = Literal["treatment", "baseline1", "baseline2"]
@@ -110,13 +112,19 @@ class Case:
 
 def read_case(path: Path) -> Case:
     """Lee un caso del corpus. Los números no enteros se leen como `Decimal` para verificar
-    que se puedan pasar sin pérdida al engine y al sandbox (ver `load_case`)."""
+    que se puedan pasar sin pérdida al engine y al sandbox (ver `load_case`).
+
+    Una fixture (contracts/README.md §4: un solo `env`, sin `scenarios`) se lee como un caso
+    con un único escenario `S1`; así el comando de punta a punta corre sobre las fixtures.
+    """
     try:
         data = json.loads(path.read_text(encoding="utf-8"), parse_float=Decimal)
     except ValueError as e:
         raise CaseError(f"{path}: no es JSON: {e}") from e
     if not isinstance(data, dict):
         raise CaseError(f"{path}: el caso debe ser un objeto JSON")
+    if "scenarios" not in data and "env" in data:
+        data = {**data, "scenarios": [{"scenario_id": FIXTURE_SCENARIO_ID, "env": data["env"]}]}
     return load_case(data)
 
 

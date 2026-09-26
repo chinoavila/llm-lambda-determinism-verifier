@@ -36,7 +36,6 @@ flowchart TD
 
 - Los códigos `missing_content` y `TIMEOUT`, y el uso del desenlace de la llamada como código de error, son convenciones del orquestador que todavía no figuran en [`contracts/README.md`](../contracts/README.md).
 - Los prompts de `build_messages` son provisorios. Influyen en el experimento, así que el equipo tiene que revisarlos.
-- Los tres runners existen; falta conectarlos en el comando de punta a punta.
-- Falta el comando que corre todos los casos de punta a punta (roadmap, Día 5).
+- El comando de punta a punta es `python -m pipeline run` (ver `specs/orquestador.md`). Por defecto corre las fixtures con una repetición y escribe `out/<run_id>.jsonl`.
 
 Reglas exactas para agentes: [`specs/orquestador.md`](../specs/orquestador.md).
