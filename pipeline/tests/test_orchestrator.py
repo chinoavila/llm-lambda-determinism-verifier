@@ -220,7 +220,12 @@ def test_route_call_ok_copies_runner_verdict_and_raw_output() -> None:
 
     assert seen == ["{roto"]
     assert record["llm_raw"] == "{roto"
-    assert {k: record[k] for k in ("outcome", "stage", "result", "error")} == blocked
+    assert (record["outcome"], record["stage"], record["result"], record["error"]) == (
+        blocked["outcome"],
+        blocked["stage"],
+        blocked["result"],
+        blocked["error"],
+    )
     assert_record_shape(record)
 
 
