@@ -1,0 +1,8 @@
+{
+  "case_id": "RULE-005",
+  "description": "Si el puntaje crediticio es mayor a 700 el monto es 500, si no 100. El LLM devuelve una cadena en la rama else.",
+  "env": { "credit_score": 650 },
+  "llm_raw": "{\"expr\":{\"type\":\"IfThenElse\",\"condition\":{\"type\":\"BinaryOp\",\"op\":\">\",\"left\":{\"type\":\"Var\",\"name\":\"credit_score\"},\"right\":{\"type\":\"Literal\",\"value\":700,\"value_type\":\"Int\"}},\"then\":{\"type\":\"Literal\",\"value\":500,\"value_type\":\"Int\"},\"else\":{\"type\":\"Literal\",\"value\":\"Rejected\",\"value_type\":\"String\"}}}",
+  "python_code": "def evaluate_rule(data):\n    if data['credit_score'] > 700:\n        return 500\n    else:\n        return \"Rejected\"\n",
+  "expected_verdict": { "outcome": "blocked", "stage": "typecheck", "exit_code": 3, "error_code": "BRANCH_MISMATCH" }
+}

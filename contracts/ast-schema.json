@@ -1,7 +1,100 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://llm-lambda-determinism-verifier.local/contracts/ast-schema.json",
-  "$comment": "PLACEHOLDER — a definir el Día 0 entre los 3 desarrolladores (ver specs/roadmap.md). Describe el AST STLC en JSON que el LLM emite y que engine/ deserializa (Literal, Var, BinaryOp, IfThenElse, Lam, App).",
-  "title": "STLC AST (placeholder)",
-  "type": "object"
+  "$comment": "Programa STLC que emite el LLM (grupo Tratamiento) y que engine/ deserializa. Solo usa anyOf/enum/$ref para ser compatible con structured output estricto. La consistencia entre 'value' y 'value_type' de Literal NO se expresa acá: la valida el engine (LITERAL_TYPE_MISMATCH). Reglas de tipado y códigos de error en contracts/README.md.",
+  "title": "Programa STLC emitido por el LLM",
+  "type": "object",
+  "properties": { "expr": { "$ref": "#/$defs/Expr" } },
+  "required": ["expr"],
+  "additionalProperties": false,
+  "$defs": {
+    "Name": { "type": "string", "pattern": "^[a-z_][A-Za-z0-9_]*$" },
+    "BaseType": { "type": "string", "enum": ["Int", "Bool", "String"] },
+    "Type": {
+      "anyOf": [
+        { "$ref": "#/$defs/BaseType" },
+        {
+          "type": "object",
+          "properties": {
+            "from": { "$ref": "#/$defs/Type" },
+            "to": { "$ref": "#/$defs/Type" }
+          },
+          "required": ["from", "to"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Expr": {
+      "anyOf": [
+        { "$ref": "#/$defs/Literal" },
+        { "$ref": "#/$defs/Var" },
+        { "$ref": "#/$defs/BinaryOp" },
+        { "$ref": "#/$defs/IfThenElse" },
+        { "$ref": "#/$defs/Lam" },
+        { "$ref": "#/$defs/App" }
+      ]
+    },
+    "Literal": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["Literal"] },
+        "value": { "anyOf": [{ "type": "integer" }, { "type": "boolean" }, { "type": "string" }] },
+        "value_type": { "$ref": "#/$defs/BaseType" }
+      },
+      "required": ["type", "value", "value_type"],
+      "additionalProperties": false
+    },
+    "Var": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["Var"] },
+        "name": { "$ref": "#/$defs/Name" }
+      },
+      "required": ["type", "name"],
+      "additionalProperties": false
+    },
+    "BinaryOp": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["BinaryOp"] },
+        "op": { "type": "string", "enum": [">", "<", ">=", "<=", "==", "AND", "OR"] },
+        "left": { "$ref": "#/$defs/Expr" },
+        "right": { "$ref": "#/$defs/Expr" }
+      },
+      "required": ["type", "op", "left", "right"],
+      "additionalProperties": false
+    },
+    "IfThenElse": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["IfThenElse"] },
+        "condition": { "$ref": "#/$defs/Expr" },
+        "then": { "$ref": "#/$defs/Expr" },
+        "else": { "$ref": "#/$defs/Expr" }
+      },
+      "required": ["type", "condition", "then", "else"],
+      "additionalProperties": false
+    },
+    "Lam": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["Lam"] },
+        "param": { "$ref": "#/$defs/Name" },
+        "param_type": { "$ref": "#/$defs/Type" },
+        "body": { "$ref": "#/$defs/Expr" }
+      },
+      "required": ["type", "param", "param_type", "body"],
+      "additionalProperties": false
+    },
+    "App": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["App"] },
+        "fn": { "$ref": "#/$defs/Expr" },
+        "arg": { "$ref": "#/$defs/Expr" }
+      },
+      "required": ["type", "fn", "arg"],
+      "additionalProperties": false
+    }
+  }
 }

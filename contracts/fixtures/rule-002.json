@@ -1,0 +1,8 @@
+{
+  "case_id": "RULE-002",
+  "description": "Aprobar si el puntaje crediticio es mayor a 700. El LLM emite un AST malformado: 'left' es una cadena en lugar de un nodo Var.",
+  "env": { "credit_score": 750 },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\">\",\"left\":\"credit_score\",\"right\":{\"type\":\"Literal\",\"value\":700,\"value_type\":\"Int\"}}}",
+  "python_code": "def evaluate_rule(data)\n    return data['credit_score'] > 700\n",
+  "expected_verdict": { "outcome": "blocked", "stage": "parse", "exit_code": 1, "error_code": "INVALID_AST" }
+}

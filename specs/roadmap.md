@@ -12,10 +12,10 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 ## Día 0 (medio día, los 3 juntos)
 
 - [ ] Elegir proveedor de LLM, SDK y variables de entorno para credenciales (`.env`, nunca en el repo).
-- [ ] Acordar y completar [`contracts/ast-schema.json`](../contracts/ast-schema.json): gramática STLC serializada (`Literal`, `Var`, `BinaryOp`, `IfThenElse`, `Lam`, `App`).
-- [ ] Acordar y completar [`contracts/output-record-schema.json`](../contracts/output-record-schema.json): un objeto por caso, JSON Lines.
-- [ ] Acordar el contrato de CLI de `engine/`: qué recibe por `stdin`, qué devuelve por `stdout`, códigos de salida.
-- [ ] Definir 3-5 casos de prueba de punta a punta (uno por categoría de error: sintáctico, de tipos, lógico) que los tres carriles van a usar como fixtures compartidas.
+- [ ] Acordar y completar [`contracts/ast-schema.json`](../contracts/ast-schema.json): gramática STLC serializada (`Literal`, `Var`, `BinaryOp`, `IfThenElse`, `Lam`, `App`). — *propuesta en la rama `definicion-dsl`, pendiente de acuerdo.*
+- [ ] Acordar y completar [`contracts/output-record-schema.json`](../contracts/output-record-schema.json): un objeto por caso, JSON Lines. — *propuesta en la rama `definicion-dsl`, pendiente de acuerdo.*
+- [ ] Acordar el contrato de CLI de `engine/`: qué recibe por `stdin`, qué devuelve por `stdout`, códigos de salida. — *propuesta en [`contracts/README.md`](../contracts/README.md) §2, pendiente de acuerdo.*
+- [ ] Definir 3-5 casos de prueba de punta a punta (uno por categoría de error: sintáctico, de tipos, lógico) que los tres carriles van a usar como fixtures compartidas. — *propuesta: 7 casos en [`contracts/fixtures/`](../contracts/fixtures/), pendiente de acuerdo.*
 
 **Sin este día, los otros tres arrancan a ciegas.** No avanzar en lógica interna de ningún componente hasta que los dos JSON Schema dejen de ser placeholders.
 

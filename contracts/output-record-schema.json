@@ -1,7 +1,60 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://llm-lambda-determinism-verifier.local/contracts/output-record-schema.json",
-  "$comment": "PLACEHOLDER — a definir el Día 0 entre los 3 desarrolladores (ver specs/roadmap.md). Un objeto por línea (JSON Lines): grupo, caso, etapa alcanzada, desenlace, error si lo hubo.",
-  "title": "Registro de salida del pipeline (placeholder)",
-  "type": "object"
+  "$comment": "Un objeto por línea (JSON Lines), uno por caso y grupo. Es registro, no medición: no incluye resultado esperado ni comparaciones. 'duration_ms' lo mide el orquestador desde que lanza el subproceso (engine o sandbox) hasta que termina; excluye la llamada al LLM y es null solo si outcome = llm_error.",
+  "title": "Registro de salida del pipeline",
+  "type": "object",
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "case_id": { "type": "string", "minLength": 1 },
+    "group": { "enum": ["treatment", "baseline1", "baseline2"] },
+    "model": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "llm_raw": { "type": ["string", "null"] },
+    "outcome": { "$ref": "#/$defs/Outcome" },
+    "stage": { "$ref": "#/$defs/Stage" },
+    "result": { "anyOf": [{ "$ref": "#/$defs/Result" }, { "type": "null" }] },
+    "error": { "anyOf": [{ "$ref": "#/$defs/Error" }, { "type": "null" }] },
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0 }
+  },
+  "required": [
+    "schema_version", "run_id", "case_id", "group", "model", "timestamp",
+    "llm_raw", "outcome", "stage", "result", "error", "duration_ms"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": { "properties": { "outcome": { "const": "executed" } } },
+      "then": { "properties": { "result": { "$ref": "#/$defs/Result" }, "error": { "type": "null" } } },
+      "else": { "properties": { "result": { "type": "null" }, "error": { "$ref": "#/$defs/Error" } } }
+    },
+    {
+      "if": { "properties": { "outcome": { "const": "llm_error" } } },
+      "then": { "properties": { "stage": { "const": "llm" }, "llm_raw": { "type": "null" }, "duration_ms": { "type": "null" } } },
+      "else": { "properties": { "llm_raw": { "type": "string" }, "duration_ms": { "type": "integer" } } }
+    }
+  ],
+  "$defs": {
+    "Stage": { "enum": ["llm", "parse", "scope", "typecheck", "execution"] },
+    "Outcome": { "enum": ["executed", "blocked", "runtime_error", "timeout", "llm_error"] },
+    "Result": {
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["Int", "Bool", "String", "Other"] },
+        "value": {}
+      },
+      "required": ["type", "value"],
+      "additionalProperties": false
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string" }
+      },
+      "required": ["code", "message"],
+      "additionalProperties": false
+    }
+  }
 }

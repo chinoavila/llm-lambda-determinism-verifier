@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llm-lambda-determinism-verifier.local/contracts/engine-verdict-schema.json",
+  "$comment": "Única línea que engine/ escribe en stdout (contrato CLI en contracts/README.md). Reutiliza Result y Error del registro para que el orquestador copie los campos sin transformarlos. No incluye tiempos: la salida del engine es determinística byte a byte.",
+  "title": "Veredicto del engine",
+  "type": "object",
+  "properties": {
+    "outcome": { "enum": ["executed", "blocked"] },
+    "stage": { "enum": ["parse", "scope", "typecheck", "execution"] },
+    "result": { "anyOf": [{ "$ref": "output-record-schema.json#/$defs/Result" }, { "type": "null" }] },
+    "error": { "anyOf": [{ "$ref": "output-record-schema.json#/$defs/Error" }, { "type": "null" }] }
+  },
+  "required": ["outcome", "stage", "result", "error"],
+  "additionalProperties": false,
+  "if": { "properties": { "outcome": { "const": "executed" } } },
+  "then": {
+    "properties": {
+      "stage": { "const": "execution" },
+      "result": { "$ref": "output-record-schema.json#/$defs/Result" },
+      "error": { "type": "null" }
+    }
+  },
+  "else": {
+    "properties": {
+      "stage": { "enum": ["parse", "scope", "typecheck"] },
+      "result": { "type": "null" },
+      "error": { "$ref": "output-record-schema.json#/$defs/Error" }
+    }
+  }
+}

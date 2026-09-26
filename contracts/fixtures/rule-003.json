@@ -1,0 +1,8 @@
+{
+  "case_id": "RULE-003",
+  "description": "Aprobar si el puntaje crediticio es alto. El LLM compara un Int con la cadena 'High'.",
+  "env": { "credit_score": 750 },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\">\",\"left\":{\"type\":\"Var\",\"name\":\"credit_score\"},\"right\":{\"type\":\"Literal\",\"value\":\"High\",\"value_type\":\"String\"}}}",
+  "python_code": "def evaluate_rule(data):\n    return data['credit_score'] > 'High'\n",
+  "expected_verdict": { "outcome": "blocked", "stage": "typecheck", "exit_code": 3, "error_code": "OPERAND_MISMATCH" }
+}

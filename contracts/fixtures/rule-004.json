@@ -1,0 +1,8 @@
+{
+  "case_id": "RULE-004",
+  "description": "Aprobar si el nivel de riesgo es bajo. El LLM inventa la variable 'risk_level', que no existe en el entorno.",
+  "env": { "credit_score": 750, "monthly_income": 5000 },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"==\",\"left\":{\"type\":\"Var\",\"name\":\"risk_level\"},\"right\":{\"type\":\"Literal\",\"value\":\"Low\",\"value_type\":\"String\"}}}",
+  "python_code": "def evaluate_rule(data):\n    return data['risk_level'] == 'Low'\n",
+  "expected_verdict": { "outcome": "blocked", "stage": "scope", "exit_code": 2, "error_code": "UNBOUND_VARIABLE" }
+}

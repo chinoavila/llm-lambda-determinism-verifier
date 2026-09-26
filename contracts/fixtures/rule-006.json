@@ -1,0 +1,8 @@
+{
+  "case_id": "RULE-006",
+  "description": "Aprobar si el puntaje crediticio es mayor a 700, expresado como una función aplicada al puntaje.",
+  "env": { "credit_score": 750 },
+  "llm_raw": "{\"expr\":{\"type\":\"App\",\"fn\":{\"type\":\"Lam\",\"param\":\"s\",\"param_type\":\"Int\",\"body\":{\"type\":\"BinaryOp\",\"op\":\">\",\"left\":{\"type\":\"Var\",\"name\":\"s\"},\"right\":{\"type\":\"Literal\",\"value\":700,\"value_type\":\"Int\"}}},\"arg\":{\"type\":\"Var\",\"name\":\"credit_score\"}}}",
+  "python_code": "def evaluate_rule(data):\n    return (lambda s: s > 700)(data['credit_score'])\n",
+  "expected_verdict": { "outcome": "executed", "stage": "execution", "exit_code": 0, "result": { "type": "Bool", "value": true } }
+}

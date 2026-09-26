@@ -1,0 +1,8 @@
+{
+  "case_id": "RULE-001",
+  "description": "Aprobar el préstamo si el puntaje crediticio es mayor a 700 y el cliente no tiene morosidades previas.",
+  "env": { "credit_score": 750, "monthly_income": 5000, "has_defaults": false, "customer_tier": "Gold" },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"AND\",\"left\":{\"type\":\"BinaryOp\",\"op\":\">\",\"left\":{\"type\":\"Var\",\"name\":\"credit_score\"},\"right\":{\"type\":\"Literal\",\"value\":700,\"value_type\":\"Int\"}},\"right\":{\"type\":\"BinaryOp\",\"op\":\"==\",\"left\":{\"type\":\"Var\",\"name\":\"has_defaults\"},\"right\":{\"type\":\"Literal\",\"value\":false,\"value_type\":\"Bool\"}}}}",
+  "python_code": "def evaluate_rule(data):\n    return data['credit_score'] > 700 and not data['has_defaults']\n",
+  "expected_verdict": { "outcome": "executed", "stage": "execution", "exit_code": 0, "result": { "type": "Bool", "value": true } }
+}
