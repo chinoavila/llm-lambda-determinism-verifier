@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from pipeline.baselines.sandbox import DEFAULT_TIMEOUT_SECONDS, run_in_sandbox, to_verdict
-from pipeline.orchestrator import Verdict
+
+if TYPE_CHECKING:
+    from pipeline.orchestrator import Verdict
 
 
 def extract_code(llm_raw: str) -> str | None:
@@ -25,9 +28,13 @@ def extract_code(llm_raw: str) -> str | None:
 
 
 def run_baseline_1(
-    llm_raw: str, env: Mapping[str, object], *, timeout: float = DEFAULT_TIMEOUT_SECONDS
+    llm_raw: str,
+    env: Mapping[str, object],
+    gamma: Mapping[str, str] | None = None,
+    *,
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
 ) -> Verdict:
-    """Runner del grupo `baseline1`: `(llm_raw, env) -> Verdict`."""
+    """Runner del grupo `baseline1`: `(llm_raw, env, gamma) -> Verdict`. No usa Γ."""
     code = extract_code(llm_raw)
     if code is None:
         return {

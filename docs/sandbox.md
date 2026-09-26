@@ -91,6 +91,18 @@ El riesgo más importante es común a las dos opciones: el código comparte el c
 
 Con las fixtures compartidas se ve la diferencia con el Tratamiento. En `rule-005`, las ramas devuelven `Int` o `String`: el engine lo bloquea (`BRANCH_MISMATCH`), mientras que Baseline 1 lo ejecuta y devuelve `"Rejected"` sin avisar nada.
 
-## Pendiente
+## Baseline 2: tipos antes de ejecutar
 
-- El tipo de `data` en la firma tipada que exige Baseline 2. Las opciones están en [`specs/sandbox.md`](../specs/sandbox.md).
+Baseline 2 existe para medir cuánto aporta la validación estática de Python. Para que `mypy` controle algo, la función tiene que decir de qué tipo es cada dato. Por eso:
+
+- **`data` es un `TypedDict` llamado `Data`, armado con Γ.** Γ lo deduce el engine, como en el Tratamiento. El prompt muestra la definición y pide `evaluate_rule(data: Data)`.
+- **La definición se antepone al código del LLM**, tanto para `mypy` como para ejecutar. No es reparar la salida, porque el código del LLM no se toca: se le da el mismo contexto que el prompt describe.
+- **Se exige la firma exacta.** Si el LLM anota `data: dict[str, Any]`, `mypy` no puede controlar nada. Esa respuesta se bloquea con `SignatureMismatch`.
+- **`mypy` corre en `pipeline`, aislado del repo**, en un directorio temporal, sin la config del proyecto ni caché. No ejecuta el código, así que no necesita el sandbox.
+
+Se descartaron dos alternativas:
+
+- **`dict[str, Any]`:** `mypy` deja pasar `data['credit_score'] > 'High'` y claves inexistentes, así que Baseline 2 quedaría casi igual que Baseline 1.
+- **Un parámetro por variable:** detecta lo mismo que `Data`, pero cambia la forma de invocar la función respecto de Baseline 1 y la comparación se vuelve menos directa.
+
+Con las fixtures, `mypy` bloquea el `Int > String` (003) y la variable inexistente (004), que Baseline 1 recién descubre al ejecutar. En cambio, las ramas `Int` / `String` (005) pasan si el LLM declara `-> int | str`, y ahí se ve lo que el engine controla y Python no.

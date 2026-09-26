@@ -49,7 +49,7 @@ Código: `pipeline/pipeline/baselines/sandbox.py` (cliente, corre en `pipeline`)
 
 ## Baselines sobre el sandbox (decidido)
 
-- Cada baseline es un runner `(llm_raw, env) -> Verdict` y extrae `code` él mismo (`extract_code` en `baseline1.py`). `llm_raw` debe ser un objeto JSON con `code` de tipo string. Se toleran claves extra; no se repara nada.
+- Cada baseline es un runner `(llm_raw, env, gamma) -> Verdict` y extrae `code` él mismo (`extract_code` en `baseline1.py`). `llm_raw` debe ser un objeto JSON con `code` de tipo string. Se toleran claves extra; no se repara nada.
 - Baseline 1 llega siempre a `execution`. Una respuesta ilegible o sin `code` se registra como `outcome: "runtime_error"`, `stage: "execution"`, `error.code: "InvalidResponse"`, y no llega al sandbox.
 - Timeout de ejecución: 5 s (`DEFAULT_TIMEOUT_SECONDS` en `sandbox.py`).
 - `to_verdict` en `sandbox.py` mapea el resultado a la etapa `execution`, y lo usan ambos baselines:
@@ -58,7 +58,27 @@ Código: `pipeline/pipeline/baselines/sandbox.py` (cliente, corre en `pipeline`)
   - `timeout` → `timeout`, con `error.code: "TIMEOUT"` (el mismo código que usa el engine);
   - `crash` → `runtime_error`, con `error.code: "SANDBOX_CRASH"`.
 
-## Pendiente de decisión (no implementar sin acuerdo)
+## Baseline 2 (decidido)
 
-- Tipo de `data` en la firma que exige Baseline 2: `dict[str, Any]`, un `TypedDict` construido desde Γ, o un parámetro por variable. Con `dict[str, object]`, `mypy --strict` rechaza casi toda regla por la firma y no por el modelo.
-- `mypy` pasa de dependencia de desarrollo a dependencia real en `pyproject.toml` cuando se implemente Baseline 2.
+Código: `pipeline/pipeline/baselines/baseline2.py`. Runner: `run_baseline_2(llm_raw, env, gamma)`.
+
+- `data` se tipa con un `TypedDict` llamado `Data`, armado desde Γ (el del engine, nunca deducido en Python). Tipos: `Int` → `int`, `Bool` → `bool`, `String` → `str`.
+- `data_preamble(gamma)` genera `from typing import TypedDict` y `Data = TypedDict("Data", {...})`, en sintaxis funcional porque una clave de Γ puede ser palabra reservada de Python. Claves en orden alfabético.
+- El prompt de `baseline2` muestra ese preámbulo, pide `evaluate_rule(data: Data)` con anotaciones completas que pasen `mypy --strict`, y avisa que `Data` ya está definido.
+- El preámbulo se antepone al código del LLM, tanto para mypy como para ejecutar. El código del LLM no se modifica. Los números de línea de los mensajes de mypy incluyen las 2 líneas del preámbulo.
+- Etapas, en orden. La primera que falla bloquea y se registra con `outcome: "blocked"`:
+  - parse: la respuesta no es un objeto JSON con `code` string → `InvalidResponse`.
+  - parse: `ast.parse` falla → nombre de la excepción (`SyntaxError`, `ValueError`, `RecursionError`, `MemoryError`).
+  - typecheck: no hay un `def evaluate_rule(data: Data)` a nivel de módulo con un único parámetro anotado exactamente `Data` → `SignatureMismatch`. Sin esta regla, el LLM podría anotar `dict[str, Any]` y mypy no controlaría nada. Si hay varias definiciones, se mira la última.
+  - typecheck: `mypy --strict` con exit 1 (o exit 2 que menciona `rule.py:`) → `error.code: "mypy"`, `error.message` con la salida de mypy.
+  - typecheck: mypy supera `MYPY_TIMEOUT_SECONDS` (60 s) → `outcome: "timeout"`, `stage: "typecheck"`, `error.code: "TIMEOUT"`.
+  - execution: el programa completo va al sandbox; `to_verdict` como en Baseline 1.
+- Aislamiento de mypy (`run_mypy`): subproceso `python -I -m mypy`, directorio temporal con `rule.py` y un `mypy.ini` vacío (no se lee la config del repo), `--cache-dir /dev/null`, `env={}`, cwd en el temporal para que los mensajes digan `rule.py` y no una ruta aleatoria.
+- mypy ausente, o exit distinto de 0/1 sin mención a `rule.py`: `StaticCheckError`. Es falla del sistema: abortar la corrida.
+- `mypy` es dependencia de ejecución en `pipeline/pyproject.toml` (ya no solo de desarrollo).
+- `duration_ms` de Baseline 2 incluye el análisis estático y la ejecución, igual que el del engine incluye su typecheck.
+- Resultado con versiones tipadas de las fixtures (ver `tests/test_baseline2.py`):
+  - 001 y 006 ejecutan con `True`;
+  - 002 y 007 se bloquean en parse (`SyntaxError`);
+  - 003 y 004 se bloquean en typecheck (`mypy`);
+  - 005, declarado `-> int | str`, pasa mypy y ejecuta `"Rejected"`, mientras que el engine lo bloquea.

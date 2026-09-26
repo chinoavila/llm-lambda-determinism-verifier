@@ -13,9 +13,10 @@ import time
 import uuid
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from pipeline.orchestrator import Verdict
+if TYPE_CHECKING:
+    from pipeline.orchestrator import Verdict
 
 DEFAULT_TIMEOUT_SECONDS = 5.0
 # Margen sobre el timeout del job: arranque del hijo y otros jobs en la cola.

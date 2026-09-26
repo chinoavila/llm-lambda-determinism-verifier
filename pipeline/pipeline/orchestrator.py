@@ -20,6 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol, TypedDict
 
+from pipeline.baselines.baseline2 import data_preamble
 from pipeline.llm import LLMCall
 
 # Binario del engine (contracts/README.md §2). Se elige con ENGINE_BIN.
@@ -70,8 +71,8 @@ class Record(TypedDict):
     duration_ms: int | None
 
 
-# Recibe la salida cruda del LLM y los datos del caso (`env`).
-Runner = Callable[[str, Mapping[str, object]], Verdict]
+# Recibe la salida cruda del LLM, los datos del caso (`env`) y Γ deducido por el engine.
+Runner = Callable[[str, Mapping[str, object], Mapping[str, str]], Verdict]
 
 
 class Completer(Protocol):
@@ -169,6 +170,13 @@ def run_engine(
     }
 
 
+def run_treatment(
+    llm_raw: str, env: Mapping[str, object], gamma: Mapping[str, str]
+) -> Verdict:
+    """Runner del grupo `treatment`. No usa Γ: el engine lo deduce de `env`."""
+    return run_engine(llm_raw, env)
+
+
 def build_messages(
     group: Group, description: str, gamma: Mapping[str, str]
 ) -> list[dict[str, str]]:
@@ -182,17 +190,20 @@ def build_messages(
             f"Variables disponibles y sus tipos: {variables}\n"
             f"JSON Schema:\n{schema}"
         )
-    else:
-        typing_rule = (
-            " La función debe tener anotaciones de tipos completas y pasar mypy --strict."
-            if group == "baseline2"
-            else ""
-        )
+    elif group == "baseline1":
         system = (
             "Traducí la regla de negocio a una función Python `evaluate_rule(data)` que recibe "
-            "un dict con los datos del caso y devuelve el resultado de la regla."
-            f"{typing_rule}\n"
+            "un dict con los datos del caso y devuelve el resultado de la regla.\n"
             f"Claves de `data` y sus tipos: {variables}\n"
+            'Respondé solo con un objeto JSON de la forma {"code": "<código Python>"}.'
+        )
+    else:
+        system = (
+            "Traducí la regla de negocio a una función Python `evaluate_rule(data: Data)` que "
+            "recibe los datos del caso y devuelve el resultado de la regla. La función debe "
+            "tener anotaciones de tipos completas y pasar mypy --strict.\n"
+            "`Data` ya está definido antes de tu código, así; no lo redefinas:\n"
+            f"{data_preamble(gamma)}"
             'Respondé solo con un objeto JSON de la forma {"code": "<código Python>"}.'
         )
     return [{"role": "system", "content": system}, {"role": "user", "content": description}]
@@ -203,6 +214,7 @@ def route_call(
     runner: Runner,
     env: Mapping[str, object],
     *,
+    gamma: Mapping[str, str],
     run_id: str,
     case_id: str,
     group: Group,
@@ -238,7 +250,7 @@ def route_call(
         return record(llm_error, None, None)
 
     started = time.monotonic()
-    verdict = runner(call.content, env)
+    verdict = runner(call.content, env, gamma)
     duration_ms = round((time.monotonic() - started) * 1000)
     return record(verdict, call.content, duration_ms)
 
@@ -257,7 +269,13 @@ def run_case(
         call = assignment.complete(build_messages(group, case.description, gamma))
         records.append(
             route_call(
-                call, runners[group], case.env, run_id=run_id, case_id=case.case_id, group=group
+                call,
+                runners[group],
+                case.env,
+                gamma=gamma,
+                run_id=run_id,
+                case_id=case.case_id,
+                group=group,
             )
         )
     return records

@@ -6,10 +6,11 @@ build-backend = "hatchling.build"
 name = "pipeline"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = []
+# mypy es dependencia de ejecución: Baseline 2 lo corre sobre el código del LLM.
+dependencies = ["mypy>=1.11,<2"]
 
 [project.optional-dependencies]
-dev = ["mypy>=1.11,<2", "pytest>=8.3,<9"]
+dev = ["pytest>=8.3,<9"]
 
 [tool.mypy]
 strict = true

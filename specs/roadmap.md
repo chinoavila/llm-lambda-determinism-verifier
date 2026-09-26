@@ -41,7 +41,7 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 
 - [x] Día 1-2: sandbox de ejecución aislado (sin red, sin acceso al filesystem del repo, con timeout) — lo van a compartir Baseline 1 y 2. — *contenedor `sandbox`, ver [`specs/sandbox.md`](./sandbox.md).*
 - [x] Día 3: Baseline 1 (ejecución directa dentro del sandbox). — *`run_baseline_1`, ver [`specs/sandbox.md`](./sandbox.md).*
-- [ ] Día 4: Baseline 2 (`ast` + `mypy --strict` antes de ejecutar; firma tipada obligatoria en el código generado, si no el control no sirve).
+- [x] Día 4: Baseline 2 (`ast` + `mypy --strict` antes de ejecutar; firma tipada obligatoria en el código generado, si no el control no sirve). — *`run_baseline_2` con `Data` como TypedDict desde Γ, ver [`specs/sandbox.md`](./sandbox.md).*
 - [ ] Día 5: mismo formato de registro que el carril B; integración con el runner común.
 
 **Listo cuando:** ambos baselines corren sobre las fixtures del Día 0 y emiten el mismo formato de registro que C-2.

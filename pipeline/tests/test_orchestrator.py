@@ -74,7 +74,7 @@ class FakeAssignment:
 
 
 def fixed_runner(verdict: Verdict, seen: list[str]) -> Any:
-    def runner(llm_raw: str, env: Any) -> Verdict:
+    def runner(llm_raw: str, env: Any, gamma: Any) -> Verdict:
         seen.append(llm_raw)
         return verdict
 
@@ -187,7 +187,7 @@ def test_route_call_llm_failure_is_llm_error_without_running(outcome: Outcome) -
     seen: list[str] = []
     runner = fixed_runner({"outcome": "executed", "stage": "execution", "result": None, "error": None}, seen)
 
-    record = route_call(llm_call(outcome), runner, {}, run_id="r", case_id="c", group="baseline1")
+    record = route_call(llm_call(outcome), runner, {}, gamma={}, run_id="r", case_id="c", group="baseline1")
 
     assert seen == []
     assert record["outcome"] == "llm_error" and record["stage"] == "llm"
@@ -199,7 +199,7 @@ def test_route_call_ok_without_content_is_llm_error() -> None:
     seen: list[str] = []
     runner = fixed_runner({"outcome": "executed", "stage": "execution", "result": None, "error": None}, seen)
 
-    record = route_call(llm_call("ok", None), runner, {}, run_id="r", case_id="c", group="treatment")
+    record = route_call(llm_call("ok", None), runner, {}, gamma={}, run_id="r", case_id="c", group="treatment")
 
     assert seen == []
     assert record["error"] == {"code": "missing_content", "message": "status 200: None"}
@@ -215,7 +215,7 @@ def test_route_call_ok_copies_runner_verdict_and_raw_output() -> None:
     }
     seen: list[str] = []
     record = route_call(
-        llm_call(content="{roto"), fixed_runner(blocked, seen), {}, run_id="r", case_id="c", group="treatment"
+        llm_call(content="{roto"), fixed_runner(blocked, seen), {}, gamma={}, run_id="r", case_id="c", group="treatment"
     )
 
     assert seen == ["{roto"]
@@ -282,8 +282,8 @@ def test_run_engine_with_real_engine_matches_fixture(fixture: Path) -> None:
 
 def test_append_jsonl_writes_one_line_per_record_and_appends(tmp_path: Path) -> None:
     out = tmp_path / "out" / "records.jsonl"
-    first = route_call(llm_call("quota_exhausted"), fixed_runner(json.loads(EXECUTED), []), {}, run_id="r", case_id="c1", group="treatment")
-    second = route_call(llm_call(content="{\"expr\": \"ñ\"}"), fixed_runner(json.loads(EXECUTED), []), {}, run_id="r", case_id="c2", group="treatment")
+    first = route_call(llm_call("quota_exhausted"), fixed_runner(json.loads(EXECUTED), []), {}, gamma={}, run_id="r", case_id="c1", group="treatment")
+    second = route_call(llm_call(content="{\"expr\": \"ñ\"}"), fixed_runner(json.loads(EXECUTED), []), {}, gamma={}, run_id="r", case_id="c2", group="treatment")
 
     append_jsonl(out, [first])
     append_jsonl(out, [second])

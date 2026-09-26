@@ -19,10 +19,10 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 
 ## Runners
 
-- Un runner es `(llm_raw, env) -> Verdict`, donde `Verdict` son los campos `outcome`, `stage`, `result` y `error` del registro. El resto del registro lo pone el orquestador.
+- Un runner es `(llm_raw, env, gamma) -> Verdict`, donde `Verdict` son los campos `outcome`, `stage`, `result` y `error` del registro y `gamma` es Γ del caso (de `print_gamma`). El resto del registro lo pone el orquestador. `route_call` recibe `gamma` como argumento de palabra clave.
 - `duration_ms` lo mide el orquestador alrededor de la llamada al runner.
-- Runner de `treatment`: `run_engine`. Escribe `llm_raw` en el stdin del engine y copia el veredicto sin transformarlo.
-- Runners de `baseline1` y `baseline2`: viven en `pipeline/pipeline/baselines/` y se pasan en `runners`. Reciben `llm_raw` completo y extraen `code` ellos mismos (ver `specs/sandbox.md`). `baseline1` ya existe: `run_baseline_1`.
+- Runner de `treatment`: `run_treatment`, que ignora `gamma` y llama a `run_engine`. Escribe `llm_raw` en el stdin del engine y copia el veredicto sin transformarlo.
+- Runners de `baseline1` y `baseline2`: `run_baseline_1` y `run_baseline_2`, en `pipeline/pipeline/baselines/`. Reciben `llm_raw` completo y extraen `code` ellos mismos. Baseline 1 ignora `gamma`; Baseline 2 lo usa para armar `Data` (ver `specs/sandbox.md`).
 
 ## Errores del engine en validación
 
