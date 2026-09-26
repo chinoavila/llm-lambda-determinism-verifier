@@ -11,20 +11,20 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 
 ## Día 0 (medio día, los 3 juntos)
 
-- [ ] Elegir proveedor de LLM, SDK y variables de entorno para credenciales (`.env`, nunca en el repo).
-- [ ] Acordar y completar [`contracts/ast-schema.json`](../contracts/ast-schema.json): gramática STLC serializada (`Literal`, `Var`, `BinaryOp`, `IfThenElse`, `Lam`, `App`). — *propuesta en la rama `definicion-dsl`, pendiente de acuerdo.*
-- [ ] Acordar y completar [`contracts/output-record-schema.json`](../contracts/output-record-schema.json): un objeto por caso, JSON Lines. — *propuesta en la rama `definicion-dsl`, pendiente de acuerdo.*
-- [ ] Acordar el contrato de CLI de `engine/`: qué recibe por `stdin`, qué devuelve por `stdout`, códigos de salida. — *propuesta en [`contracts/README.md`](../contracts/README.md) §2, pendiente de acuerdo.*
-- [ ] Definir 3-5 casos de prueba de punta a punta (uno por categoría de error: sintáctico, de tipos, lógico) que los tres carriles van a usar como fixtures compartidas. — *propuesta: 7 casos en [`contracts/fixtures/`](../contracts/fixtures/), pendiente de acuerdo.*
+- [x] Elegir proveedor de LLM, SDK y variables de entorno para credenciales (`.env`, nunca en el repo). — *Groq por API OpenAI-compatible, sin SDK (`urllib`); claves en `.env`. Ver [`llm-client.md`](./llm-client.md).*
+- [ ] Acordar y completar [`contracts/ast-schema.json`](../contracts/ast-schema.json): gramática STLC serializada (`Literal`, `Var`, `BinaryOp`, `IfThenElse`, `Lam`, `App`). — *implementado en `develop` y extendido con `UnaryOp`, `In`, aritmética y `Decimal` ([`docs/dsl-extension.md`](../docs/dsl-extension.md)); falta confirmar el acuerdo del equipo.*
+- [ ] Acordar y completar [`contracts/output-record-schema.json`](../contracts/output-record-schema.json): un objeto por caso, JSON Lines. — *implementado en `develop` (versión `2.0`: un registro por escenario de cada generación, con `repetition` y `scenario_id`; entrada en `case-schema.json`); falta confirmar el acuerdo del equipo.*
+- [ ] Acordar el contrato de CLI de `engine/`: qué recibe por `stdin`, qué devuelve por `stdout`, códigos de salida. — *implementado según [`contracts/README.md`](../contracts/README.md) §2 (con exit 4 para errores del programa); falta confirmar el acuerdo del equipo.*
+- [ ] Definir 3-5 casos de prueba de punta a punta (uno por categoría de error: sintáctico, de tipos, lógico) que los tres carriles van a usar como fixtures compartidas. — *15 casos en [`contracts/fixtures/`](../contracts/fixtures/), usados por los tests de los tres carriles; falta confirmar el acuerdo del equipo.*
 
 **Sin este día, los otros tres arrancan a ciegas.** No avanzar en lógica interna de ningún componente hasta que los dos JSON Schema dejen de ser placeholders.
 
 ## Carril A — `engine/` (C-1, Haskell)
 
-- [ ] Día 1-2: ADT del DSL según el contrato; instancia `FromJSON` que rechaza estructura malformada; typechecker con errores tipados (`Either`, nunca excepciones).
+- [x] Día 1-2: ADT del DSL según el contrato; instancia `FromJSON` que rechaza estructura malformada; typechecker con errores tipados (`Either`, nunca excepciones).
 - [x] Día 3: evaluador *big-step* sobre AST ya verificado; CLI según el contrato acordado el Día 0.
-- [ ] Día 4: suite `hspec`/`QuickCheck` sobre las fixtures compartidas del Día 0, incluida una propiedad de *type soundness*.
-- [ ] Día 5: integración con el carril B (probar el binario real desde `pipeline/`, no un mock).
+- [ ] Día 4: suite `hspec`/`QuickCheck` sobre las fixtures compartidas del Día 0, incluida una propiedad de *type soundness*. — *suite hecha (82 casos, incluye las 15 fixtures y propiedades QuickCheck); falta la propiedad de type soundness.*
+- [x] Día 5: integración con el carril B (probar el binario real desde `pipeline/`, no un mock). — *`run_engine` corre las 15 fixtures contra el binario real en los tests del pipeline.*
 
 **Listo cuando:** `docker compose run --rm engine cabal test` da verde y las fixtures negativas del Día 0 son interceptadas.
 
@@ -42,7 +42,7 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 - [x] Día 1-2: sandbox de ejecución aislado (sin red, sin acceso al filesystem del repo, con timeout) — lo van a compartir Baseline 1 y 2. — *contenedor `sandbox`, ver [`specs/sandbox.md`](./sandbox.md).*
 - [x] Día 3: Baseline 1 (ejecución directa dentro del sandbox). — *`run_baseline_1`, ver [`specs/sandbox.md`](./sandbox.md).*
 - [x] Día 4: Baseline 2 (`ast` + `mypy --strict` antes de ejecutar; firma tipada obligatoria en el código generado, si no el control no sirve). — *`run_baseline_2` con `Data` como TypedDict desde Γ, ver [`specs/sandbox.md`](./sandbox.md).*
-- [ ] Día 5: mismo formato de registro que el carril B; integración con el runner común.
+- [x] Día 5: mismo formato de registro que el carril B; integración con el runner común. — *runners de `run_case` (`per_scenario(run_baseline_1)`, `run_baseline_2_scenarios`).*
 
 **Listo cuando:** ambos baselines corren sobre las fixtures del Día 0 y emiten el mismo formato de registro que C-2.
 
