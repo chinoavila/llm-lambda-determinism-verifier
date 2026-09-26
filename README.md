@@ -79,7 +79,7 @@ Está terminado cuando alguien puede clonar el repositorio, configurar credencia
 ├── engine/                # C-1: motor de validación STLC (Haskell)
 ├── pipeline/              # C-2 orquestador + C-3 baselines (Python)
 ├── prototype/             # mockup de referencia, NO normativo (ver aviso en el archivo)
-├── docker/                # Dockerfiles de engine/ y pipeline/
+├── Dockerfile             # imagen única, una etapa por componente (ver docs/docker.md)
 └── docker-compose.yml     # entorno de laboratorio
 ```
 

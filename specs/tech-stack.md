@@ -55,9 +55,14 @@
 
 ## 5. Entorno de laboratorio (Docker Compose)
 
-| Servicio | Imagen base | Rol |
-|---|---|---|
-| `engine` | `haskell:9.6-slim` | Corre build y tests C-1: `docker compose run --rm engine cabal test` |
-| `pipeline` | `python:3.12-slim` | Instala C-2/C-3 y corre gates: `docker compose run --rm pipeline sh -c "mypy . && pytest"` |
+Un solo `Dockerfile`, en la raíz, con una etapa por componente; cada servicio elige la suya con `target`.
 
-`docker-compose.yml` monta `engine/`, `pipeline/` y `contracts/` como volúmenes, así que los cambios de código no requieren rebuild de imagen (solo si cambian dependencias). `docker compose up --build` corre ambos servicios y sus gates en un solo paso.
+| Servicio | Etapa (`target`) | Imagen base | Rol |
+|---|---|---|---|
+| `engine` | `engine-build` | `haskell:9.6-slim` | Corre build y tests C-1: `docker compose run --rm engine cabal test` |
+| `pipeline` | `pipeline` | `python:3.12-slim` | Instala C-2/C-3 y corre gates: `docker compose run --rm pipeline sh -c "mypy . && pytest"` |
+
+- La etapa `engine-build` compila y corre `cabal test`; solo si pasa, deja el binario en `/usr/local/bin/engine`.
+- La etapa `pipeline` copia ese binario (`COPY --from=engine-build`) y el orquestador lo lanza como subproceso según el contrato CLI de `contracts/README.md` §2. En ejecución el pipeline no depende del contenedor `engine`: no se usa `depends_on`.
+- `docker-compose.yml` monta `engine/`, `pipeline/` y `contracts/` como volúmenes, así que los cambios de código no requieren rebuild de imagen (solo si cambian dependencias). Excepción: el binario del engine dentro de `pipeline` es el de la última build; un cambio en `engine/` requiere `docker compose build pipeline` para llegar al orquestador.
+- `docker compose up --build` corre ambos servicios y sus gates en un solo paso.

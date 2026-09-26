@@ -2,7 +2,7 @@ services:
   engine:
     build:
       context: .
-      dockerfile: docker/engine.Dockerfile
+      target: engine-build
     volumes:
       - ./engine:/workspace/engine
       - ./contracts:/workspace/contracts:ro
@@ -12,7 +12,7 @@ services:
   pipeline:
     build:
       context: .
-      dockerfile: docker/pipeline.Dockerfile
+      target: pipeline
     volumes:
       - ./pipeline:/workspace/pipeline
       - ./contracts:/workspace/contracts:ro

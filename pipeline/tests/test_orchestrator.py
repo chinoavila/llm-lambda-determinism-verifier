@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -52,6 +53,17 @@ def test_print_gamma_rejects_non_json_stdout(tmp_path: Path) -> None:
 def test_print_gamma_rejects_non_gamma_json(tmp_path: Path) -> None:
     with pytest.raises(EngineError, match="nombre: tipo"):
         print_gamma({}, fake_engine(tmp_path, '{"x": 1}\n'))
+
+
+@pytest.mark.skipif(shutil.which("engine") is None, reason="binario del engine no instalado")
+def test_print_gamma_with_real_engine() -> None:
+    env = json.loads(FIXTURE.read_text(encoding="utf-8"))["env"]
+    assert print_gamma(env, ["engine"]) == {
+        "credit_score": "Int",
+        "customer_tier": "String",
+        "has_defaults": "Bool",
+        "monthly_income": "Int",
+    }
 
 
 def test_print_gamma_missing_binary(tmp_path: Path) -> None:
