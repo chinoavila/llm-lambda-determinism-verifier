@@ -1,0 +1,18 @@
+{
+  "case_id": "RULE-010",
+  "description": "Ofrecer el upgrade si la categoría del cliente es Gold o Platinum.",
+  "env": {
+    "customer_tier": "Platinum"
+  },
+  "llm_raw": "{\"expr\":{\"type\":\"In\",\"value\":{\"type\":\"Var\",\"name\":\"customer_tier\"},\"options\":[{\"type\":\"Literal\",\"value\":\"Gold\",\"value_type\":\"String\"},{\"type\":\"Literal\",\"value\":\"Platinum\",\"value_type\":\"String\"}]}}",
+  "python_code": "def evaluate_rule(data):\n    return data['customer_tier'] in ['Gold', 'Platinum']\n",
+  "expected_verdict": {
+    "outcome": "executed",
+    "stage": "execution",
+    "exit_code": 0,
+    "result": {
+      "type": "Bool",
+      "value": true
+    }
+  }
+}

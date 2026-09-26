@@ -349,6 +349,11 @@ def test_run_engine_blocked(tmp_path: Path) -> None:
     assert run_engine("{}", {}, fake_engine(tmp_path, BLOCKED, exit_code=3)) == json.loads(BLOCKED)
 
 
+def test_run_engine_program_runtime_error_is_copied(tmp_path: Path) -> None:
+    runtime = '{"outcome":"runtime_error","stage":"execution","result":null,"error":{"code":"DIVISION_BY_ZERO","message":"x"}}\n'
+    assert run_engine("{}", {}, fake_engine(tmp_path, runtime, exit_code=4)) == json.loads(runtime)
+
+
 def test_run_engine_internal_error_is_runtime_error(tmp_path: Path) -> None:
     verdict = run_engine("{}", {}, fake_engine(tmp_path, "", exit_code=70))
     assert verdict["outcome"] == "runtime_error" and verdict["stage"] == "execution"

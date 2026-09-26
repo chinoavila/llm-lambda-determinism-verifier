@@ -2,19 +2,22 @@
 --
 -- Gramática acordada en @contracts/ast-schema.json@ (reglas en
 -- @contracts/README.md@):
---   Tipos        τ ::= Int | Bool | String | τ → τ
---   Expresiones  e ::= Literal | Var | BinaryOp | IfThenElse | Lam | App
+--   Tipos        τ ::= Int | Decimal | Bool | String | τ → τ
+--   Expresiones  e ::= Literal | Var | UnaryOp | BinaryOp | In | IfThenElse | Lam | App
 module Engine.Types
   ( Name
   , Type (..)
   , LiteralValue (..)
+  , UnOp (..)
   , BinOp (..)
   , Expr (..)
   , Program (..)
   , isBase
+  , isNumeric
   , literalType
   , renderType
   , opSymbol
+  , unOpSymbol
   ) where
 
 -- FP[Tipos]
@@ -22,39 +25,54 @@ module Engine.Types
 type Name = String
 
 -- FP[Tipos] FP[Tipos algebraicos]
--- | τ ::= Int | Bool | String | τ → τ
+-- | τ ::= Int | Decimal | Bool | String | τ → τ
 data Type
   = TInt
+  | TDecimal
   | TBool
   | TString
   | TArrow Type Type
   deriving (Show, Eq)
 
--- | Valores que puede llevar un constructor 'Literal'.
+-- | Valores que puede llevar un constructor 'Literal'. 'VDecimal' es un
+-- racional exacto: @0.1 + 0.2 == 0.3@ es verdadero.
 data LiteralValue
   = VInt Int
+  | VDecimal Rational
   | VBool Bool
   | VString String
   deriving (Show, Eq)
 
+-- | Operadores unarios.
+data UnOp = Not
+  deriving (Show, Eq, Enum, Bounded)
+
 -- FP[Clases]
--- | Operadores binarios: comparación y lógicos.
+-- | Operadores binarios: aritméticos, de comparación y lógicos.
 data BinOp
-  = Gt
+  = Add
+  | Sub
+  | Mul
+  | Div
+  | Mod
+  | Gt
   | Lt
   | Gte
   | Lte
   | Eq
+  | Neq
   | And
   | Or
   deriving (Show, Eq, Enum, Bounded)
 
 -- FP[Tipos algebraicos] FP[Funciones lambda]
--- | e ::= Literal | Var | BinaryOp | IfThenElse | Lam | App
+-- | e ::= Literal | Var | UnaryOp | BinaryOp | In | IfThenElse | Lam | App
 data Expr
   = Literal LiteralValue
   | Var Name
+  | UnaryOp UnOp Expr
   | BinaryOp BinOp Expr Expr
+  | In Expr [Expr] -- ^ valor y opciones (lista no vacía, la garantiza el parser)
   | IfThenElse Expr Expr Expr
   | Lam Name Type Expr
   | App Expr Expr
@@ -66,14 +84,19 @@ newtype Program = Program Expr
   deriving (Show, Eq)
 
 -- FP[Patrones irrefutables]
--- | Int, Bool y String son tipos base; las flechas no.
+-- | Int, Decimal, Bool y String son tipos base; las flechas no.
 isBase :: Type -> Bool
 isBase (TArrow _ _) = False
 isBase _ = True
 
+-- | Int y Decimal: los tipos que admiten aritmética y comparaciones de orden.
+isNumeric :: Type -> Bool
+isNumeric t = t == TInt || t == TDecimal
+
 -- FP[Igualaciones]
 literalType :: LiteralValue -> Type
 literalType (VInt _) = TInt
+literalType (VDecimal _) = TDecimal
 literalType (VBool _) = TBool
 literalType (VString _) = TString
 
@@ -81,6 +104,7 @@ literalType (VString _) = TString
 -- | Tipo en notación del contrato: @Int@, @(Int -> Bool) -> Bool@.
 renderType :: Type -> String
 renderType TInt = "Int"
+renderType TDecimal = "Decimal"
 renderType TBool = "Bool"
 renderType TString = "String"
 renderType (TArrow a b) = domain a ++ " -> " ++ renderType b
@@ -91,10 +115,19 @@ renderType (TArrow a b) = domain a ++ " -> " ++ renderType b
 -- FP[Patrones constantes]
 -- | Símbolo del operador tal como aparece en el JSON.
 opSymbol :: BinOp -> String
+opSymbol Add = "+"
+opSymbol Sub = "-"
+opSymbol Mul = "*"
+opSymbol Div = "/"
+opSymbol Mod = "%"
 opSymbol Gt = ">"
 opSymbol Lt = "<"
 opSymbol Gte = ">="
 opSymbol Lte = "<="
 opSymbol Eq = "=="
+opSymbol Neq = "!="
 opSymbol And = "AND"
 opSymbol Or = "OR"
+
+unOpSymbol :: UnOp -> String
+unOpSymbol Not = "NOT"

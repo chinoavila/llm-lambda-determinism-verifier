@@ -26,8 +26,9 @@ import Data.List (sortOn)
 import System.Exit (ExitCode (..))
 
 import Engine.Env (Env, emptyEnv)
-import Engine.Eval (evalErrorMessage, evalProgram, EvalError)
+import Engine.Eval (EvalError (..), RuntimeError, evalErrorMessage, evalProgram, runtimeErrorCode, runtimeErrorMessage)
 import Engine.Json
+import Engine.Number (renderDecimal)
 import Engine.TypeCheck
 import Engine.Types
 
@@ -44,6 +45,7 @@ data Verdict
   = Executed LiteralValue
   | BlockedParse ParseError
   | BlockedCheck CheckError
+  | RuntimeFailure RuntimeError -- ^ programa verificado que falla al ejecutarse
   deriving (Show, Eq)
 
 data Response = Response
@@ -74,14 +76,18 @@ decodeEnv (Just raw) = do
 
 -- FP[Funciones puras] FP[Composición]
 -- | parse → scope → typecheck → execution. Cada etapa corta en su primer
--- error. 'Left' solo si el evaluador se atasca sobre un programa verificado:
--- eso es un bug del motor, no del LLM.
+-- error. Un error del programa al ejecutarse es un veredicto más
+-- ('RuntimeFailure'). 'Left' solo si el evaluador se atasca sobre un programa
+-- verificado: eso es un bug del motor, no del LLM.
 validate :: Env LiteralValue -> BL.ByteString -> Either EvalError Verdict
 validate env input = case parseProgram input of
   Left err -> Right (BlockedParse err)
   Right prog -> case checkProgram (typesOf env) prog of
     Left err -> Right (BlockedCheck err)
-    Right _ -> Executed <$> evalProgram env prog
+    Right _ -> case evalProgram env prog of
+      Right lit -> Right (Executed lit)
+      Left (Runtime err) -> Right (RuntimeFailure err)
+      Left err -> Left err
 
 -- FP[Polimorfismo] FP[Currificación]
 -- | Γ se deduce de los valores del caso. Sin nombrar el argumento: @map@
@@ -96,6 +102,7 @@ verdictExit (BlockedParse _) = ExitFailure 1
 verdictExit (BlockedCheck err) = case errorStage err of
   Scope -> ExitFailure 2
   TypeCheck -> ExitFailure 3
+verdictExit (RuntimeFailure _) = ExitFailure 4
 
 -- | Una línea conforme a @engine-verdict-schema.json@. Las claves van en el
 -- orden del contrato (no alfabético), así que se arma con 'E.pairs'.
@@ -106,6 +113,8 @@ encodeVerdict v = line $ case v of
     verdict "blocked" "parse" E.null_ (errorObj (parseErrorCode err) (parseErrorMessage err))
   BlockedCheck err ->
     verdict "blocked" (stageName (errorStage err)) E.null_ (errorObj (errorCode err) (errorMessage err))
+  RuntimeFailure err ->
+    verdict "runtime_error" "execution" E.null_ (errorObj (runtimeErrorCode err) (runtimeErrorMessage err))
   where
     verdict outcome stage res err =
       E.pairs
@@ -122,6 +131,7 @@ encodeVerdict v = line $ case v of
 
 literalJson :: LiteralValue -> E.Encoding
 literalJson (VInt n) = E.int n
+literalJson (VDecimal q) = E.string (renderDecimal q)
 literalJson (VBool b) = E.bool b
 literalJson (VString s) = E.string s
 

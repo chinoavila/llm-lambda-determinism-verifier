@@ -23,7 +23,7 @@ emptyEnv = []
 extend :: Name -> a -> Env a -> Env a
 extend x v env = (x, v) : env
 
--- FP[Patrones de listas] FP[Tuplas] FP[Recursión] FP[Excepciones] FP[Reducciones] FP[Funciones totales]
+-- FP[Patrones de listas] FP[Tuplas] FP[Recursión] FP[Guardas] FP[Reducciones] FP[Funciones totales]
 lookupVar :: Name -> Env a -> Maybe a
 lookupVar _ [] = Nothing
 lookupVar x ((k, v) : rest)

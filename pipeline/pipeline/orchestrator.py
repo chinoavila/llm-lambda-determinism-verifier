@@ -39,7 +39,7 @@ RecordOutcome = Literal["executed", "blocked", "runtime_error", "timeout", "llm_
 Stage = Literal["llm", "parse", "scope", "typecheck", "execution"]
 
 # Etapa que corresponde a cada código de salida con veredicto (contracts/README.md §2).
-ENGINE_EXIT_STAGE: dict[int, str] = {0: "execution", 1: "parse", 2: "scope", 3: "typecheck"}
+ENGINE_EXIT_STAGE: dict[int, str] = {0: "execution", 1: "parse", 2: "scope", 3: "typecheck", 4: "execution"}
 
 
 class EngineError(Exception):

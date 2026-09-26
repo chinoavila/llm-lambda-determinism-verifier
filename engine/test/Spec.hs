@@ -16,6 +16,7 @@ import Engine.Env (Env, emptyEnv, extend, lookupVar)
 import Engine.Eval (EvalError (..), eval, evalProgram)
 import qualified Engine.Eval as Eval
 import Engine.Json
+import Engine.Number (renderDecimal)
 import Engine.TypeCheck
 import Engine.Types
 
@@ -45,6 +46,9 @@ bool = Literal . VBool
 
 str :: String -> Expr
 str = Literal . VString
+
+dec :: Rational -> Expr
+dec = Literal . VDecimal
 
 -- | Γ de los fixtures de crédito.
 gamma :: Env Type
@@ -96,7 +100,7 @@ jsonSpec = describe "Engine.Json" $ do
               )
           )
 
-    it "acepta los siete operadores" $
+    it "acepta todos los operadores binarios" $
       let src op = "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"" ++ opSymbol op ++ "\",\
                    \\"left\":{\"type\":\"Var\",\"name\":\"a\"},\"right\":{\"type\":\"Var\",\"name\":\"b\"}}}"
        in [parse (src op) | op <- [minBound .. maxBound]]
@@ -114,10 +118,15 @@ jsonSpec = describe "Engine.Json" $ do
         , "{\"expr\":{\"type\":\"Var\",\"name\":\"x\"},\"extra\":1}" -- clave extra en la raíz
         , "{\"expr\":{\"type\":\"Var\",\"name\":\"x\",\"value_type\":\"Int\"}}" -- clave extra en un nodo
         , "{\"expr\":{\"type\":\"Let\",\"name\":\"x\"}}" -- constructor inexistente
-        , "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"+\",\"left\":{\"type\":\"Var\",\"name\":\"a\"},\"right\":{\"type\":\"Var\",\"name\":\"b\"}}}"
+        , "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"^\",\"left\":{\"type\":\"Var\",\"name\":\"a\"},\"right\":{\"type\":\"Var\",\"name\":\"b\"}}}"
+        , "{\"expr\":{\"type\":\"UnaryOp\",\"op\":\"-\",\"operand\":{\"type\":\"Var\",\"name\":\"a\"}}}"
+        , "{\"expr\":{\"type\":\"In\",\"value\":{\"type\":\"Var\",\"name\":\"a\"},\"options\":[]}}" -- options vacía
         , "{\"expr\":{\"type\":\"Var\"}}" -- campo faltante
         , "{\"expr\":{\"type\":\"Var\",\"name\":\"Credit\"}}" -- nombre fuera del patrón
-        , "{\"expr\":{\"type\":\"Literal\",\"value\":7.5,\"value_type\":\"Int\"}}" -- decimal
+        , "{\"expr\":{\"type\":\"Literal\",\"value\":1e30,\"value_type\":\"Int\"}}" -- fuera de 64 bits
+        , "{\"expr\":{\"type\":\"Literal\",\"value\":1e28,\"value_type\":\"Decimal\"}}" -- fuera de 10^28
+        , "{\"expr\":{\"type\":\"Literal\",\"value\":1e-29,\"value_type\":\"Decimal\"}}" -- más de 28 decimales
+        , "{\"expr\":{\"type\":\"Literal\",\"value\":1e999999999,\"value_type\":\"Decimal\"}}" -- sin agotar memoria
         , "{\"expr\":{\"type\":\"Literal\",\"value\":null,\"value_type\":\"Int\"}}"
         , "{\"expr\":{\"type\":\"Literal\",\"value\":1,\"value_type\":\"Float\"}}"
         , "{\"expr\":{\"type\":\"Lam\",\"param\":\"x\",\"param_type\":{\"from\":\"Int\"},\"body\":{\"type\":\"Var\",\"name\":\"x\"}}}"
@@ -128,6 +137,27 @@ jsonSpec = describe "Engine.Json" $ do
         `shouldBe` Left "LITERAL_TYPE_MISMATCH"
       codeOf (parse "{\"expr\":{\"type\":\"Literal\",\"value\":1,\"value_type\":\"Bool\"}}")
         `shouldBe` Left "LITERAL_TYPE_MISMATCH"
+      codeOf (parse "{\"expr\":{\"type\":\"Literal\",\"value\":7.5,\"value_type\":\"Int\"}}")
+        `shouldBe` Left "LITERAL_TYPE_MISMATCH"
+      codeOf (parse "{\"expr\":{\"type\":\"Literal\",\"value\":\"0.3\",\"value_type\":\"Decimal\"}}")
+        `shouldBe` Left "LITERAL_TYPE_MISMATCH"
+
+    it "literales Decimal exactos; un entero también sirve como Decimal" $ do
+      parse "{\"expr\":{\"type\":\"Literal\",\"value\":0.30,\"value_type\":\"Decimal\"}}"
+        `shouldBe` Right (Program (dec (3 / 10)))
+      parse "{\"expr\":{\"type\":\"Literal\",\"value\":5000,\"value_type\":\"Decimal\"}}"
+        `shouldBe` Right (Program (dec 5000))
+      parse "{\"expr\":{\"type\":\"Literal\",\"value\":5000.0,\"value_type\":\"Int\"}}"
+        `shouldBe` Right (Program (int 5000))
+      parse "{\"expr\":{\"type\":\"Literal\",\"value\":1e-28,\"value_type\":\"Decimal\"}}"
+        `shouldBe` Right (Program (dec (1 / 10 ^ (28 :: Int))))
+
+    it "UnaryOp e In" $
+      parse
+        "{\"expr\":{\"type\":\"UnaryOp\",\"op\":\"NOT\",\"operand\":{\"type\":\"In\",\
+        \\"value\":{\"type\":\"Var\",\"name\":\"t\"},\"options\":[{\"type\":\"Literal\",\
+        \\"value\":\"Gold\",\"value_type\":\"String\"}]}}}"
+        `shouldBe` Right (Program (UnaryOp Not (In (Var "t") [str "Gold"])))
 
     it "el mensaje de error incluye la ruta del nodo" $
       case parse "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\">\",\"left\":\"credit_score\",\"right\":{\"type\":\"Var\",\"name\":\"a\"}}}" of
@@ -136,11 +166,15 @@ jsonSpec = describe "Engine.Json" $ do
 
   describe "envFromJSON" $ do
     it "deduce el tipo de cada variable desde su valor" $
-      fmap (map (fmap literalType)) (envFromJSON =<< decodeValue "{\"a\":1,\"b\":true,\"c\":\"x\"}")
-        `shouldBe` Right [("a", TInt), ("b", TBool), ("c", TString)]
+      fmap (map (fmap literalType)) (envFromJSON =<< decodeValue "{\"a\":1,\"b\":true,\"c\":\"x\",\"d\":0.30,\"e\":5000.0}")
+        `shouldBe` Right [("a", TInt), ("b", TBool), ("c", TString), ("d", TDecimal), ("e", TInt)]
+
+    it "un decimal del env es exacto" $
+      (envFromJSON =<< decodeValue "{\"d\":1250.75}") `shouldBe` Right [("d", VDecimal (125075 / 100))]
 
     it "rechaza valores y nombres que no se pueden tipar" $ do
-      (envFromJSON =<< decodeValue "{\"a\":1.5}") `shouldBe` Left (InvalidEnvValue "a")
+      (envFromJSON =<< decodeValue "{\"a\":1e30}") `shouldBe` Left (InvalidEnvValue "a")
+      (envFromJSON =<< decodeValue "{\"a\":1e-40}") `shouldBe` Left (InvalidEnvValue "a")
       (envFromJSON =<< decodeValue "{\"a\":null}") `shouldBe` Left (InvalidEnvValue "a")
       (envFromJSON =<< decodeValue "{\"a\":[1]}") `shouldBe` Left (InvalidEnvValue "a")
       (envFromJSON =<< decodeValue "{\"A\":1}") `shouldBe` Left (InvalidEnvName "A")
@@ -179,6 +213,39 @@ typeCheckSpec = describe "Engine.TypeCheck" $ do
     it "AND / OR: Bool × Bool → Bool" $ do
       checkCode (BinaryOp Or (Var "has_defaults") (bool True)) `shouldBe` Right TBool
       checkCode (BinaryOp And (Var "has_defaults") (int 1)) `shouldBe` Left "OPERAND_MISMATCH"
+
+  describe "aritmética y Decimal" $ do
+    it "+ - * entre Int dan Int; con un Decimal, Decimal (promoción en operadores)" $ do
+      checkCode (BinaryOp Add (Var "credit_score") (int 1)) `shouldBe` Right TInt
+      checkCode (BinaryOp Mul (Var "credit_score") (dec 0.3)) `shouldBe` Right TDecimal
+      checkCode (BinaryOp Sub (dec 1) (Var "credit_score")) `shouldBe` Right TDecimal
+    it "/ siempre da Decimal; % solo entre Int" $ do
+      checkCode (BinaryOp Div (int 7) (int 2)) `shouldBe` Right TDecimal
+      checkCode (BinaryOp Mod (int 7) (int 2)) `shouldBe` Right TInt
+      checkCode (BinaryOp Mod (dec 7) (int 2)) `shouldBe` Left "OPERAND_MISMATCH"
+    it "la aritmética no admite Bool ni String" $ do
+      checkCode (BinaryOp Add (str "a") (str "b")) `shouldBe` Left "OPERAND_MISMATCH"
+      checkCode (BinaryOp Mul (bool True) (int 2)) `shouldBe` Left "OPERAND_MISMATCH"
+    it "comparaciones e igualdad entre Int y Decimal" $ do
+      checkCode (BinaryOp Lte (Var "credit_score") (dec 700.5)) `shouldBe` Right TBool
+      checkCode (BinaryOp Eq (int 1) (dec 1)) `shouldBe` Right TBool
+      checkCode (BinaryOp Neq (Var "customer_tier") (str "Basic")) `shouldBe` Right TBool
+      checkCode (BinaryOp Neq (int 1) (str "1")) `shouldBe` Left "OPERAND_MISMATCH"
+    it "sin promoción en App: Int donde se espera Decimal es ARGUMENT_MISMATCH" $
+      checkProgram gamma (Program (App (Lam "x" TDecimal (BinaryOp Gt (Var "x") (int 0))) (int 1)))
+        `shouldBe` Left (ArgumentMismatch TDecimal TInt)
+
+  describe "NOT e In" $ do
+    it "NOT: Bool → Bool" $ do
+      checkCode (UnaryOp Not (Var "has_defaults")) `shouldBe` Right TBool
+      checkProgram gamma (Program (UnaryOp Not (int 1))) `shouldBe` Left (UnaryMismatch Not TInt)
+    it "In: opciones del tipo del valor, con promoción numérica" $ do
+      checkCode (In (Var "customer_tier") [str "Gold", str "Platinum"]) `shouldBe` Right TBool
+      checkCode (In (Var "credit_score") [int 700, dec 750.5]) `shouldBe` Right TBool
+      checkProgram gamma (Program (In (Var "customer_tier") [str "Gold", int 1]))
+        `shouldBe` Left (InMismatch TString TInt)
+    it "In revisa el alcance de value y de las opciones" $
+      checkCode (In (Var "credit_score") [Var "nope"]) `shouldBe` Left "UNBOUND_VARIABLE"
 
   describe "IfThenElse" $ do
     it "acepta condición Bool y ramas del mismo tipo" $
@@ -234,6 +301,47 @@ evalSpec = describe "Engine.Eval" $ do
     run' (BinaryOp And (bool True) (Var "has_defaults")) `shouldBe` Right (VBool False)
     run' (BinaryOp Or (bool False) (bool True)) `shouldBe` Right (VBool True)
 
+  describe "aritmética exacta" $ do
+    it "0.1 + 0.2 == 0.3" $
+      run' (BinaryOp Eq (BinaryOp Add (dec 0.1) (dec 0.2)) (dec 0.3)) `shouldBe` Right (VBool True)
+    it "Int con Int queda Int; con Decimal, Decimal; / siempre Decimal" $ do
+      run' (BinaryOp Mul (int 6) (int 7)) `shouldBe` Right (VInt 42)
+      run' (BinaryOp Mul (Var "credit_score") (dec 0.3)) `shouldBe` Right (VDecimal 225)
+      run' (BinaryOp Div (int 7) (int 2)) `shouldBe` Right (VDecimal 3.5)
+    it "% con el signo del divisor, como Python" $ do
+      run' (BinaryOp Mod (int (-7)) (int 3)) `shouldBe` Right (VInt 2)
+      run' (BinaryOp Mod (int 7) (int (-3))) `shouldBe` Right (VInt (-2))
+    it "1 == 1.0 y != " $ do
+      run' (BinaryOp Eq (int 1) (dec 1)) `shouldBe` Right (VBool True)
+      run' (BinaryOp Neq (Var "customer_tier") (str "Gold")) `shouldBe` Right (VBool False)
+    it "las operaciones entre Int coinciden con las de Integer mientras no desborden" $
+      property $ \(a :: Int) b ->
+        let exact = toInteger a + toInteger b
+         in run' (BinaryOp Add (int a) (int b))
+              === if abs exact <= toInteger (maxBound :: Int) then Right (VInt (a + b)) else Left (Eval.Runtime Eval.NumericOverflow)
+
+  describe "errores en ejecución (Runtime, no atascos)" $ do
+    it "división por cero en / y %" $ do
+      run' (BinaryOp Div (int 1) (int 0)) `shouldBe` Left (Eval.Runtime Eval.DivisionByZero)
+      run' (BinaryOp Div (dec 1) (dec 0)) `shouldBe` Left (Eval.Runtime Eval.DivisionByZero)
+      run' (BinaryOp Mod (int 1) (int 0)) `shouldBe` Left (Eval.Runtime Eval.DivisionByZero)
+    it "desborde de Int y de Decimal" $ do
+      run' (BinaryOp Add (int maxBound) (int 1)) `shouldBe` Left (Eval.Runtime Eval.NumericOverflow)
+      run' (BinaryOp Mul (dec (10 ^ (27 :: Int))) (int 10)) `shouldBe` Left (Eval.Runtime Eval.NumericOverflow)
+    it "AND / OR cortocircuitan: una guarda protege la división" $ do
+      let guarded x = BinaryOp And (BinaryOp Neq x (int 0)) (BinaryOp Gt (BinaryOp Div (int 10) x) (int 2))
+      run' (guarded (int 0)) `shouldBe` Right (VBool False)
+      run' (guarded (int 4)) `shouldBe` Right (VBool True)
+      run' (BinaryOp Or (bool True) (BinaryOp Gt (BinaryOp Div (int 1) (int 0)) (int 0))) `shouldBe` Right (VBool True)
+
+  describe "NOT e In" $ do
+    it "NOT niega" $ run' (UnaryOp Not (Var "has_defaults")) `shouldBe` Right (VBool True)
+    it "In busca la primera opción igual y no evalúa las siguientes" $ do
+      run' (In (Var "customer_tier") [str "Silver", str "Gold"]) `shouldBe` Right (VBool True)
+      run' (In (Var "customer_tier") [str "Silver"]) `shouldBe` Right (VBool False)
+      run' (In (int 750) [Var "credit_score", BinaryOp Div (int 1) (int 0)]) `shouldBe` Right (VBool True)
+      run' (In (int 1) [dec 1]) `shouldBe` Right (VBool True)
+
   it "IfThenElse elige la rama según la condición" $ do
     run' (IfThenElse (BinaryOp Gt (Var "credit_score") (int 700)) (int 500) (int 0))
       `shouldBe` Right (VInt 500)
@@ -286,14 +394,30 @@ cliSpec = describe "Engine.Cli" $ do
         `shouldBe` "{\"outcome\":\"executed\",\"stage\":\"execution\",\"result\":{\"type\":\"Bool\",\"value\":true},\"error\":null}\n"
       encodeVerdict (BlockedCheck (BranchMismatch TInt TString))
         `shouldBe` "{\"outcome\":\"blocked\",\"stage\":\"typecheck\",\"result\":null,\"error\":{\"code\":\"BRANCH_MISMATCH\",\"message\":\"then: Int, else: String\"}}\n"
+    it "runtime_error y Decimal como texto canónico" $ do
+      encodeVerdict (RuntimeFailure Eval.DivisionByZero)
+        `shouldBe` utf8 "{\"outcome\":\"runtime_error\",\"stage\":\"execution\",\"result\":null,\"error\":{\"code\":\"DIVISION_BY_ZERO\",\"message\":\"división por cero\"}}\n"
+      encodeVerdict (Executed (VDecimal 1500.5))
+        `shouldBe` "{\"outcome\":\"executed\",\"stage\":\"execution\",\"result\":{\"type\":\"Decimal\",\"value\":\"1500.5\"},\"error\":null}\n"
     it "los códigos de salida siguen la etapa" $
       map verdictExit
         [ Executed (VInt 1)
         , BlockedParse (MalformedJson "")
         , BlockedCheck (UnboundVariable "x")
         , BlockedCheck (NotAFunction TInt)
+        , RuntimeFailure Eval.NumericOverflow
         ]
-        `shouldBe` [ExitSuccess, ExitFailure 1, ExitFailure 2, ExitFailure 3]
+        `shouldBe` [ExitSuccess, ExitFailure 1, ExitFailure 2, ExitFailure 3, ExitFailure 4]
+
+  describe "renderDecimal" $ do
+    it "exacto si termina, sin ceros finales ni exponente" $
+      map renderDecimal [1500.5, 0.3, -2, 0, 12.50, 1 / 10 ^ (28 :: Int), 10 ^ (27 :: Int)]
+        `shouldBe` ["1500.5", "0.3", "-2", "0", "12.5", "0." ++ replicate 27 '0' ++ "1", '1' : replicate 27 '0']
+    it "si no termina, 28 dígitos significativos half-even (como decimal de Python)" $ do
+      renderDecimal (10 / 3) `shouldBe` "3.333333333333333333333333333"
+      renderDecimal (10000 / 12) `shouldBe` "833.3333333333333333333333333"
+      renderDecimal (-2 / 3) `shouldBe` "-0.6666666666666666666666666667"
+      renderDecimal (1 / 7) `shouldBe` "0.1428571428571428571428571429"
 
   describe "run" $ do
     it "sin --env, Γ es vacío" $
@@ -320,7 +444,7 @@ cliSpec = describe "Engine.Cli" $ do
         , ["--env"]
         , ["--env", "{\"a\":"]
         , ["--env", "[1]"]
-        , ["--env", "{\"a\":1.5}"]
+        , ["--env", "{\"a\":1e30}"]
         , ["--env", "{\"A\":1}"]
         , ["--env", "{}", "--env", "{}"]
         , ["--print-gamma", "--print-gamma"]
@@ -361,8 +485,9 @@ actualSummary r = do
 -- orquestador: @engine --env '<env>' < llm_raw@.
 fixturesSpec :: Spec
 fixturesSpec = describe "contracts/fixtures" $
-  mapM_ fixtureCase ["rule-00" ++ show n ++ ".json" | n <- [1 .. 7 :: Int]]
+  mapM_ fixtureCase ["rule-" ++ pad (show n) ++ ".json" | n <- [1 .. 15 :: Int]]
   where
+    pad s = replicate (3 - length s) '0' ++ s
     fixtureCase name = it name $ do
       bytes <- BL.readFile ("../contracts/fixtures/" ++ name)
       (env, raw, expected) <- either fail pure $ do

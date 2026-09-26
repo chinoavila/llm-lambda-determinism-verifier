@@ -26,6 +26,8 @@ data Stage = Scope | TypeCheck
 data CheckError
   = UnboundVariable Name
   | OperandMismatch BinOp Type Type
+  | UnaryMismatch UnOp Type
+  | InMismatch Type Type -- ^ tipo de @value@, tipo de la opción
   | ConditionNotBool Type
   | BranchMismatch Type Type
   | NotAFunction Type
@@ -38,7 +40,9 @@ data CheckError
 freeVars :: Expr -> [Name]
 freeVars (Literal _) = []
 freeVars (Var x) = [x]
+freeVars (UnaryOp _ e) = freeVars e
 freeVars (BinaryOp _ l r) = freeVars l ++ freeVars r
+freeVars (In v opts) = concatMap freeVars (v : opts)
 freeVars (IfThenElse c t e) = concatMap freeVars [c, t, e]
 freeVars (Lam x _ body) = [v | v <- freeVars body, v /= x]
 freeVars (App f a) = freeVars f ++ freeVars a
@@ -58,11 +62,22 @@ scopeCheck gamma e =
 typeOf :: Env Type -> Expr -> Either CheckError Type
 typeOf _ (Literal v) = Right (literalType v)
 typeOf gamma (Var x) = maybe (Left (UnboundVariable x)) Right (lookupVar x gamma)
+typeOf gamma (UnaryOp Not e) = do
+  t <- typeOf gamma e
+  unless (t == TBool) (Left (UnaryMismatch Not t))
+  Right TBool
 typeOf gamma (BinaryOp op l r) = do
   tl <- typeOf gamma l
   tr <- typeOf gamma r
-  unless (operandsOk op tl tr) (Left (OperandMismatch op tl tr))
+  maybe (Left (OperandMismatch op tl tr)) Right (binOpType op tl tr)
+typeOf gamma (In v opts) = do
+  tv <- typeOf gamma v
+  mapM_ (option tv) opts
   Right TBool
+  where
+    option tv o = do
+      to <- typeOf gamma o
+      unless (comparable tv to) (Left (InMismatch tv to))
 typeOf gamma (IfThenElse c t e) = do
   tc <- typeOf gamma c
   unless (tc == TBool) (Left (ConditionNotBool tc))
@@ -80,13 +95,25 @@ typeOf gamma (App f a) = do
       | otherwise -> Left (ArgumentMismatch param ta)
     _ -> Left (NotAFunction tf)
 
--- FP[Patrones constantes]
--- | Comparaciones sobre Int, @==@ sobre un mismo tipo base, lógicos sobre Bool.
-operandsOk :: BinOp -> Type -> Type -> Bool
-operandsOk Eq a b = a == b && isBase a
-operandsOk And a b = a == TBool && b == TBool
-operandsOk Or a b = a == TBool && b == TBool
-operandsOk _ a b = a == TInt && b == TInt
+-- FP[Condicionales]
+-- | Tipo del resultado de un operador binario, o 'Nothing' si los operandos no
+-- sirven. Int se promueve a Decimal solo acá, dentro de operadores
+-- (@contracts/README.md@ §1); en 'App' no hay promoción.
+binOpType :: BinOp -> Type -> Type -> Maybe Type
+binOpType op a b
+  | op `elem` [Add, Sub, Mul], numeric = Just (if a == TInt && b == TInt then TInt else TDecimal)
+  | op == Div, numeric = Just TDecimal
+  | op == Mod, a == TInt, b == TInt = Just TInt
+  | op `elem` [Gt, Lt, Gte, Lte], numeric = Just TBool
+  | op `elem` [Eq, Neq], comparable a b = Just TBool
+  | op `elem` [And, Or], a == TBool, b == TBool = Just TBool
+  | otherwise = Nothing
+  where
+    numeric = isNumeric a && isNumeric b
+
+-- | Se pueden comparar por igualdad: el mismo tipo base, o dos numéricos.
+comparable :: Type -> Type -> Bool
+comparable a b = (a == b && isBase a) || (isNumeric a && isNumeric b)
 
 -- FP[Funciones puras]
 -- | Alcance, luego tipos, luego exige que el resultado sea un tipo base.
@@ -105,6 +132,8 @@ errorStage _ = TypeCheck
 errorCode :: CheckError -> String
 errorCode (UnboundVariable _) = "UNBOUND_VARIABLE"
 errorCode (OperandMismatch {}) = "OPERAND_MISMATCH"
+errorCode (UnaryMismatch _ _) = "OPERAND_MISMATCH"
+errorCode (InMismatch _ _) = "OPERAND_MISMATCH"
 errorCode (ConditionNotBool _) = "CONDITION_NOT_BOOL"
 errorCode (BranchMismatch _ _) = "BRANCH_MISMATCH"
 errorCode (NotAFunction _) = "NOT_A_FUNCTION"
@@ -115,9 +144,12 @@ errorMessage :: CheckError -> String
 errorMessage (UnboundVariable x) = "variable no declarada: " ++ x
 errorMessage (OperandMismatch op a b) =
   opSymbol op ++ " no admite " ++ renderType a ++ " y " ++ renderType b
+errorMessage (UnaryMismatch op t) = unOpSymbol op ++ " no admite " ++ renderType t
+errorMessage (InMismatch v o) =
+  "IN compara un valor " ++ renderType v ++ " con una opción " ++ renderType o
 errorMessage (ConditionNotBool t) = "la condición es " ++ renderType t ++ ", se esperaba Bool"
 errorMessage (BranchMismatch a b) = "then: " ++ renderType a ++ ", else: " ++ renderType b
 errorMessage (NotAFunction t) = "se aplica un valor de tipo " ++ renderType t ++ ", que no es función"
 errorMessage (ArgumentMismatch expected got) =
   "argumento " ++ renderType got ++ ", se esperaba " ++ renderType expected
-errorMessage (NonBaseResult t) = "el resultado es " ++ renderType t ++ ", se esperaba Int, Bool o String"
+errorMessage (NonBaseResult t) = "el resultado es " ++ renderType t ++ ", se esperaba Int, Decimal, Bool o String"

@@ -78,7 +78,7 @@ Un programa bien tipado todavía puede fallar al ejecutarse. Esos errores son de
 | Error | Cuándo | Código | Etapa |
 |---|---|---|---|
 | División por cero | divisor `0` en `/` o `%` | `DIVISION_BY_ZERO` | `execution` |
-| Desborde | un resultado `Int` fuera de 64 bits, o un `Decimal` con valor absoluto ≥ 10^28 o denominador (reducido) ≥ 10^28 | `NUMERIC_OVERFLOW` | `execution` |
+| Desborde | un resultado `Int` fuera de 64 bits, o un `Decimal` con valor absoluto ≥ 10^28 o denominador (reducido) mayor que 10^28 | `NUMERIC_OVERFLOW` | `execution` |
 
 El límite de `Decimal` existe porque el STLC con funciones de orden superior puede generar cuentas de tamaño exponencial; con el límite, el engine nunca agota la memoria.
 
@@ -182,8 +182,16 @@ Un archivo por caso en [`fixtures/`](./fixtures/):
 | `rule-005` | ramas `Int` / `String` | `typecheck`, `BRANCH_MISMATCH`, exit 3 |
 | `rule-006` | `(λs:Int. s > 700) credit_score` | `executed`, `Bool true`, exit 0 |
 | `rule-007` | JSON truncado | `parse`, `MALFORMED_JSON`, exit 1 |
+| `rule-008` | `cuota <= ingreso * 0.30` (promoción Int → Decimal) | `executed`, `Bool true`, exit 0 |
+| `rule-009` | `NOT` y `!=` | `executed`, `Bool true`, exit 0 |
+| `rule-010` | `IN ["Gold", "Platinum"]` | `executed`, `Bool true`, exit 0 |
+| `rule-011` | `deuda / ingreso` con `ingreso = 0` | `runtime_error`, `DIVISION_BY_ZERO`, exit 4 |
+| `rule-012` | la misma división con guarda `ingreso != 0 AND ...` (cortocircuito) | `executed`, `Bool false`, exit 0 |
+| `rule-013` | `%` sobre `Decimal` | `typecheck`, `OPERAND_MISMATCH`, exit 3 |
+| `rule-014` | `monto / 12`, resultado `Decimal` que no termina | `executed`, `Decimal "833.3333333333333333333333333"`, exit 0 |
+| `rule-015` | literal `700.5` con `value_type: "Int"` | `parse`, `LITERAL_TYPE_MISMATCH`, exit 1 |
 
-Los casos 001–005 vienen de [`prototype/guia_fixtures_pruebas.md`](../prototype/guia_fixtures_pruebas.md). `python_code` se copió tal cual de esa guía; el carril de baselines decide si le agrega la firma tipada que exige Baseline 2.
+Los casos 001–005 vienen de [`prototype/guia_fixtures_pruebas.md`](../prototype/guia_fixtures_pruebas.md); los 008–015 prueban la extensión del DSL ([`docs/dsl-extension.md`](../docs/dsl-extension.md)). `python_code` se copió tal cual de esa guía; el carril de baselines decide si le agrega la firma tipada que exige Baseline 2.
 
 ## 5. Casos de entrada
 

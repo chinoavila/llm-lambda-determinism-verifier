@@ -1,0 +1,19 @@
+{
+  "case_id": "RULE-009",
+  "description": "Aprobar si el cliente no tiene morosidades y su categoría no es Basic.",
+  "env": {
+    "has_defaults": false,
+    "customer_tier": "Gold"
+  },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"AND\",\"left\":{\"type\":\"UnaryOp\",\"op\":\"NOT\",\"operand\":{\"type\":\"Var\",\"name\":\"has_defaults\"}},\"right\":{\"type\":\"BinaryOp\",\"op\":\"!=\",\"left\":{\"type\":\"Var\",\"name\":\"customer_tier\"},\"right\":{\"type\":\"Literal\",\"value\":\"Basic\",\"value_type\":\"String\"}}}}",
+  "python_code": "def evaluate_rule(data):\n    return not data['has_defaults'] and data['customer_tier'] != 'Basic'\n",
+  "expected_verdict": {
+    "outcome": "executed",
+    "stage": "execution",
+    "exit_code": 0,
+    "result": {
+      "type": "Bool",
+      "value": true
+    }
+  }
+}

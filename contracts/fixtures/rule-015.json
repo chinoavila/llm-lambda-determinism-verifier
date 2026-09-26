@@ -1,0 +1,15 @@
+{
+  "case_id": "RULE-015",
+  "description": "Aprobar si el puntaje crediticio supera 700.5.",
+  "env": {
+    "credit_score": 750
+  },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\">\",\"left\":{\"type\":\"Var\",\"name\":\"credit_score\"},\"right\":{\"type\":\"Literal\",\"value\":700.5,\"value_type\":\"Int\"}}}",
+  "python_code": "def evaluate_rule(data):\n    return data['credit_score'] > 700.5\n",
+  "expected_verdict": {
+    "outcome": "blocked",
+    "stage": "parse",
+    "exit_code": 1,
+    "error_code": "LITERAL_TYPE_MISMATCH"
+  }
+}

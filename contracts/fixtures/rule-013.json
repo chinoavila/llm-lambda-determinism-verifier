@@ -1,0 +1,15 @@
+{
+  "case_id": "RULE-013",
+  "description": "Marcar la operación si el monto es múltiplo de 100.",
+  "env": {
+    "monto": 1250.5
+  },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"==\",\"left\":{\"type\":\"BinaryOp\",\"op\":\"%\",\"left\":{\"type\":\"Var\",\"name\":\"monto\"},\"right\":{\"type\":\"Literal\",\"value\":100,\"value_type\":\"Int\"}},\"right\":{\"type\":\"Literal\",\"value\":0,\"value_type\":\"Int\"}}}",
+  "python_code": "def evaluate_rule(data):\n    return data['monto'] % 100 == 0\n",
+  "expected_verdict": {
+    "outcome": "blocked",
+    "stage": "typecheck",
+    "exit_code": 3,
+    "error_code": "OPERAND_MISMATCH"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "case_id": "RULE-014",
+  "description": "La cuota mensual es el monto del préstamo dividido en 12 pagos.",
+  "env": {
+    "monto": 10000
+  },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"/\",\"left\":{\"type\":\"Var\",\"name\":\"monto\"},\"right\":{\"type\":\"Literal\",\"value\":12,\"value_type\":\"Int\"}}}",
+  "python_code": "def evaluate_rule(data):\n    return data['monto'] / 12\n",
+  "expected_verdict": {
+    "outcome": "executed",
+    "stage": "execution",
+    "exit_code": 0,
+    "result": {
+      "type": "Decimal",
+      "value": "833.3333333333333333333333333"
+    }
+  }
+}

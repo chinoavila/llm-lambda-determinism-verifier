@@ -16,7 +16,7 @@ data CheckError
 Para ver dónde se aplica un concepto, se busca su etiqueta exacta:
 
 ```powershell
-git grep -nF "FP[Excepciones]"
+git grep -nF "FP[Guardas]"
 git grep -nF "FP["          # todas las etiquetas
 ```
 
@@ -68,10 +68,10 @@ Cada flecha es una función pura que devuelve `Either`: un error es un valor má
 | Concepto | Etiqueta | Dónde | Qué observar | Test que lo muestra |
 |---|---|---|---|---|
 | Igualaciones | `FP[Igualaciones]` | `literalType`, `freeVars`, `typeOf` | Una ecuación por constructor ("igualación por tramos"): la función se lee como una lista de igualdades | `typeCheckSpec` |
-| Patrones constantes | `FP[Patrones constantes]` | `opSymbol`, `operandsOk`, `FromJSON Type`, `FromJSON Expr` | Ecuaciones que solo aplican a un valor fijo (`Eq`, `"Int"`, `"Literal"`), como `factorial 0 = 1` | "acepta los siete operadores" |
+| Patrones constantes | `FP[Patrones constantes]` | `opSymbol`, `applyOp`, `FromJSON Type`, `FromJSON Expr` | Ecuaciones que solo aplican a un valor fijo (`Eq`, `"Int"`, `"Literal"`), como `factorial 0 = 1` | "acepta todos los operadores binarios" |
 | Patrones irrefutables | `FP[Patrones irrefutables]` | `isBase` | `_` y las variables nunca fallan: son el caso por defecto, como `esBinario _ = False`. El patrón perezoso `~(a, b)` todavía no se usa | `typeCheckSpec` ("NON_BASE_RESULT") |
-| Excepciones | `FP[Excepciones]` | `lookupVar`, `entry` (en `envFromJSON`), `classify` (en `parseProgram`) | `\| condición = resultado`, evaluadas en orden; `otherwise` es simplemente `True` y va al final | `envSpec` |
-| Condicionales | `FP[Condicionales]` | Haskell: `isBase` (patrones), `lookupVar` (Excepciones), `fixtureParser` en los tests (`if`). DSL: caso `IfThenElse` de `typeOf` | Las tres formas de decidir que muestra el factorial. En Haskell y en el DSL, `if` exige que las dos ramas tengan el mismo tipo: `typeOf` implementa esa misma regla (`BRANCH_MISMATCH`) | "BRANCH_MISMATCH" |
+| Guardas | `FP[Guardas]` | `lookupVar`, `entry` (en `envFromJSON`), `classify` (en `parseProgram`) | `\| condición = resultado`, evaluadas en orden; `otherwise` es simplemente `True` y va al final | `envSpec` |
+| Condicionales | `FP[Condicionales]` | Haskell: `isBase` (patrones), `lookupVar` (Guardas), `fixtureParser` en los tests (`if`). DSL: caso `IfThenElse` de `typeOf` | Las tres formas de decidir que muestra el factorial. En Haskell y en el DSL, `if` exige que las dos ramas tengan el mismo tipo: `typeOf` implementa esa misma regla (`BRANCH_MISMATCH`) | "BRANCH_MISMATCH" |
 | Funciones totales | `FP[Funciones totales]` | `lookupVar`, `validName`, `scopeCheck` | Toda entrada tiene respuesta: se devuelve `Maybe` o `Either` y se cubre el caso `[]`, en vez de usar `error` como en `myHead [] = error ...`. `-Wall` avisa si falta un caso, como el `[]` que le falta a un `myTake` | "rechaza valores y nombres..." |
 
 ### Listas y tuplas

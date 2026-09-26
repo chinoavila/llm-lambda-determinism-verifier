@@ -25,6 +25,7 @@ import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.List (isInfixOf)
 
 import Engine.Env (Env)
+import Engine.Number (isIntegral, scientificDecimal, scientificInt)
 import Engine.Types
 
 -- FP[Tipos algebraicos]
@@ -57,9 +58,11 @@ envErrorMessage :: EnvError -> String
 envErrorMessage EnvNotObject = "--env debe ser un objeto JSON"
 envErrorMessage (InvalidEnvName x) = "nombre inválido en --env: " ++ show x
 envErrorMessage (InvalidEnvValue x) =
-  "valor de " ++ show x ++ " en --env: se esperaba entero de 64 bits, booleano o cadena"
+  "valor de " ++ show x
+    ++ " en --env: se esperaba entero de 64 bits, decimal (menos de 10^28, hasta 28 decimales),"
+    ++ " booleano o cadena"
 
--- FP[Funciones puras] FP[Composición] FP[Orden superior] FP[Excepciones] FP[Inferencia de tipos]
+-- FP[Funciones puras] FP[Composición] FP[Orden superior] FP[Guardas] FP[Inferencia de tipos]
 -- | Primero exige JSON sintácticamente válido; después, la forma del AST.
 parseProgram :: BL.ByteString -> Either ParseError Program
 parseProgram bytes = case eitherDecode bytes of
@@ -75,7 +78,7 @@ parseProgram bytes = case eitherDecode bytes of
 literalMismatchTag :: String
 literalMismatchTag = "LITERAL_TYPE_MISMATCH"
 
--- FP[Orden superior] FP[Tuplas] FP[Excepciones] FP[Currificación]
+-- FP[Orden superior] FP[Tuplas] FP[Guardas] FP[Currificación]
 -- | Deduce los datos del caso desde @--env@. Γ es @fmap literalType@ del
 -- resultado: el tipo sale del valor, nunca de cómo lo usa la regla.
 envFromJSON :: Value -> Either EnvError (Env LiteralValue)
@@ -88,8 +91,11 @@ envFromJSON (Object o) = traverse entry (KeyMap.toList o)
         x = Key.toString k
 envFromJSON _ = Left EnvNotObject
 
+-- | El tipo sale del valor, no de cómo está escrito: @5000.0@ es 'VInt'.
 envValue :: Value -> Maybe LiteralValue
-envValue v@(Number _) = VInt <$> parseMaybe parseJSON v
+envValue (Number s)
+  | isIntegral s = VInt <$> scientificInt s
+  | otherwise = VDecimal <$> scientificDecimal s
 envValue (Bool b) = Just (VBool b)
 envValue v@(String _) = VString <$> parseMaybe parseJSON v
 envValue _ = Nothing
@@ -126,6 +132,7 @@ instance FromJSON Program where
 instance FromJSON Type where
   parseJSON (String s) = case s of
     "Int" -> pure TInt
+    "Decimal" -> pure TDecimal
     "Bool" -> pure TBool
     "String" -> pure TString
     _ -> fail ("tipo desconocido: " ++ show s)
@@ -143,6 +150,13 @@ instance FromJSON BinOp where
       Just op -> pure op
       Nothing -> fail ("operador desconocido: " ++ show s)
 
+instance FromJSON UnOp where
+  parseJSON v = do
+    s <- parseJSON v :: Parser String
+    case lookup s [(unOpSymbol op, op) | op <- [minBound .. maxBound]] of
+      Just op -> pure op
+      Nothing -> fail ("operador unario desconocido: " ++ show s)
+
 -- FP[Clases] FP[Patrones constantes] FP[Currificación]
 -- | Los constructores están currificados: @BinaryOp <$> op <*> l <*> r@ los
 -- aplica de a un argumento por vez.
@@ -156,9 +170,17 @@ instance FromJSON Expr where
       "Var" -> do
         onlyKeys ["type", "name"] o
         Var <$> nameField o "name"
+      "UnaryOp" -> do
+        onlyKeys ["type", "op", "operand"] o
+        UnaryOp <$> o .: "op" <*> o .: "operand"
       "BinaryOp" -> do
         onlyKeys ["type", "op", "left", "right"] o
         BinaryOp <$> o .: "op" <*> o .: "left" <*> o .: "right"
+      "In" -> do
+        onlyKeys ["type", "value", "options"] o
+        options <- o .: "options"
+        -- El schema no puede exigirlo sin salir de anyOf/enum/$ref.
+        if null options then fail "options no puede estar vacía" else In <$> o .: "value" <*> pure options
       "IfThenElse" -> do
         onlyKeys ["type", "condition", "then", "else"] o
         IfThenElse <$> o .: "condition" <*> o .: "then" <*> o .: "else"
@@ -170,23 +192,35 @@ instance FromJSON Expr where
         App <$> o .: "fn" <*> o .: "arg"
       _ -> fail ("tipo de nodo desconocido: " ++ show tag)
 
--- | Un @value@ que no es entero, booleano ni cadena es forma inválida; uno
--- válido pero distinto de @value_type@ es 'LiteralTypeMismatch'.
+-- FP[Patrones constantes] FP[Tuplas]
+-- | Un @value@ que no es número, booleano ni cadena, o un número fuera de los
+-- límites de su tipo, es forma inválida. Uno válido pero incompatible con
+-- @value_type@ es 'LiteralTypeMismatch'. Un número entero sirve como
+-- @Decimal@; uno no entero no sirve como @Int@.
 literal :: Object -> Parser LiteralValue
 literal o = do
   declared <- o .: "value_type"
-  unless (isBase declared) (fail "value_type debe ser Int, Bool o String")
+  unless (isBase declared) (fail "value_type debe ser Int, Decimal, Bool o String")
   raw <- o .: "value"
-  actual <- case raw of
-    Number _ -> VInt <$> parseJSON raw
-    Bool b -> pure (VBool b)
-    String _ -> VString <$> parseJSON raw
-    _ -> fail "value debe ser entero, booleano o cadena"
-  unless (literalType actual == declared) $
-    fail
-      ( literalMismatchTag ++ ": value es "
-          ++ renderType (literalType actual)
-          ++ " pero value_type es "
-          ++ renderType declared
-      )
-  pure actual
+  case (declared, raw) of
+    (TInt, Number s)
+      | isIntegral s -> maybe (fail "entero fuera de 64 bits") (pure . VInt) (scientificInt s)
+    (TDecimal, Number s) ->
+      maybe
+        (fail "Decimal fuera de límites: valor absoluto menor a 10^28 y a lo sumo 28 decimales")
+        (pure . VDecimal)
+        (scientificDecimal s)
+    (TBool, Bool b) -> pure (VBool b)
+    (TString, String _) -> VString <$> parseJSON raw
+    (_, Number s) -> mismatch (if isIntegral s then "Int" else "Decimal")
+    (_, Bool _) -> mismatch "Bool"
+    (_, String _) -> mismatch "String"
+    _ -> fail "value debe ser número, booleano o cadena"
+  where
+    mismatch actual = do
+      declared <- o .: "value_type"
+      fail
+        ( literalMismatchTag ++ ": value es " ++ actual
+            ++ " pero value_type es "
+            ++ renderType declared
+        )

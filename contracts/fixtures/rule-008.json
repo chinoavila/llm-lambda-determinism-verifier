@@ -1,0 +1,19 @@
+{
+  "case_id": "RULE-008",
+  "description": "Aprobar el préstamo si la cuota mensual no supera el 30 % del ingreso mensual.",
+  "env": {
+    "cuota": 1499.5,
+    "ingreso_mensual": 5000
+  },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"<=\",\"left\":{\"type\":\"Var\",\"name\":\"cuota\"},\"right\":{\"type\":\"BinaryOp\",\"op\":\"*\",\"left\":{\"type\":\"Var\",\"name\":\"ingreso_mensual\"},\"right\":{\"type\":\"Literal\",\"value\":0.3,\"value_type\":\"Decimal\"}}}}",
+  "python_code": "def evaluate_rule(data):\n    return data['cuota'] <= data['ingreso_mensual'] * 0.30\n",
+  "expected_verdict": {
+    "outcome": "executed",
+    "stage": "execution",
+    "exit_code": 0,
+    "result": {
+      "type": "Bool",
+      "value": true
+    }
+  }
+}

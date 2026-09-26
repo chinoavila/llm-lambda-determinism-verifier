@@ -1,0 +1,16 @@
+{
+  "case_id": "RULE-011",
+  "description": "Aprobar si la relación entre deuda e ingreso es menor a 0.4.",
+  "env": {
+    "deuda": 1000,
+    "ingreso": 0
+  },
+  "llm_raw": "{\"expr\":{\"type\":\"BinaryOp\",\"op\":\"<\",\"left\":{\"type\":\"BinaryOp\",\"op\":\"/\",\"left\":{\"type\":\"Var\",\"name\":\"deuda\"},\"right\":{\"type\":\"Var\",\"name\":\"ingreso\"}},\"right\":{\"type\":\"Literal\",\"value\":0.4,\"value_type\":\"Decimal\"}}}",
+  "python_code": "def evaluate_rule(data):\n    return data['deuda'] / data['ingreso'] < 0.4\n",
+  "expected_verdict": {
+    "outcome": "runtime_error",
+    "stage": "execution",
+    "exit_code": 4,
+    "error_code": "DIVISION_BY_ZERO"
+  }
+}

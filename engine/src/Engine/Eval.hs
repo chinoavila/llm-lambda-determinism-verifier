@@ -1,15 +1,26 @@
 -- | Evaluador big-step (etapa @execution@ del contrato). Solo se llama sobre
--- programas que ya pasaron 'Engine.TypeCheck.checkProgram'; por eso un
--- 'EvalError' nunca debería ocurrir: si ocurre, es un bug del motor (exit 70).
+-- programas que ya pasaron 'Engine.TypeCheck.checkProgram'.
+--
+-- Hay dos clases de fallas, y son valores, no excepciones:
+--
+-- * 'Runtime': errores del programa que el sistema de tipos no puede
+--   descartar (dividir por cero, desbordar). Son desenlaces legítimos:
+--   @runtime_error@, exit 4.
+-- * Estados atascados ('StuckVar', 'StuckOp', ...): imposibles en un programa
+--   bien tipado. Si ocurren, es un bug del motor (exit 70).
 module Engine.Eval
   ( Value (..)
+  , RuntimeError (..)
   , EvalError (..)
   , eval
   , evalProgram
   , evalErrorMessage
+  , runtimeErrorCode
+  , runtimeErrorMessage
   ) where
 
 import Engine.Env (Env, extend, lookupVar)
+import Engine.Number (decimalInRange, intInRange)
 import Engine.Types
 
 -- FP[Tipos algebraicos] FP[Funciones lambda]
@@ -20,27 +31,61 @@ data Value
   | VClosure Name Expr (Env Value)
   deriving (Show, Eq)
 
--- | Estados atascados: imposibles en un programa bien tipado.
+-- | Errores del programa en ejecución (@contracts/README.md@ §1).
+data RuntimeError
+  = DivisionByZero
+  | NumericOverflow
+  deriving (Show, Eq)
+
 data EvalError
-  = StuckVar Name
+  = Runtime RuntimeError
+  | StuckVar Name
   | StuckOp BinOp
+  | StuckUnOp UnOp
+  | StuckIn
   | StuckIf
   | StuckApp
   | StuckResult
   deriving (Show, Eq)
 
 -- FP[Recursión] FP[Igualaciones] FP[Funciones puras] FP[Inmutabilidad] FP[Condicionales] FP[Currificación]
--- | ρ ⊢ e ⇓ v, con llamada por valor: en 'App' se evalúa el argumento antes
--- de entrar al cuerpo. En 'IfThenElse' solo se evalúa la rama elegida.
+-- | ρ ⊢ e ⇓ v, con llamada por valor y de izquierda a derecha. En
+-- 'IfThenElse' solo se evalúa la rama elegida; @AND@ y @OR@ cortocircuitan
+-- como en Python, así una guarda (@x != 0 AND 10 / x > 2@) protege a la
+-- división; 'In' se detiene en la primera opción igual.
 eval :: Env Value -> Expr -> Either EvalError Value
 eval _ (Literal v) = Right (VBase v)
 eval env (Var x) = maybe (Left (StuckVar x)) Right (lookupVar x env)
-eval env (BinaryOp op l r) = do
-  a <- eval env l
-  b <- eval env r
-  case (a, b) of
-    (VBase x, VBase y) -> VBase . VBool <$> applyOp op x y
-    _ -> Left (StuckOp op)
+eval env (UnaryOp Not e) = do
+  v <- eval env e
+  case v of
+    VBase (VBool b) -> Right (VBase (VBool (not b)))
+    _ -> Left (StuckUnOp Not)
+eval env (BinaryOp op l r)
+  | op == And || op == Or = do
+      a <- bool =<< eval env l
+      -- FP[Evaluación perezosa]
+      if a == (op == Or) then Right (VBase (VBool a)) else VBase . VBool <$> (bool =<< eval env r)
+  | otherwise = do
+      a <- eval env l
+      b <- eval env r
+      case (a, b) of
+        (VBase x, VBase y) -> VBase <$> applyOp op x y
+        _ -> Left (StuckOp op)
+  where
+    bool (VBase (VBool b)) = Right b
+    bool _ = Left (StuckOp op)
+eval env (In v opts) = do
+  a <- base =<< eval env v
+  anyEqual a opts
+  where
+    base (VBase x) = Right x
+    base _ = Left StuckIn
+    anyEqual _ [] = Right (VBase (VBool False))
+    anyEqual a (o : os) = do
+      b <- base =<< eval env o
+      same <- maybe (Left StuckIn) Right (equal a b)
+      if same then Right (VBase (VBool True)) else anyEqual a os
 eval env (IfThenElse c t e) = do
   vc <- eval env c
   case vc of
@@ -56,19 +101,54 @@ eval env (App f a) = do
     VClosure x body closureEnv -> eval (extend x va closureEnv) body
     _ -> Left StuckApp
 
--- FP[Patrones constantes]
--- | Mismo reparto que 'Engine.TypeCheck.operandsOk': comparaciones sobre
--- Int, @==@ sobre un mismo tipo base, lógicos sobre Bool.
-applyOp :: BinOp -> LiteralValue -> LiteralValue -> Either EvalError Bool
-applyOp Gt (VInt a) (VInt b) = Right (a > b)
-applyOp Lt (VInt a) (VInt b) = Right (a < b)
-applyOp Gte (VInt a) (VInt b) = Right (a >= b)
-applyOp Lte (VInt a) (VInt b) = Right (a <= b)
-applyOp Eq a b
-  | literalType a == literalType b = Right (a == b)
-applyOp And (VBool a) (VBool b) = Right (a && b)
-applyOp Or (VBool a) (VBool b) = Right (a || b)
-applyOp op _ _ = Left (StuckOp op)
+-- FP[Patrones constantes] FP[Condicionales]
+-- | Mismo reparto que 'Engine.TypeCheck.binOpType'. La aritmética entre dos
+-- 'VInt' se hace en 'Integer' y se verifica el rango de 64 bits; con algún
+-- 'VDecimal' (o en @/@), en racionales exactos con su propio límite.
+applyOp :: BinOp -> LiteralValue -> LiteralValue -> Either EvalError LiteralValue
+applyOp op x y = case (x, y) of
+  (VInt a, VInt b)
+    | op `elem` [Add, Sub, Mul] -> intResult (intArith op (toInteger a) (toInteger b))
+    | op == Mod -> if b == 0 then runtime DivisionByZero else intResult (toInteger a `mod` toInteger b)
+  _
+    | op `elem` [Add, Sub, Mul, Div], Just a <- rational x, Just b <- rational y ->
+        if op == Div && b == 0 then runtime DivisionByZero else decimalResult (ratArith op a b)
+    | op `elem` [Gt, Lt, Gte, Lte], Just a <- rational x, Just b <- rational y ->
+        Right (VBool (compareWith op a b))
+    | op == Eq, Just same <- equal x y -> Right (VBool same)
+    | op == Neq, Just same <- equal x y -> Right (VBool (not same))
+    | otherwise -> Left (StuckOp op)
+  where
+    intArith Add = (+)
+    intArith Sub = (-)
+    intArith _ = (*)
+    ratArith Add = (+)
+    ratArith Sub = (-)
+    ratArith Mul = (*)
+    ratArith _ = (/)
+    compareWith Gt = (>)
+    compareWith Lt = (<)
+    compareWith Gte = (>=)
+    compareWith _ = (<=)
+    intResult n = if intInRange n then Right (VInt (fromInteger n)) else runtime NumericOverflow
+    decimalResult q = if decimalInRange q then Right (VDecimal q) else runtime NumericOverflow
+
+runtime :: RuntimeError -> Either EvalError a
+runtime = Left . Runtime
+
+rational :: LiteralValue -> Maybe Rational
+rational (VInt n) = Just (toRational n)
+rational (VDecimal q) = Just q
+rational _ = Nothing
+
+-- | Igualdad de @==@, @!=@ e 'In': exacta entre números (@1 == 1.0@), y entre
+-- valores del mismo tipo base. 'Nothing' si no son comparables (atasco).
+equal :: LiteralValue -> LiteralValue -> Maybe Bool
+equal x y = case (rational x, rational y) of
+  (Just a, Just b) -> Just (a == b)
+  _
+    | literalType x == literalType y -> Just (x == y)
+    | otherwise -> Nothing
 
 -- FP[Composición] FP[Polimorfismo]
 -- | Evalúa el programa con los datos del caso. El resultado debe ser un
@@ -80,9 +160,21 @@ evalProgram env (Program e) = do
     VBase lit -> Right lit
     VClosure {} -> Left StuckResult
 
+runtimeErrorCode :: RuntimeError -> String
+runtimeErrorCode DivisionByZero = "DIVISION_BY_ZERO"
+runtimeErrorCode NumericOverflow = "NUMERIC_OVERFLOW"
+
+runtimeErrorMessage :: RuntimeError -> String
+runtimeErrorMessage DivisionByZero = "división por cero"
+runtimeErrorMessage NumericOverflow =
+  "resultado fuera de rango: Int de 64 bits, o Decimal menor a 10^28 con denominador de a lo sumo 10^28"
+
 evalErrorMessage :: EvalError -> String
+evalErrorMessage (Runtime err) = runtimeErrorMessage err
 evalErrorMessage (StuckVar x) = "variable sin valor en tiempo de ejecución: " ++ x
 evalErrorMessage (StuckOp op) = "operandos inválidos para " ++ opSymbol op
+evalErrorMessage (StuckUnOp op) = "operando inválido para " ++ unOpSymbol op
+evalErrorMessage StuckIn = "IN con valores que no se pueden comparar"
 evalErrorMessage StuckIf = "la condición no es un booleano"
 evalErrorMessage StuckApp = "se aplicó un valor que no es función"
 evalErrorMessage StuckResult = "el resultado es una función"
