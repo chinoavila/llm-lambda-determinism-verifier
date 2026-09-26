@@ -11,6 +11,7 @@ module Engine.Json
   , parseProgram
   , envFromJSON
   , parseErrorCode
+  , parseErrorMessage
   , envErrorMessage
   ) where
 
@@ -46,6 +47,11 @@ parseErrorCode :: ParseError -> String
 parseErrorCode (MalformedJson _) = "MALFORMED_JSON"
 parseErrorCode (InvalidAst _) = "INVALID_AST"
 parseErrorCode (LiteralTypeMismatch _) = "LITERAL_TYPE_MISMATCH"
+
+parseErrorMessage :: ParseError -> String
+parseErrorMessage (MalformedJson msg) = msg
+parseErrorMessage (InvalidAst msg) = msg
+parseErrorMessage (LiteralTypeMismatch msg) = msg
 
 envErrorMessage :: EnvError -> String
 envErrorMessage EnvNotObject = "--env debe ser un objeto JSON"

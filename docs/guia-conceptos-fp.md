@@ -40,14 +40,16 @@ flowchart LR
     P -->|"Program"| S["Engine.TypeCheck<br/>scopeCheck"]
     E -->|"Γ"| S
     S --> T["Engine.TypeCheck<br/>typeOf"]
-    T -->|"tipo base"| OK["Programa verificado"]
-    P -->|"ParseError"| B["Bloqueado"]
+    T -->|"tipo base"| EV["Engine.Eval<br/>evalProgram"]
+    E -->|"valores"| EV
+    P -->|"ParseError"| B["Bloqueado<br/>exit 1, 2 o 3"]
     S -->|"CheckError"| B
     T -->|"CheckError"| B
-    OK -.->|"pendiente"| EV["Evaluador"]
+    EV -->|"LiteralValue"| X["Ejecutado<br/>exit 0"]
+    EV -.->|"EvalError: bug del motor"| I["exit 70"]
 ```
 
-Cada flecha es una función pura que devuelve `Either`: un error es un valor más, nunca una excepción.
+Cada flecha es una función pura que devuelve `Either`: un error es un valor más, nunca una excepción. `Engine.Cli.validate` encadena las etapas y `Engine.Cli.run` convierte el desenlace en el veredicto JSON y el código de salida del contrato; `Main` solo hace el IO alrededor de `run`.
 
 ## Mapa de conceptos
 
@@ -87,15 +89,15 @@ Cada flecha es una función pura que devuelve `Either`: un error es un valor má
 
 | Concepto | Etiqueta | Dónde | Qué observar | Test que lo muestra |
 |---|---|---|---|---|
-| Recursión | `FP[Recursión]` | `renderType`, `lookupVar`, `freeVars`, `typeOf` | Recursión estructural: cada llamada baja a un subárbol o a la cola, así que termina | `typeCheckSpec` |
+| Recursión | `FP[Recursión]` | `renderType`, `lookupVar`, `freeVars`, `typeOf`, `eval`, `parseArgs` | Recursión estructural: cada llamada baja a un subárbol o a la cola, así que termina. `eval` es la excepción instructiva: en `App` evalúa el cuerpo de la clausura, que no es un subárbol del nodo; termina porque el DSL está tipado (STLC normaliza) | `typeCheckSpec`, `evalSpec` |
 | Reducciones | `FP[Reducciones]` | `lookupVar` | Evaluar es reescribir usando las ecuaciones hasta llegar a un valor. Ver la traza más abajo | `envSpec` |
-| Funciones puras | `FP[Funciones puras]` | `parseProgram`, `typeOf`, `checkProgram` | Sin IO ni excepciones: el resultado depende solo de los argumentos, y eso permite probarlas con QuickCheck | Propiedades de `envSpec` y `typeCheckSpec` |
-| Inmutabilidad | `FP[Inmutabilidad]` | `extend`, caso `Lam` de `typeOf` | Agregar un binding crea un entorno nuevo; el anterior sigue intacto | "un binding nuevo oculta al anterior..." |
+| Funciones puras | `FP[Funciones puras]` | `parseProgram`, `typeOf`, `checkProgram`, `eval`, `validate` | Sin IO ni excepciones: el resultado depende solo de los argumentos, y eso permite probarlas con QuickCheck. Incluso la CLI entera (`run`) es pura: los tests la llaman sin lanzar un proceso | Propiedades de `envSpec`, `typeCheckSpec` y `evalSpec`; `cliSpec` |
+| Inmutabilidad | `FP[Inmutabilidad]` | `extend`, caso `Lam` de `typeOf`, `eval` | Agregar un binding crea un entorno nuevo; el anterior sigue intacto. Por eso una clausura puede guardar su entorno sin copiarlo | "un binding nuevo oculta al anterior...", "alcance léxico..." |
 | Funciones anónimas | `FP[Funciones anónimas]` | Instancias `FromJSON` (`\o -> ...`), tests | Lambdas de Haskell pasadas como argumento sin nombrarlas | "INVALID_AST ante formas..." |
-| Funciones lambda (DSL) | `FP[Funciones lambda]` | `Expr` (`Lam`, `App`), caso `Lam` de `typeOf` | Una lambda del DSL tiene tipo `τ → σ`; su cuerpo se tipa con Γ extendido con el parámetro | "funciones de orden superior dentro del DSL" |
+| Funciones lambda (DSL) | `FP[Funciones lambda]` | `Expr` (`Lam`, `App`), caso `Lam` de `typeOf`, `Value` (`VClosure`) | Una lambda del DSL tiene tipo `τ → σ`; su cuerpo se tipa con Γ extendido con el parámetro. Al evaluarse se convierte en una clausura: la lambda más el entorno donde se definió | "funciones de orden superior dentro del DSL", "alcance léxico..." |
 | Funciones de orden superior | `FP[Orden superior]` | `parseProgram` (`either`), `envFromJSON` (`traverse`) | Funciones que reciben funciones. `traverse` aplica una función que puede fallar y corta en el primer error | "rechaza valores y nombres..." |
-| Composición | `FP[Composición]` | `parseProgram` (`Left . classify`), `int` en los tests | `(.)` encadena funciones sin nombrar el argumento | `jsonSpec` |
-| Evaluación perezosa | `FP[Evaluación perezosa]` | `scopeCheck` | La lista de variables sin declarar solo se calcula hasta encontrar la primera, porque `case` solo mira la cabeza | "UNBOUND_VARIABLE con la primera variable..." |
+| Composición | `FP[Composición]` | `parseProgram` (`Left . classify`), `evalProgram`, `validate`, `int` en los tests | `(.)` encadena funciones sin nombrar el argumento. `validate` encadena las etapas parse → typecheck → eval: cada una recibe lo que produjo la anterior | `jsonSpec`, `fixturesSpec` |
+| Evaluación perezosa | `FP[Evaluación perezosa]` | `scopeCheck`, `run` | La lista de variables sin declarar solo se calcula hasta encontrar la primera, porque `case` solo mira la cabeza. Con `--print-gamma`, `run` nunca mira stdin, así que la lectura perezosa de `Main` nunca ocurre | "UNBOUND_VARIABLE con la primera variable...", "--print-gamma ... no lee stdin" |
 
 ## Reducción paso a paso
 
@@ -114,7 +116,7 @@ lookupVar "x" [("y", TInt), ("x", TBool)]
 = Just TBool                       -- 2.ª ecuación, guarda x == k ("x" == "x")
 ```
 
-Cada paso es una igualdad válida, y por eso se puede razonar sobre el código como en álgebra. Cuando exista el evaluador del DSL, la misma idea aparecerá en el otro nivel: la β-reducción `(λx. b) v → b[x := v]` reescribe programas del DSL.
+Cada paso es una igualdad válida, y por eso se puede razonar sobre el código como en álgebra. La misma idea aparece en el otro nivel, en el evaluador del DSL: la β-reducción `(λx. b) v ⇓ b` con `x ↦ v`. `eval` no sustituye texto; extiende el entorno de la clausura, que es equivalente y no requiere renombrar variables.
 
 ## Convenciones de nombres
 
@@ -126,7 +128,6 @@ Cada paso es una igualdad válida, y por eso se puede razonar sobre el código c
 
 | Concepto | Dónde va a aparecer |
 |---|---|
-| Composición funcional | Ensamblado del motor con `>=>`: `parseProgram >=> checkProgram >=> eval` |
 | Patrón perezoso `~(a, b)` | Todavía sin un uso natural en el motor |
 
 ## Cómo mantener esta guía

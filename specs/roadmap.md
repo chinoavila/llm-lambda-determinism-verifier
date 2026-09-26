@@ -22,7 +22,7 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 ## Carril A — `engine/` (C-1, Haskell)
 
 - [ ] Día 1-2: ADT del DSL según el contrato; instancia `FromJSON` que rechaza estructura malformada; typechecker con errores tipados (`Either`, nunca excepciones).
-- [ ] Día 3: evaluador *big-step* sobre AST ya verificado; CLI según el contrato acordado el Día 0.
+- [x] Día 3: evaluador *big-step* sobre AST ya verificado; CLI según el contrato acordado el Día 0.
 - [ ] Día 4: suite `hspec`/`QuickCheck` sobre las fixtures compartidas del Día 0, incluida una propiedad de *type soundness*.
 - [ ] Día 5: integración con el carril B (probar el binario real desde `pipeline/`, no un mock).
 

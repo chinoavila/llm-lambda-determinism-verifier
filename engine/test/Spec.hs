@@ -2,14 +2,19 @@
 
 module Main (main) where
 
-import Data.Aeson (Value, eitherDecode, withObject, (.:))
+import Data.Aeson (Value, encode, eitherDecode, withObject, (.:))
 import Data.Aeson.Types (Parser, parseEither)
 import qualified Data.ByteString.Builder as B
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy.Char8 as BL8
+import System.Exit (ExitCode (..))
 import Test.Hspec
 import Test.QuickCheck
 
+import Engine.Cli
 import Engine.Env (Env, emptyEnv, extend, lookupVar)
+import Engine.Eval (EvalError (..), eval, evalProgram)
+import qualified Engine.Eval as Eval
 import Engine.Json
 import Engine.TypeCheck
 import Engine.Types
@@ -19,6 +24,8 @@ main = hspec $ do
   envSpec
   jsonSpec
   typeCheckSpec
+  evalSpec
+  cliSpec
   fixturesSpec
 
 -- * Helpers
@@ -201,50 +208,162 @@ typeCheckSpec = describe "Engine.TypeCheck" $ do
     property $ \(n :: Int) b s ->
       map (typeOf emptyEnv) [int n, bool b, str s] === map Right [TInt, TBool, TString]
 
+-- * Evaluador
+
+evalSpec :: Spec
+evalSpec = describe "Engine.Eval" $ do
+  let caseEnv = [("credit_score", VInt 750), ("has_defaults", VBool False), ("customer_tier", VString "Gold")]
+      run' = evalProgram caseEnv . Program
+
+  it "un literal evalúa a sí mismo" $
+    property $ \(n :: Int) b s ->
+      map run' [int n, bool b, str s] === map Right [VInt n, VBool b, VString s]
+
+  it "las comparaciones coinciden con las de Haskell" $
+    property $ \(a :: Int) b ->
+      map (\op -> run' (BinaryOp op (int a) (int b))) [Gt, Lt, Gte, Lte, Eq]
+        === map (Right . VBool) [a > b, a < b, a >= b, a <= b, a == b]
+
+  it "== sobre cadenas y booleanos; AND / OR" $ do
+    run' (BinaryOp Eq (Var "customer_tier") (str "Gold")) `shouldBe` Right (VBool True)
+    run' (BinaryOp Eq (Var "has_defaults") (bool True)) `shouldBe` Right (VBool False)
+    run' (BinaryOp And (bool True) (Var "has_defaults")) `shouldBe` Right (VBool False)
+    run' (BinaryOp Or (bool False) (bool True)) `shouldBe` Right (VBool True)
+
+  it "IfThenElse elige la rama según la condición" $ do
+    run' (IfThenElse (BinaryOp Gt (Var "credit_score") (int 700)) (int 500) (int 0))
+      `shouldBe` Right (VInt 500)
+    run' (IfThenElse (Var "has_defaults") (str "no") (str "si")) `shouldBe` Right (VString "si")
+
+  -- FP[Funciones lambda] FP[Orden superior]
+  describe "Lam / App" $ do
+    let notB = Lam "b" TBool (IfThenElse (Var "b") (bool False) (bool True))
+        twice = Lam "f" (TArrow TBool TBool) (Lam "x" TBool (App (Var "f") (App (Var "f") (Var "x"))))
+    it "β-reducción con llamada por valor" $
+      run' (App (Lam "s" TInt (BinaryOp Gt (Var "s") (int 700))) (Var "credit_score"))
+        `shouldBe` Right (VBool True)
+    it "funciones de orden superior dentro del DSL" $ do
+      run' (App notB (Var "has_defaults")) `shouldBe` Right (VBool True)
+      run' (App (App twice notB) (Var "has_defaults")) `shouldBe` Right (VBool False)
+    it "el parámetro oculta a una variable del caso" $
+      run' (App (Lam "credit_score" TBool (Var "credit_score")) (bool True)) `shouldBe` Right (VBool True)
+    it "alcance léxico: una clausura usa el entorno donde se definió" $
+      -- (λf. (λx. f true) 99) (λb. x), con x = 5 en el caso: da 5, no 99.
+      evalProgram [("x", VInt 5)]
+        ( Program
+            ( App
+                (Lam "f" (TArrow TBool TInt) (App (Lam "x" TInt (App (Var "f") (bool True))) (int 99)))
+                (Lam "b" TBool (Var "x"))
+            )
+        )
+        `shouldBe` Right (VInt 5)
+
+  it "se atasca (sin excepciones) sobre programas mal tipados" $ do
+    eval [] (App (int 1) (int 2)) `shouldBe` Left StuckApp
+    eval [] (Var "x") `shouldBe` Left (StuckVar "x")
+    eval [] (BinaryOp Gt (bool True) (int 1)) `shouldBe` Left (StuckOp Gt)
+    eval [] (IfThenElse (int 1) (int 2) (int 3)) `shouldBe` Left StuckIf
+    evalProgram [] (Program (Lam "x" TInt (Var "x"))) `shouldBe` Left StuckResult
+    fmap isClosure (eval [] (Lam "x" TInt (Var "x"))) `shouldBe` Right True
+  where
+    isClosure (Eval.VClosure {}) = True
+    isClosure _ = False
+
+-- * CLI
+
+cliSpec :: Spec
+cliSpec = describe "Engine.Cli" $ do
+  describe "encodeVerdict" $ do
+    it "respeta el orden de claves de los ejemplos del contrato" $ do
+      encodeVerdict (Executed (VBool True))
+        `shouldBe` "{\"outcome\":\"executed\",\"stage\":\"execution\",\"result\":{\"type\":\"Bool\",\"value\":true},\"error\":null}\n"
+      encodeVerdict (BlockedCheck (BranchMismatch TInt TString))
+        `shouldBe` "{\"outcome\":\"blocked\",\"stage\":\"typecheck\",\"result\":null,\"error\":{\"code\":\"BRANCH_MISMATCH\",\"message\":\"then: Int, else: String\"}}\n"
+    it "los códigos de salida siguen la etapa" $
+      map verdictExit
+        [ Executed (VInt 1)
+        , BlockedParse (MalformedJson "")
+        , BlockedCheck (UnboundVariable "x")
+        , BlockedCheck (NotAFunction TInt)
+        ]
+        `shouldBe` [ExitSuccess, ExitFailure 1, ExitFailure 2, ExitFailure 3]
+
+  describe "run" $ do
+    it "sin --env, Γ es vacío" $
+      run [] (utf8 "{\"expr\":{\"type\":\"Literal\",\"value\":\"ok\",\"value_type\":\"String\"}}")
+        `shouldBe` Response ExitSuccess "{\"outcome\":\"executed\",\"stage\":\"execution\",\"result\":{\"type\":\"String\",\"value\":\"ok\"},\"error\":null}\n" ""
+
+    -- FP[Evaluación perezosa]
+    it "--print-gamma imprime Γ ordenado y no lee stdin" $
+      run ["--env", "{\"has_defaults\":true,\"credit_score\":1,\"customer_tier\":\"x\"}", "--print-gamma"]
+        (error "no se debe leer stdin")
+        `shouldBe` Response ExitSuccess "{\"credit_score\":\"Int\",\"customer_tier\":\"String\",\"has_defaults\":\"Bool\"}\n" ""
+
+    it "--print-gamma sin --env imprime {}" $
+      resStdout (run ["--print-gamma"] "") `shouldBe` "{}\n"
+
+    it "exit 64 con stdout vacío ante un error de uso" $
+      mapM_
+        ( \args -> do
+            let r = run args "{\"expr\":{\"type\":\"Literal\",\"value\":1,\"value_type\":\"Int\"}}"
+            (resExit r, resStdout r) `shouldBe` (ExitFailure 64, "")
+            resStderr r `shouldNotBe` ""
+        )
+        [ ["--verbose"]
+        , ["--env"]
+        , ["--env", "{\"a\":"]
+        , ["--env", "[1]"]
+        , ["--env", "{\"a\":1.5}"]
+        , ["--env", "{\"A\":1}"]
+        , ["--env", "{}", "--env", "{}"]
+        , ["--print-gamma", "--print-gamma"]
+        ]
+
 -- * Fixtures compartidas (contracts/fixtures/)
 
-data Fixture = Fixture
-  { fxEnv :: Value
-  , fxRaw :: String
-  , fxStage :: String
-  , fxOutcome :: String
-  , fxExpect :: Either String String -- ^ código de error o tipo del resultado
-  }
+-- | (exit, outcome, stage, Left código de error | Right result)
+type Summary = (Int, String, String, Either String Value)
 
 -- FP[Condicionales]
-fixtureParser :: Value -> Parser Fixture
-fixtureParser = withObject "Fixture" $ \o -> do
-  ev <- o .: "expected_verdict"
+expectedParser :: Value -> Parser Summary
+expectedParser = withObject "expected_verdict" $ \ev -> do
   outcome <- ev .: "outcome"
-  expect <-
+  detail <-
     if outcome == "executed"
-      then Right <$> ((ev .: "result") >>= (.: "type"))
+      then Right <$> ev .: "result"
       else Left <$> ev .: "error_code"
-  Fixture <$> o .: "env" <*> o .: "llm_raw" <*> ev .: "stage" <*> pure outcome <*> pure expect
+  (,,,) <$> ev .: "exit_code" <*> pure outcome <*> ev .: "stage" <*> pure detail
 
--- | Etapas estáticas del contrato: parse → scope → typecheck. Devuelve
--- @(etapa, Left código | Right tipo)@ para comparar con el veredicto esperado.
-staticVerdict :: Fixture -> (String, Either String String)
-staticVerdict fx = case envFromJSON (fxEnv fx) of
-  Left err -> ("usage", Left (envErrorMessage err))
-  Right env -> case parseProgram (utf8 (fxRaw fx)) of
-    Left err -> ("parse", Left (parseErrorCode err))
-    Right prog -> case checkProgram (map (fmap literalType) env) prog of
-      Left err -> (stageName (errorStage err), Left (errorCode err))
-      Right t -> ("execution", Right (renderType t))
+-- | Lo mismo, leído de la línea que el engine escribe en stdout.
+actualSummary :: Response -> Either String Summary
+actualSummary r = do
+  v <- eitherDecode (resStdout r)
+  flip parseEither v $ withObject "Verdict" $ \o -> do
+    outcome <- o .: "outcome"
+    detail <-
+      if outcome == "executed"
+        then Right <$> o .: "result"
+        else Left <$> ((o .: "error") >>= (.: "code"))
+    (,,,) (exitNumber (resExit r)) outcome <$> o .: "stage" <*> pure detail
   where
-    stageName Scope = "scope"
-    stageName TypeCheck = "typecheck"
+    exitNumber ExitSuccess = 0
+    exitNumber (ExitFailure n) = n
 
 -- FP[Listas por comprensión]
+-- | Cada fixture pasa por la CLI completa, igual que la va a invocar el
+-- orquestador: @engine --env '<env>' < llm_raw@.
 fixturesSpec :: Spec
 fixturesSpec = describe "contracts/fixtures" $
   mapM_ fixtureCase ["rule-00" ++ show n ++ ".json" | n <- [1 .. 7 :: Int]]
   where
     fixtureCase name = it name $ do
       bytes <- BL.readFile ("../contracts/fixtures/" ++ name)
-      fx <- either fail pure (eitherDecode bytes >>= parseEither fixtureParser)
-      staticVerdict fx `shouldBe` (fxStage fx, fxExpect fx)
-      -- Los casos 'executed' todavía no se evalúan: solo se exige que pasen
-      -- la verificación estática con el tipo del resultado esperado.
-      fxOutcome fx `shouldSatisfy` (`elem` ["executed", "blocked"])
+      (env, raw, expected) <- either fail pure $ do
+        v <- eitherDecode bytes
+        flip parseEither v $ withObject "Fixture" $ \o ->
+          (,,) <$> o .: "env" <*> o .: "llm_raw" <*> (o .: "expected_verdict" >>= expectedParser)
+      -- Las fixtures son ASCII, así que Char8 alcanza para pasar el env como argumento.
+      let r = run ["--env", BL8.unpack (encode (env :: Value))] (utf8 raw)
+      actualSummary r `shouldBe` Right expected
+      BL8.count '\n' (resStdout r) `shouldBe` 1
+      BL8.last (resStdout r) `shouldBe` '\n'
