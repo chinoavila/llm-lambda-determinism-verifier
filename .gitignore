@@ -21,3 +21,6 @@ Thumbs.db
 # Secretos y salidas de corridas (fuera de alcance de este repositorio; ver specs/mission.md)
 .env
 out/
+
+# Referencias sin trackeo
+prototype/referencias

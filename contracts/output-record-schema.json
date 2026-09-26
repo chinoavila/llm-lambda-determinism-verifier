@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://llm-lambda-determinism-verifier.local/contracts/output-record-schema.json",
-  "$comment": "Un objeto por línea (JSON Lines), uno por caso y grupo. Es registro, no medición: no incluye resultado esperado ni comparaciones. 'duration_ms' lo mide el orquestador desde que lanza el subproceso (engine o sandbox) hasta que termina; excluye la llamada al LLM y es null solo si outcome = llm_error.",
+  "$comment": "Un objeto por línea (JSON Lines), uno por caso y grupo. Un Result de tipo Decimal lleva el valor como texto decimal canónico (ver contracts/README.md §3), para no perder exactitud en un número JSON. Es registro, no medición: no incluye resultado esperado ni comparaciones. 'duration_ms' lo mide el orquestador desde que lanza el subproceso (engine o sandbox) hasta que termina; excluye la llamada al LLM y es null solo si outcome = llm_error.",
   "title": "Registro de salida del pipeline",
   "type": "object",
   "properties": {
@@ -41,7 +41,7 @@
     "Result": {
       "type": "object",
       "properties": {
-        "type": { "enum": ["Int", "Bool", "String", "Other"] },
+        "type": { "enum": ["Int", "Decimal", "Bool", "String", "Other"] },
         "value": {}
       },
       "required": ["type", "value"],

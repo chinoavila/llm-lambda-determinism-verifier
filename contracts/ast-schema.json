@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://llm-lambda-determinism-verifier.local/contracts/ast-schema.json",
-  "$comment": "Programa STLC que emite el LLM (grupo Tratamiento) y que engine/ deserializa. Solo usa anyOf/enum/$ref para ser compatible con structured output estricto. La consistencia entre 'value' y 'value_type' de Literal NO se expresa acá: la valida el engine (LITERAL_TYPE_MISMATCH). Reglas de tipado y códigos de error en contracts/README.md.",
+  "$comment": "Programa STLC que emite el LLM (grupo Tratamiento) y que engine/ deserializa. Solo usa anyOf/enum/$ref para ser compatible con structured output estricto. Lo que no se puede expresar así lo valida el engine: la consistencia entre 'value' y 'value_type' de Literal (LITERAL_TYPE_MISMATCH), los límites numéricos y que 'options' de In no esté vacío (INVALID_AST). Reglas de tipado y códigos de error en contracts/README.md.",
   "title": "Programa STLC emitido por el LLM",
   "type": "object",
   "properties": { "expr": { "$ref": "#/$defs/Expr" } },
@@ -9,7 +9,7 @@
   "additionalProperties": false,
   "$defs": {
     "Name": { "type": "string", "pattern": "^[a-z_][A-Za-z0-9_]*$" },
-    "BaseType": { "type": "string", "enum": ["Int", "Bool", "String"] },
+    "BaseType": { "type": "string", "enum": ["Int", "Decimal", "Bool", "String"] },
     "Type": {
       "anyOf": [
         { "$ref": "#/$defs/BaseType" },
@@ -28,7 +28,9 @@
       "anyOf": [
         { "$ref": "#/$defs/Literal" },
         { "$ref": "#/$defs/Var" },
+        { "$ref": "#/$defs/UnaryOp" },
         { "$ref": "#/$defs/BinaryOp" },
+        { "$ref": "#/$defs/In" },
         { "$ref": "#/$defs/IfThenElse" },
         { "$ref": "#/$defs/Lam" },
         { "$ref": "#/$defs/App" }
@@ -38,7 +40,7 @@
       "type": "object",
       "properties": {
         "type": { "type": "string", "enum": ["Literal"] },
-        "value": { "anyOf": [{ "type": "integer" }, { "type": "boolean" }, { "type": "string" }] },
+        "value": { "anyOf": [{ "type": "number" }, { "type": "boolean" }, { "type": "string" }] },
         "value_type": { "$ref": "#/$defs/BaseType" }
       },
       "required": ["type", "value", "value_type"],
@@ -57,11 +59,31 @@
       "type": "object",
       "properties": {
         "type": { "type": "string", "enum": ["BinaryOp"] },
-        "op": { "type": "string", "enum": [">", "<", ">=", "<=", "==", "AND", "OR"] },
+        "op": { "type": "string", "enum": ["+", "-", "*", "/", "%", ">", "<", ">=", "<=", "==", "!=", "AND", "OR"] },
         "left": { "$ref": "#/$defs/Expr" },
         "right": { "$ref": "#/$defs/Expr" }
       },
       "required": ["type", "op", "left", "right"],
+      "additionalProperties": false
+    },
+    "UnaryOp": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["UnaryOp"] },
+        "op": { "type": "string", "enum": ["NOT"] },
+        "operand": { "$ref": "#/$defs/Expr" }
+      },
+      "required": ["type", "op", "operand"],
+      "additionalProperties": false
+    },
+    "In": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["In"] },
+        "value": { "$ref": "#/$defs/Expr" },
+        "options": { "type": "array", "items": { "$ref": "#/$defs/Expr" } }
+      },
+      "required": ["type", "value", "options"],
       "additionalProperties": false
     },
     "IfThenElse": {

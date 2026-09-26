@@ -18,7 +18,7 @@
 | Tests | `hspec` + `QuickCheck` |
 | Interfaz | CLI: JSON por `stdin` → veredicto JSON por `stdout`, códigos de salida estables |
 
-**Gramática del DSL:** `Literal (Int | Bool | String)`, `Var`, `BinaryOp (> < >= <= == AND OR)`, `IfThenElse`, `Lam`, `App`. No agregar constructores que los tests no requieran.
+**Gramática del DSL:** `Literal (Int | Decimal | Bool | String)`, `Var`, `UnaryOp (NOT)`, `BinaryOp (+ - * / % > < >= <= == != AND OR)`, `In`, `IfThenElse`, `Lam`, `App`. Semántica y tipado en `contracts/README.md` §1; motivos de cada agregado en `docs/dsl-extension.md`. No agregar constructores que los tests no requieran, ni otros agregados sin la misma justificación.
 
 ## 2. C-2 — Orquestador del pipeline (Python)
 

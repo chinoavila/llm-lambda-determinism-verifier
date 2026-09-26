@@ -49,11 +49,11 @@ Los tres grupos de un mismo caso usan el mismo modelo, y el LLM siempre responde
 Un cálculo lambda simplemente tipado, mínimo y cerrado al dominio de reglas de negocio:
 
 ```
-Tipos        τ ::= Int | Bool | String | τ → τ
-Expresiones  e ::= Literal | Var | BinaryOp | IfThenElse | Lam | App
+Tipos        τ ::= Int | Decimal | Bool | String | τ → τ
+Expresiones  e ::= Literal | Var | UnaryOp | BinaryOp | In | IfThenElse | Lam | App
 ```
 
-Los constructores del ADT son la frontera: lo que no se puede escribir en el DSL, el LLM no lo puede producir.
+Los constructores del ADT son la frontera: lo que no se puede escribir en el DSL, el LLM no lo puede producir. Incluye aritmética exacta con `Decimal`, `NOT`, `!=` e `IN`; ver [`docs/dsl-extension.md`](docs/dsl-extension.md).
 
 ## Alcance
 
