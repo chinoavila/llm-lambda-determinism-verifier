@@ -1,0 +1,47 @@
+# Configuración del cliente LLM (ver specs/llm-client.md).
+# Se elige con la variable LLM_CONFIG (default: ./llm.toml, relativo a pipeline/).
+# Sin secretos: cada endpoint nombra la variable de entorno con su clave (.env).
+#
+# Cualquier API OpenAI-compatible sirve cambiando solo base_url/model/api_key_env:
+#   Groq       https://api.groq.com/openai/v1
+#   OpenAI     https://api.openai.com/v1
+#   Anthropic  https://api.anthropic.com/v1           (endpoint compatible con OpenAI)
+#   Ollama     http://host.docker.internal:11434/v1   (sin api_key_env)
+# `params` se envía tal cual en el cuerpo del request (temperature, seed, etc.).
+# `model`, `messages`, `response_format` y `stream` los fija el cliente.
+
+[balancer]
+reserve_tokens = 2000          # tokens estimados por request; margen mínimo de TPM para asignar un caso nuevo
+min_remaining_requests = 1     # margen mínimo de requests restantes (en Groq, x-ratelimit-*-requests es diario)
+max_wait_seconds = 90          # espera máxima por un 429 o para asignar un caso; si se supera, se registra quota_exhausted
+max_transport_retries = 3      # reintentos ante red/timeout/5xx (backoff exponencial)
+backoff_base_seconds = 2.0
+request_timeout_seconds = 60
+
+# Pool Groq plan Free (docs de Groq consultadas el 2026-09-25):
+# los tres modelos: 30 RPM, 1K RPD, 8K TPM, 200K TPD.
+
+[[endpoints]]
+name = "groq-gpt-oss-120b"
+base_url = "https://api.groq.com/openai/v1"
+api_key_env = "GROQ_API_KEY"
+model = "openai/gpt-oss-120b"
+priority = 1
+params = {}
+
+[[endpoints]]
+name = "groq-gpt-oss-20b"
+base_url = "https://api.groq.com/openai/v1"
+api_key_env = "GROQ_API_KEY"
+model = "openai/gpt-oss-20b"
+priority = 2
+params = {}
+
+# Modelo en preview: Groq puede retirarlo sin aviso; si desaparece, el health check lo excluye.
+[[endpoints]]
+name = "groq-qwen3.8-27b"
+base_url = "https://api.groq.com/openai/v1"
+api_key_env = "GROQ_API_KEY"
+model = "qwen/qwen3.8-27b"
+priority = 3
+params = {}

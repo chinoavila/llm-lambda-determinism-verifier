@@ -18,6 +18,8 @@ services:
       - ./contracts:/workspace/contracts:ro
       - ./out:/workspace/out
     working_dir: /workspace/pipeline
-    environment:
-      - LLM_API_KEY=${LLM_API_KEY:-}
+    # Las claves las nombra llm.toml (api_key_env), así que se pasa .env entero.
+    env_file:
+      - path: .env
+        required: false
     command: ["sh", "-c", "mypy . && pytest"]

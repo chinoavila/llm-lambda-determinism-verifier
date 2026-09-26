@@ -18,11 +18,11 @@ Tres componentes, y nada más:
 
 ```mermaid
 flowchart LR
-    NL["Regla en lenguaje natural"] --> LLM["LLM"]
+    NL["Regla en lenguaje natural"] --> LLM["LLM<br/>API OpenAI-compatible<br/>con balanceo de modelos"]
 
-    LLM -->|"JSON AST"| T["Tratamiento<br/>motor STLC en Haskell"]
-    LLM -->|"código Python"| B1["Baseline 1<br/>sin validación"]
-    LLM -->|"código Python"| B2["Baseline 2<br/>ast + mypy"]
+    LLM -->|"JSON: AST"| T["Tratamiento<br/>motor STLC en Haskell"]
+    LLM -->|"JSON: código Python"| B1["Baseline 1<br/>sin validación"]
+    LLM -->|"JSON: código Python"| B2["Baseline 2<br/>ast + mypy"]
 
     T --> TC{"typecheck<br/>+ scopecheck"}
     TC -->|"falla"| BLOQ["Bloqueado antes de ejecutar"]
@@ -41,6 +41,8 @@ flowchart LR
 - **Baseline 2 (control estructurado)** — el LLM emite Python que pasa por análisis estático del ecosistema (`ast` + `mypy`) antes de ejecutarse.
 
 El Baseline 2 existe para que se pueda distinguir el efecto de "agregar validación estática" del efecto del enfoque funcional tipado. Sin los tres, el pipeline está incompleto.
+
+Los tres grupos de un mismo caso usan el mismo modelo, y el LLM siempre responde en modo JSON (los baselines reciben el código como `{"code": "..."}`). El proveedor se elige por configuración; ver [`docs/llm-client.md`](docs/llm-client.md).
 
 ### El DSL
 
@@ -63,6 +65,7 @@ Está terminado cuando alguien puede clonar el repositorio, configurar credencia
 
 - **Haskell** (GHC ≥ 9.4, GHC2021) + Cabal — motor de validación (`engine/`). `aeson` para deserializar, `hspec` + `QuickCheck` para tests.
 - **Python** 3.12+ — orquestador y baselines (`pipeline/`). `mypy --strict`, `pytest`.
+- **LLM** — cualquier API OpenAI-compatible, configurada en `pipeline/llm.toml`, con balanceo entre modelos según su cuota. Para el experimento: modelos gratuitos de Groq.
 - **Docker Compose** — entorno de laboratorio: un servicio por componente, sin instalar toolchains localmente.
 
 ## Estructura del repositorio
@@ -71,6 +74,7 @@ Está terminado cuando alguien puede clonar el repositorio, configurar credencia
 ├── README.md              # este archivo
 ├── AGENTS.md              # reglas mínimas de trabajo (humanos y agentes de IA)
 ├── specs/                 # misión, stack, roadmap y estado actual vs. la guía de entrega
+├── docs/                  # decisiones de arquitectura para humanos, un .md por asunto
 ├── contracts/             # JSON Schema compartido entre engine/ y pipeline/ (acordar Día 0)
 ├── engine/                # C-1: motor de validación STLC (Haskell)
 ├── pipeline/              # C-2 orquestador + C-3 baselines (Python)
@@ -82,7 +86,8 @@ Está terminado cuando alguien puede clonar el repositorio, configurar credencia
 ## Cómo empezar
 
 ```powershell
-# Copiar credenciales del LLM (no commitear .env)
+# Copiar credenciales del LLM (no commitear .env) y completar GROQ_API_KEY
+# (u otras claves, si cambiás de proveedor en pipeline/llm.toml)
 Copy-Item .env.example .env
 
 # Correr el build y los gates de los dos componentes

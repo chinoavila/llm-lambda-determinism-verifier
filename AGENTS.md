@@ -2,6 +2,14 @@
 
 Instrucciones mínimas para trabajar en este repo, sean humanos o agentes de IA (Copilot, Claude, etc.).
 
+`specs/` es normativo y para agentes (texto plano, sin diagramas ni tablas complejas). Las decisiones de arquitectura para humanos van en [`docs/`](docs/), un `.md` corto por asunto. En `docs/`, cuando ayude, incluir diagramas Mermaid (flujos, arquitectura, secuencias) y verificar su sintaxis después de escribirlos:
+
+```powershell
+docker run --rm -v "${PWD}:/data" minlag/mermaid-cli -i docs/<archivo>.md -o /tmp/out.md
+```
+
+Si el comando falla, el diagrama está roto y hay que corregirlo.
+
 ## Qué es esto
 
 MVP de laboratorio: un pipeline que valida reglas de negocio generadas por un LLM usando un motor STLC en Haskell, contra dos baselines en Python. Ver [`README.md`](README.md) para el diseño y [`specs/`](specs/) para alcance, stack y plan de la semana. Ver [`specs/status.md`](specs/status.md) para el estado actual contra la guía de entrega de la cátedra.

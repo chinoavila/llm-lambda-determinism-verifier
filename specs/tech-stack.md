@@ -27,6 +27,7 @@
 | Lenguaje | Python 3.12+ |
 | Entorno | `pipeline/pyproject.toml` (deps + config de `mypy`/`pytest`), instalado dentro del contenedor Docker |
 | Contrato con el LLM | JSON Schema del AST (`contracts/ast-schema.json`), para habilitar *structured output* |
+| Cliente LLM | Agnóstico, OpenAI-compatible por `base_url`, con balanceo de modelos — ver [`llm-client.md`](./llm-client.md) |
 | Integración con C-1 | Subproceso: escribir JSON a `stdin` del binario Haskell, leer el veredicto de `stdout` |
 | Registro de salida | JSON Lines según `contracts/output-record-schema.json`: un renglón por caso, grupo, etapa alcanzada, desenlace, error si lo hubo |
 | Tipado | *Type hints* obligatorios; `mypy --strict` limpio |
