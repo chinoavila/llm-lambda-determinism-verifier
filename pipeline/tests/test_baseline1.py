@@ -87,6 +87,18 @@ EXPECTED: dict[str, tuple[str, Any]] = {
     "rule-005": ("executed", {"type": "String", "value": "Rejected"}),
     "rule-006": ("executed", {"type": "Bool", "value": True}),
     "rule-007": ("runtime_error", "SyntaxError"),
+    # Decimal <= float se puede comparar en Python.
+    "rule-008": ("executed", {"type": "Bool", "value": True}),
+    "rule-009": ("executed", {"type": "Bool", "value": True}),
+    "rule-010": ("executed", {"type": "Bool", "value": True}),
+    "rule-011": ("runtime_error", "ZeroDivisionError"),
+    "rule-012": ("executed", {"type": "Bool", "value": False}),
+    # El engine lo bloquea (% sobre Decimal); Python lo ejecuta.
+    "rule-013": ("executed", {"type": "Bool", "value": False}),
+    # int / int en Python es float: no exacto, se registra como Other.
+    "rule-014": ("executed", {"type": "Other", "value": "833.3333333333334"}),
+    # El engine lo bloquea (700.5 declarado Int); en Python no hay value_type.
+    "rule-015": ("executed", {"type": "Bool", "value": True}),
 }
 
 

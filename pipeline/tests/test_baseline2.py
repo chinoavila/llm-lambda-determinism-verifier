@@ -11,6 +11,7 @@ import pytest
 
 from pipeline.baselines import baseline2
 from pipeline.baselines.baseline2 import (
+    PREAMBLE_LINES,
     check_signature,
     data_preamble,
     run_baseline_2,
@@ -44,9 +45,22 @@ def raw(code: str) -> str:
 
 def test_data_preamble_from_gamma() -> None:
     assert data_preamble(GAMMA) == (
+        "from decimal import Decimal\n"
         "from typing import TypedDict\n"
         "Data = TypedDict(\"Data\", {'credit_score': int, 'customer_tier': str, 'has_defaults': bool})\n"
     )
+
+
+def test_data_preamble_maps_decimal() -> None:
+    preamble = data_preamble({"cuota": "Decimal", "n": "Int"})
+    assert "'cuota': Decimal, 'n': int" in preamble
+    assert preamble.count("\n") == PREAMBLE_LINES
+
+
+def test_mypy_rejects_decimal_times_float() -> None:
+    code = "def evaluate_rule(data: Data) -> Decimal:\n    return data['cuota'] * 0.30\n"
+    result = run_mypy(data_preamble({"cuota": "Decimal"}) + code)
+    assert result is not None and result[0] == 1 and "Unsupported operand" in result[1]
 
 
 def test_data_preamble_accepts_python_keywords() -> None:
@@ -154,6 +168,9 @@ TYPED_CODE = {
     "rule-005": "def evaluate_rule(data: Data) -> int | str:\n    if data['credit_score'] > 700:\n        return 500\n    else:\n        return \"Rejected\"\n",
     "rule-006": "def evaluate_rule(data: Data) -> bool:\n    return (lambda s: s > 700)(data['credit_score'])\n",
     "rule-007": "def evaluate_rule(data: Data) -> bool:\n    return data['credit_score'] >\n",
+    "rule-008": "def evaluate_rule(data: Data) -> bool:\n    return data['cuota'] <= data['ingreso_mensual'] * Decimal('0.30')\n",
+    "rule-013": "def evaluate_rule(data: Data) -> bool:\n    return data['monto'] % 100 == 0\n",
+    "rule-014": "def evaluate_rule(data: Data) -> Decimal:\n    return data['monto'] / Decimal(12)\n",
 }
 
 EXPECTED: dict[str, tuple[str, str, Any]] = {
@@ -165,6 +182,11 @@ EXPECTED: dict[str, tuple[str, str, Any]] = {
     "rule-005": ("executed", "execution", {"type": "String", "value": "Rejected"}),
     "rule-006": ("executed", "execution", {"type": "Bool", "value": True}),
     "rule-007": ("blocked", "parse", "SyntaxError"),
+    "rule-008": ("executed", "execution", {"type": "Bool", "value": True}),
+    # Decimal % int es válido en Python y mypy lo acepta; el engine lo bloquea (OPERAND_MISMATCH).
+    "rule-013": ("executed", "execution", {"type": "Bool", "value": False}),
+    # Mismo texto canónico que el engine para el mismo valor.
+    "rule-014": ("executed", "execution", {"type": "Decimal", "value": "833.3333333333333333333333333"}),
 }
 
 

@@ -42,18 +42,22 @@ flowchart LR
 - **`IN` sin tipo lista.** `options` es una lista escrita en el AST, no un valor: no hace falta un tipo `List τ`, ni en Γ ni en `Lam`.
 - **Γ se deduce por valor:** un número no entero es `Decimal`, uno entero es `Int` (también `5000.0`). No depende de cómo lo serialice cada herramienta.
 
-## Qué cambia en cada componente
+## Qué cambió en cada componente
 
-- **`contracts/`:** esquema del AST, reglas de tipado, errores de ejecución, deducción de Γ, código de salida 4 y tipo `Decimal` en el resultado. Hay que avisar a los otros dos desarrolladores.
-- **`engine/`:** tipos, parser, typechecker, evaluador y CLI.
+- **`contracts/`:** esquema del AST, reglas de tipado, errores de ejecución, deducción de Γ, código de salida 4 y tipo `Decimal` en el resultado.
+- **`engine/`:** tipos, parser, typechecker, evaluador y CLI. El módulo `Engine.Number` reúne los límites, la lectura exacta de números JSON y el texto canónico de `Decimal`.
 - **`pipeline/`:**
-  - el código de salida 4 en `run_engine`;
-  - `Decimal` en el sandbox y en el `TypedDict` de Baseline 2;
-  - valores `Decimal` exactos al leer y pasar `env`;
-  - aclaraciones de semántica en los prompts.
-- **Fixtures:** casos nuevos para cada construcción y para los errores en ejecución.
+  - `run_engine` acepta el código de salida 4 y copia el veredicto `runtime_error`;
+  - el sandbox registra un `decimal.Decimal` como `Decimal` con el mismo texto canónico que el engine, y entrega los decimales de `env` como `decimal.Decimal` exactos;
+  - Baseline 2 tipa los `Decimal` de Γ como `decimal.Decimal` en `Data`;
+  - el corpus se lee con los decimales exactos y se rechaza un valor que no pueda viajar sin pérdida;
+  - los tres prompts dicen lo mismo sobre los tipos, y cada uno agrega lo propio de su lenguaje (semántica del DSL o tipos de Python).
+- **Fixtures:** de `rule-008` a `rule-015`, una por construcción nueva y por error en ejecución.
 
 ## Cosas a tener en cuenta
 
 - Si una variable debe ser `Decimal` en todos los escenarios de una regla, sus valores tienen que ser no enteros. Si no, Γ cambia entre escenarios.
 - `1 == 1.0` es `true`, pero el tipo del resultado sí cambia: `2 * 3` es `Int` y `2 * 3.0` es `Decimal`.
+- **El DSL y Python no redondean igual en todos los casos.** El engine calcula exacto y redondea solo al escribir el resultado. `decimal` de Python redondea a 28 dígitos en cada operación. Solo difieren si un resultado que no termina (`10 / 3`) se sigue usando en otra cuenta. Para las reglas del corpus, conviene evitar esas cadenas o tenerlo en cuenta al comparar.
+- **En Python, `int / int` da `float`.** Si el modelo escribe `monto / 12` con `monto` entero, Baseline 1 devuelve un `float` que se registra como `Other` (por ejemplo, `rule-014`), mientras que el Tratamiento devuelve un `Decimal` exacto. Es una diferencia real entre los lenguajes, no del pipeline.
+- **`Decimal` con `float` falla en Python.** `data['cuota'] * 0.30` lanza `TypeError` al ejecutar en Baseline 1, y mypy lo rechaza antes en Baseline 2. El prompt de los baselines avisa que los decimales llegan como `decimal.Decimal`.

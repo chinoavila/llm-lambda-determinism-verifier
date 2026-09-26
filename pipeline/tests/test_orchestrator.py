@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from decimal import Decimal
 import shutil
 import sys
 from pathlib import Path
@@ -22,6 +23,8 @@ from pipeline.orchestrator import (
     append_jsonl,
     case_gamma,
     load_case,
+    read_case,
+    build_messages,
     per_scenario,
     print_gamma,
     route_call,
@@ -407,3 +410,45 @@ def test_append_jsonl_writes_one_line_per_record_and_appends(tmp_path: Path) -> 
     assert "ñ" in lines[2]
     for line in lines[:4]:
         assert_record_shape(json.loads(line))
+
+
+# --- Decimales exactos del corpus ---------------------------------------------
+
+
+def test_read_case_keeps_decimals_exact(tmp_path: Path) -> None:
+    path = tmp_path / "rule.json"
+    path.write_text(
+        '{"case_id": "c", "description": "d", "scenarios": [{"scenario_id": "a", "env": {"cuota": 1250.75, "n": 5000}}]}',
+        encoding="utf-8",
+    )
+    case = read_case(path)
+    env = case.scenarios[0].env
+    assert env == {"cuota": 1250.75, "n": 5000}
+    assert json.dumps(env) == '{"cuota": 1250.75, "n": 5000}'  # lo que reciben engine y sandbox
+
+
+def test_load_case_rejects_decimals_that_would_lose_digits() -> None:
+    data = {"case_id": "c", "description": "d", "scenarios": [{"scenario_id": "a", "env": {"x": Decimal("0.12345678901234567890123")}}]}
+    with pytest.raises(CaseError, match="sin pérdida"):
+        load_case(data)
+
+
+def test_read_case_rejects_non_json(tmp_path: Path) -> None:
+    path = tmp_path / "rule.json"
+    path.write_text("{roto", encoding="utf-8")
+    with pytest.raises(CaseError, match="no es JSON"):
+        read_case(path)
+
+
+# --- Prompts: misma información de tipos en los tres grupos --------------------
+
+
+def test_prompts_share_types_note_and_add_language_specifics() -> None:
+    gamma = {"cuota": "Decimal"}
+    systems = {g: build_messages(g, "regla", gamma)[0]["content"] for g in GROUPS}
+    for text in systems.values():
+        assert "Decimal un número decimal exacto" in text
+    assert "/ siempre da Decimal" in systems["treatment"]
+    assert "decimal.Decimal" in systems["baseline1"] and "decimal.Decimal" in systems["baseline2"]
+    assert "decimal.Decimal" not in systems["treatment"]
+    assert "'cuota': Decimal" in systems["baseline2"]

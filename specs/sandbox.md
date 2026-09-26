@@ -35,7 +35,8 @@ Código: `pipeline/pipeline/baselines/sandbox.py` (cliente, corre en `pipeline`)
   - `exception`, con `name` y `message`;
   - `timeout`;
   - `crash`, si el hijo terminó sin resultado.
-- `type`: `Bool` si es `bool` (se chequea antes que `int`), `Int`, `String`, o `Other` con `value = repr(x)`.
+- `type`: `Bool` si es `bool` (se chequea antes que `int`), `Int`, `Decimal` si es un `decimal.Decimal` finito (con el texto canónico de contracts/README.md §3: `format(x.normalize(), "f")`, y `"0"` para cero), `String`, o `Other` con `value = repr(x)`. Un `float` es `Other`: no es exacto.
+- El hijo lee el job con `json.load(..., parse_float=Decimal)`: los números no enteros de `env` llegan como `decimal.Decimal` exactos; los enteros, como `int`.
 - Si falta la función pedida, el resultado es `exception` con `name: "NameError"`. `SystemExit` y `KeyboardInterrupt` también se reportan como `exception`.
 - Si no llega resultado en `timeout` + 30 s, el cliente borra el job y lanza `SandboxError`. Es una falla del sistema: abortar la corrida, no registrar.
 - El cliente devuelve el resultado crudo. El mapeo a `outcome`, `stage` y `error` del registro lo hace cada baseline.
@@ -62,10 +63,10 @@ Código: `pipeline/pipeline/baselines/sandbox.py` (cliente, corre en `pipeline`)
 
 Código: `pipeline/pipeline/baselines/baseline2.py`. Runner: `run_baseline_2(llm_raw, env, gamma)`.
 
-- `data` se tipa con un `TypedDict` llamado `Data`, armado desde Γ (el del engine, nunca deducido en Python). Tipos: `Int` → `int`, `Bool` → `bool`, `String` → `str`.
-- `data_preamble(gamma)` genera `from typing import TypedDict` y `Data = TypedDict("Data", {...})`, en sintaxis funcional porque una clave de Γ puede ser palabra reservada de Python. Claves en orden alfabético.
+- `data` se tipa con un `TypedDict` llamado `Data`, armado desde Γ (el del engine, nunca deducido en Python). Tipos: `Int` → `int`, `Decimal` → `decimal.Decimal`, `Bool` → `bool`, `String` → `str`.
+- `data_preamble(gamma)` genera `from decimal import Decimal`, `from typing import TypedDict` y `Data = TypedDict("Data", {...})`, en sintaxis funcional porque una clave de Γ puede ser palabra reservada de Python. Claves en orden alfabético.
 - El prompt de `baseline2` muestra ese preámbulo, pide `evaluate_rule(data: Data)` con anotaciones completas que pasen `mypy --strict`, y avisa que `Data` ya está definido.
-- El preámbulo se antepone al código del LLM, tanto para mypy como para ejecutar. El código del LLM no se modifica. Los números de línea de los mensajes de mypy incluyen las 2 líneas del preámbulo.
+- El preámbulo se antepone al código del LLM, tanto para mypy como para ejecutar. El código del LLM no se modifica. Los números de línea de los mensajes de mypy incluyen las 3 líneas del preámbulo (`PREAMBLE_LINES`; `Decimal` se importa siempre para que el largo sea fijo).
 - Etapas, en orden. La primera que falla bloquea y se registra con `outcome: "blocked"`:
   - parse: la respuesta no es un objeto JSON con `code` string → `InvalidResponse`.
   - parse: `ast.parse` falla → nombre de la excepción (`SyntaxError`, `ValueError`, `RecursionError`, `MemoryError`).

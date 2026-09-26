@@ -18,6 +18,7 @@ import time
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Literal, Protocol, TypedDict
 
@@ -107,6 +108,33 @@ class Case:
     scenarios: tuple[Scenario, ...]
 
 
+def read_case(path: Path) -> Case:
+    """Lee un caso del corpus. Los números no enteros se leen como `Decimal` para verificar
+    que se puedan pasar sin pérdida al engine y al sandbox (ver `load_case`)."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"), parse_float=Decimal)
+    except ValueError as e:
+        raise CaseError(f"{path}: no es JSON: {e}") from e
+    if not isinstance(data, dict):
+        raise CaseError(f"{path}: el caso debe ser un objeto JSON")
+    return load_case(data)
+
+
+def exact_value(value: object, where: str) -> object:
+    """Un `Decimal` del corpus pasa a `float` solo si su texto sobrevive sin cambios.
+
+    El engine y el sandbox reciben `env` como JSON: `json.dumps` escribe un `float` con su
+    `repr` más corto, y del otro lado se vuelve a leer como decimal exacto. Si ese viaje
+    cambiara el valor (más de ~15 dígitos significativos), el corpus es inválido.
+    """
+    if not isinstance(value, Decimal):
+        return value
+    as_float = float(value)
+    if not value.is_finite() or Decimal(repr(as_float)) != value:
+        raise CaseError(f"{where}: {value} no se puede pasar sin pérdida; usá menos dígitos")
+    return as_float
+
+
 def load_case(data: Mapping[str, Any]) -> Case:
     """Caso de entrada según contracts/case-schema.json; ignora los campos del corpus."""
     case_id, description, scenarios = (
@@ -126,7 +154,8 @@ def load_case(data: Mapping[str, Any]) -> Case:
         env = s.get("env") if isinstance(s, dict) else None
         if not isinstance(sid, str) or not sid or not isinstance(env, dict):
             raise CaseError(f"{case_id}: cada escenario necesita scenario_id y env: {s!r}")
-        parsed.append(Scenario(sid, env))
+        exact = {k: exact_value(v, f"{case_id}/{sid}/{k}") for k, v in env.items()}
+        parsed.append(Scenario(sid, exact))
     ids = [s.scenario_id for s in parsed]
     if len(set(ids)) != len(ids):
         raise CaseError(f"{case_id}: scenario_id repetido en {ids}")
@@ -254,10 +283,29 @@ def run_treatment(
     return run_engine(llm_raw, env)
 
 
+TYPES_NOTE = (
+    "Tipos de los datos: Int es un entero, Decimal un número decimal exacto (montos, "
+    "porcentajes), Bool un booleano y String un texto."
+)
+DSL_SEMANTICS = (
+    "En el DSL, Int y Decimal se pueden combinar en aritmética y comparaciones (el resultado "
+    "es Decimal); / siempre da Decimal; % solo entre Int; AND y OR se evalúan de izquierda a "
+    "derecha y no evalúan el lado derecho si el izquierdo ya decide."
+)
+PYTHON_TYPES_NOTE = (
+    "En Python, Int llega como int, Decimal como decimal.Decimal, Bool como bool y String "
+    "como str."
+)
+
+
 def build_messages(
     group: Group, description: str, gamma: Mapping[str, str]
 ) -> list[dict[str, str]]:
-    """Prompt de cada grupo. Todos piden JSON (response_format = json_object)."""
+    """Prompt de cada grupo. Todos piden JSON (response_format = json_object).
+
+    Los tres dicen lo mismo sobre los tipos de los datos (`TYPES_NOTE`); cada uno agrega lo
+    que su lenguaje necesita. Provisorio: ver specs/orquestador.md.
+    """
     variables = json.dumps(dict(gamma), ensure_ascii=False)
     if group == "treatment":
         schema = AST_SCHEMA_PATH.read_text(encoding="utf-8")
@@ -265,6 +313,7 @@ def build_messages(
             "Traducí la regla de negocio a un programa del DSL descrito por este JSON Schema. "
             "Respondé solo con un objeto JSON que lo cumpla.\n"
             f"Variables disponibles y sus tipos: {variables}\n"
+            f"{TYPES_NOTE}\n{DSL_SEMANTICS}\n"
             f"JSON Schema:\n{schema}"
         )
     elif group == "baseline1":
@@ -272,6 +321,7 @@ def build_messages(
             "Traducí la regla de negocio a una función Python `evaluate_rule(data)` que recibe "
             "un dict con los datos del caso y devuelve el resultado de la regla.\n"
             f"Claves de `data` y sus tipos: {variables}\n"
+            f"{TYPES_NOTE}\n{PYTHON_TYPES_NOTE}\n"
             'Respondé solo con un objeto JSON de la forma {"code": "<código Python>"}.'
         )
     else:
@@ -279,6 +329,7 @@ def build_messages(
             "Traducí la regla de negocio a una función Python `evaluate_rule(data: Data)` que "
             "recibe los datos del caso y devuelve el resultado de la regla. La función debe "
             "tener anotaciones de tipos completas y pasar mypy --strict.\n"
+            f"{TYPES_NOTE}\n{PYTHON_TYPES_NOTE}\n"
             "`Data` ya está definido antes de tu código, así; no lo redefinas:\n"
             f"{data_preamble(gamma)}"
             'Respondé solo con un objeto JSON de la forma {"code": "<código Python>"}.'

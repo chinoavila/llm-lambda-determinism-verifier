@@ -15,6 +15,7 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 
 - `load_case(data)` construye `Case(case_id, description, scenarios)` desde un objeto conforme a `contracts/case-schema.json`. Ignora los campos del corpus. Lanza `CaseError` si faltan campos, si `scenarios` está vacía o si hay `scenario_id` repetidos.
 - `case_gamma(case, engine_cmd)` llama a `print_gamma` por escenario y exige que todos los Γ sean iguales; si no, `CaseError`. Ese Γ común va en el prompt y en los runners.
+- `read_case(path)` lee un caso del corpus con `parse_float=Decimal` y llama a `load_case`. En `load_case`, cada `Decimal` de `env` pasa a `float` solo si `Decimal(repr(float(d))) == d` (el texto sobrevive al viaje por JSON hasta el engine y el sandbox); si no, `CaseError`. No escribir otro serializador de JSON.
 - `CaseError` es error del corpus: abortar la corrida, no registrar.
 
 ## Ruteo a partir del outcome de LLMCall
@@ -51,5 +52,5 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 ## Pendiente de acuerdo del equipo
 
 - Los códigos `missing_content` y `TIMEOUT`, y el uso del `outcome` de `LLMCall` como `error.code`, son convenciones del orquestador. Todavía no figuran en `contracts/README.md` §3; moverlos ahí requiere avisar a los otros dos desarrolladores.
-- Los prompts de `build_messages` son provisorios: el equipo debe revisarlos antes de correr el experimento.
+- Los prompts de `build_messages` son provisorios: el equipo debe revisarlos antes de correr el experimento. Invariante que no se debe romper: los tres grupos reciben la misma información de tipos (`TYPES_NOTE`); el Tratamiento suma la semántica del DSL (`DSL_SEMANTICS`) y los baselines, el mapeo a tipos de Python (`PYTHON_TYPES_NOTE`).
 - El comando que carga los casos y corre todo de punta a punta (roadmap, Día 5) no existe todavía.

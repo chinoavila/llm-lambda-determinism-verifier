@@ -22,6 +22,7 @@ import signal
 import subprocess
 import sys
 import time
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -37,19 +38,33 @@ DEFAULT_TIMEOUT_SECONDS = 5.0
 # --- Modo hijo --------------------------------------------------------------
 
 
+def decimal_text(value: Decimal) -> str:
+    """Texto canónico de contracts/README.md §3: posicional, sin ceros finales, "0" sin signo."""
+    if value == 0:
+        return "0"
+    return format(value.normalize(), "f")
+
+
 def encode(value: object) -> dict[str, Any]:
-    """`result` del registro; `bool` antes que `int` porque True es un int."""
+    """`result` del registro; `bool` antes que `int` porque True es un int.
+
+    `float` va a `Other`: no es exacto, así que no se registra como `Decimal`.
+    """
     if isinstance(value, bool):
         return {"type": "Bool", "value": value}
     if isinstance(value, int):
         return {"type": "Int", "value": value}
+    if isinstance(value, Decimal) and value.is_finite():
+        return {"type": "Decimal", "value": decimal_text(value)}
     if isinstance(value, str):
         return {"type": "String", "value": value}
     return {"type": "Other", "value": repr(value)}
 
 
 def child() -> None:
-    job = json.load(sys.stdin)
+    # Los números no enteros de `env` llegan como decimal.Decimal exactos, igual
+    # que el Decimal del DSL (contracts/README.md §3).
+    job = json.load(sys.stdin, parse_float=Decimal)
     # El resultado sale por una copia privada de stdout; lo que imprima el
     # código del LLM va a /dev/null y no puede mezclarse con él.
     out = os.fdopen(os.dup(1), "w", encoding="utf-8")

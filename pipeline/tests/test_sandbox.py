@@ -145,3 +145,39 @@ def test_missing_worker_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     with pytest.raises(SandboxError, match="no respondió"):
         run_in_sandbox("", {}, timeout=0, io_dir=tmp_path)
     assert list((tmp_path / "jobs").iterdir()) == []
+
+
+# --- Decimal (contracts/README.md §3) -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("expr", "text"),
+    [
+        ("Decimal('1500.50')", "1500.5"),
+        ("Decimal('0.30')", "0.3"),
+        ("Decimal('-2.000')", "-2"),
+        ("Decimal('-0.0')", "0"),
+        ("Decimal('1E+2')", "100"),
+        ("Decimal(10) / Decimal(3)", "3.333333333333333333333333333"),
+    ],
+)
+def test_decimal_result_uses_canonical_text(expr: str, text: str) -> None:
+    assert run(f"from decimal import Decimal\nreturn {expr}") == {"status": "ok", "type": "Decimal", "value": text}
+
+
+def test_float_result_is_other() -> None:
+    assert run("return 10000 / 12") == {"status": "ok", "type": "Other", "value": "833.3333333333334"}
+
+
+def test_env_decimals_arrive_as_exact_decimal() -> None:
+    result = run("return type(data['cuota']).__name__ + ' ' + str(data['cuota'] + data['cuota'])", {"cuota": 0.1})
+    assert result == {"status": "ok", "type": "String", "value": "Decimal 0.2"}
+
+
+def test_env_ints_stay_int() -> None:
+    assert run("return type(data['n']).__name__", {"n": 5000}) == {"status": "ok", "type": "String", "value": "int"}
+
+
+def test_decimal_times_float_is_type_error() -> None:
+    result = run("return data['cuota'] * 0.30", {"cuota": 1499.5})
+    assert result["status"] == "exception" and result["name"] == "TypeError"

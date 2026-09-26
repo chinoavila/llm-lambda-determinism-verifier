@@ -95,7 +95,7 @@ Con las fixtures compartidas se ve la diferencia con el Tratamiento. En `rule-00
 
 Baseline 2 existe para medir cuánto aporta la validación estática de Python. Para que `mypy` controle algo, la función tiene que decir de qué tipo es cada dato. Por eso:
 
-- **`data` es un `TypedDict` llamado `Data`, armado con Γ.** Γ lo deduce el engine, como en el Tratamiento. El prompt muestra la definición y pide `evaluate_rule(data: Data)`.
+- **`data` es un `TypedDict` llamado `Data`, armado con Γ.** Γ lo deduce el engine, como en el Tratamiento. El prompt muestra la definición y pide `evaluate_rule(data: Data)`. Un `Decimal` de Γ es `decimal.Decimal` en `Data`, y el valor llega así también al ejecutar: el sandbox lee los decimales de `env` exactos, nunca como `float`.
 - **La definición se antepone al código del LLM**, tanto para `mypy` como para ejecutar. No es reparar la salida, porque el código del LLM no se toca: se le da el mismo contexto que el prompt describe.
 - **Se exige la firma exacta.** Si el LLM anota `data: dict[str, Any]`, `mypy` no puede controlar nada. Esa respuesta se bloquea con `SignatureMismatch`.
 - **`mypy` corre en `pipeline`, aislado del repo**, en un directorio temporal, sin la config del proyecto ni caché. No ejecuta el código, así que no necesita el sandbox.

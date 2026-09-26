@@ -28,7 +28,9 @@ if TYPE_CHECKING:
 
 FUNCTION = "evaluate_rule"
 MYPY_TIMEOUT_SECONDS = 60.0
-PYTHON_TYPES = {"Int": "int", "Bool": "bool", "String": "str"}
+PYTHON_TYPES = {"Int": "int", "Decimal": "Decimal", "Bool": "bool", "String": "str"}
+# Líneas que el preámbulo agrega antes del código del LLM (desplazan los mensajes de mypy).
+PREAMBLE_LINES = 3
 
 
 class StaticCheckError(Exception):
@@ -36,9 +38,16 @@ class StaticCheckError(Exception):
 
 
 def data_preamble(gamma: Mapping[str, str]) -> str:
-    """Definición de `Data` desde Γ. Sintaxis funcional: admite claves que son palabras reservadas."""
+    """Definición de `Data` desde Γ. Sintaxis funcional: admite claves que son palabras reservadas.
+
+    Siempre importa `Decimal`, aunque Γ no lo use: el preámbulo tiene largo fijo.
+    """
     fields = ", ".join(f"{name!r}: {PYTHON_TYPES[t]}" for name, t in sorted(gamma.items()))
-    return f'from typing import TypedDict\nData = TypedDict("Data", {{{fields}}})\n'
+    return (
+        "from decimal import Decimal\n"
+        "from typing import TypedDict\n"
+        f'Data = TypedDict("Data", {{{fields}}})\n'
+    )
 
 
 def check_signature(tree: ast.Module) -> str | None:
