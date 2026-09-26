@@ -1,3 +1,25 @@
+# Imagen, volúmenes y entorno del pipeline: los comparten `pipeline` (gates) y
+# `run` (corrida de punta a punta).
+x-pipeline: &pipeline
+  build:
+    context: .
+    target: pipeline
+  volumes:
+    - ./pipeline:/workspace/pipeline
+    - ./contracts:/workspace/contracts:ro
+    - ./out:/workspace/out
+    - sandbox-io:/io
+  working_dir: /workspace/pipeline
+  # Las claves las nombra llm.toml (api_key_env), así que se pasa .env entero.
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    SANDBOX_IO: /io
+  # Los baselines ejecutan en el sandbox; el engine sigue siendo subproceso local.
+  depends_on:
+    - sandbox
+
 services:
   engine:
     build:
@@ -10,25 +32,15 @@ services:
     command: ["cabal", "test"]
 
   pipeline:
-    build:
-      context: .
-      target: pipeline
-    volumes:
-      - ./pipeline:/workspace/pipeline
-      - ./contracts:/workspace/contracts:ro
-      - ./out:/workspace/out
-      - sandbox-io:/io
-    working_dir: /workspace/pipeline
-    # Las claves las nombra llm.toml (api_key_env), así que se pasa .env entero.
-    env_file:
-      - path: .env
-        required: false
-    environment:
-      SANDBOX_IO: /io
-    # Los baselines ejecutan en el sandbox; el engine sigue siendo subproceso local.
-    depends_on:
-      - sandbox
+    <<: *pipeline
     command: ["sh", "-c", "mypy . && pytest"]
+
+  # Corrida de punta a punta sobre las fixtures (ver specs/orquestador.md).
+  # Llama al LLM real: consume cuota. Sin credenciales en .env, avisa y termina
+  # sin error. Escribe out/<run_id>.jsonl.
+  run:
+    <<: *pipeline
+    command: ["python", "-m", "pipeline", "run"]
 
   # Ejecución del código de los baselines (ver docs/sandbox.md). Sin red, sin
   # .env y sin volúmenes del repo: solo la cola compartida con pipeline.

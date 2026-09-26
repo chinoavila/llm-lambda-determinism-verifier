@@ -25,7 +25,7 @@ Los tres componentes están implementados y verificados en Docker.
   - Baseline 1;
   - Baseline 2 con `ast` y `mypy --strict`.
 
-**Falta el comando que corre todo de punta a punta con un LLM real** (roadmap, Día 5), y con él el primer caso ejecutado con un modelo.
+**El comando de punta a punta existe** (`python -m pipeline run`, servicio `run` de `docker compose up`) y está probado sobre las 15 fixtures con un LLM falso y el engine, el sandbox y mypy reales. **Falta la primera corrida con el LLM real**, que requiere credenciales y consume cuota.
 
 ## 2. Contra el contenido exigido por la guía
 
@@ -39,7 +39,7 @@ Los tres componentes están implementados y verificados en Docker.
 | Algoritmos | ✅ | Chequeo de tipos por síntesis (los `Lam` vienen anotados), promoción numérica solo en operadores, evaluación *big-step* con llamada por valor y cortocircuito, aritmética racional exacta con límites |
 | Código fuente | ✅ | `engine/` (Haskell), `pipeline/` (Python) |
 | Ejemplos de ejecución | ✅ | 15 fixtures en [`contracts/fixtures/`](../contracts/fixtures/), ejecutadas por la CLI real en los tests del engine y del pipeline |
-| Resultados preliminares | ⚠️ Solo sobre fixtures | La comparación de los tres grupos sobre las fixtures está en los tests (ver §4). No hay corridas con un LLM real: eso requiere el comando de punta a punta, y el experimento en sí queda fuera del alcance de este repo |
+| Resultados preliminares | ⚠️ Solo sobre fixtures | La comparación de los tres grupos sobre las fixtures está en los tests (ver §4). Todavía no hay una corrida con un LLM real; el comando ya existe. El experimento en sí queda fuera del alcance de este repo |
 
 ## 3. Contra la tabla de conceptos de programación funcional del curso
 
@@ -75,15 +75,10 @@ Sale de los tests, no de un experimento. El engine bloquea antes de ejecutar lo 
 
 ## 5. Pendiente para cerrar el MVP
 
-1. El comando de punta a punta. Tiene que:
-   - leer los casos (`read_case`);
-   - pedir el modelo al balanceador;
-   - calcular Γ (`case_gamma`) y ejecutar `run_case` con los tres runners y las repeticiones;
-   - escribir el JSONL.
-2. Que `docker compose up --build` corra ese comando sobre las fixtures, que es el criterio de cierre del roadmap.
-3. Revisar los prompts de `build_messages` en equipo: son provisorios.
-4. Confirmar con el equipo los contratos del Día 0, que ya están implementados en `develop`.
-5. Opcional: la propiedad QuickCheck de *type soundness* del Día 4 del carril A.
+1. La primera corrida con el LLM real: `docker compose up --build` con `.env` completo. Es lo único que falta para el criterio de cierre del roadmap.
+2. Revisar los prompts de `build_messages` en equipo: son provisorios.
+3. Confirmar con el equipo los contratos del Día 0, que ya están implementados en `develop`.
+4. Opcional: la propiedad QuickCheck de *type soundness* del Día 4 del carril A.
 
 ## 6. Cómo mantener este documento
 

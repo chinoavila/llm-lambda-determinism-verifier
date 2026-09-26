@@ -1,10 +1,10 @@
 # Docker: cómo llega el engine al pipeline
 
-El orquestador (Python) ejecuta el engine (Haskell) como **subproceso**, según el contrato CLI de [`contracts/README.md`](../contracts/README.md) §2. Para eso el binario tiene que estar dentro del contenedor `pipeline`. No hay comunicación entre contenedores. El código de los baselines, en cambio, corre en un tercer contenedor sin red: ver [`sandbox.md`](sandbox.md).
+El orquestador (Python) ejecuta el engine (Haskell) como **subproceso**, según el contrato CLI de [`contracts/README.md`](../contracts/README.md) §2. Para eso el binario tiene que estar dentro del contenedor `pipeline`. No hay comunicación entre contenedores. El código de los baselines, en cambio, corre en un tercer contenedor sin red: ver [`sandbox.md`](sandbox.md). El servicio `run` usa la misma imagen que `pipeline` para correr el pipeline de punta a punta (`python -m pipeline run`).
 
 ## Decisión
 
-Un solo [`Dockerfile`](../Dockerfile) con dos etapas. Cada servicio del compose elige la suya con `target`.
+Un solo [`Dockerfile`](../Dockerfile) con tres etapas (`engine-build`, `pipeline`, `sandbox`). Cada servicio del compose elige la suya con `target`.
 
 ```mermaid
 flowchart LR

@@ -20,7 +20,7 @@ MVP de laboratorio: un pipeline que valida reglas de negocio generadas por un LL
 docker compose up --build
 ```
 
-Esto corre el build y los gates (`cabal test` para `engine/`, `mypy` + `pytest` para `pipeline/`). Ver [`README.md`](README.md) para más comandos.
+Esto corre el build, los gates (`cabal test` para `engine/`, `mypy` + `pytest` para `pipeline/`) y el servicio `run`, que corre el pipeline de punta a punta sobre las fixtures **con el LLM real** si `.env` tiene credenciales. Un agente no debe correr `docker compose up` ni el servicio `run` sin que el desarrollador lo pida: consume cuota del proveedor. Para verificar, usar los servicios por separado (`engine`, `pipeline`) o `docker compose run --rm -e GROQ_API_KEY= run`, que omite la corrida. Ver [`README.md`](README.md) para más comandos.
 
 ## Reglas que importan
 

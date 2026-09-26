@@ -90,13 +90,35 @@ Está terminado cuando alguien puede clonar el repositorio, configurar credencia
 # (u otras claves, si cambiás de proveedor en pipeline/llm.toml)
 Copy-Item .env.example .env
 
-# Correr el build y los gates de los dos componentes
+# Build, gates de los dos componentes y corrida de punta a punta sobre las fixtures
 docker compose up --build
+```
 
+`docker compose up --build` levanta cuatro servicios:
+
+| Servicio | Qué hace | Termina solo |
+|---|---|---|
+| `engine` | `cabal test` del motor Haskell | sí |
+| `pipeline` | `mypy` + `pytest` del orquestador y los baselines | sí |
+| `sandbox` | ejecuta el código de los baselines, sin red ([`docs/sandbox.md`](docs/sandbox.md)) | no: cortar con Ctrl+C o `docker compose down` |
+| `run` | corre los tres grupos sobre [`contracts/fixtures/`](contracts/fixtures/) con el LLM real y escribe `out/<run_id>.jsonl` | sí |
+
+`run` llama al LLM y **consume cuota** (15 casos × 3 grupos = 45 llamadas). Si `.env` no tiene credenciales, avisa y termina sin error, así `up` sigue sirviendo para correr los gates.
+
+```powershell
 # Iterar sobre un solo componente
 docker compose run --rm engine cabal test
 docker compose run --rm pipeline sh -c "mypy . && pytest"
+
+# Corrida de punta a punta con opciones (casos, repeticiones, destino)
+docker compose run --rm run python -m pipeline run --repetitions 3
+docker compose run --rm run python -m pipeline run --help
+
+# Apagar el sandbox
+docker compose down
 ```
+
+Cada renglón del JSONL es un escenario de una generación ([`contracts/output-record-schema.json`](contracts/output-record-schema.json)). Calcular métricas a partir de ahí es trabajo del experimento, no de este repositorio.
 
 No hace falta instalar GHC ni Python localmente: todo corre dentro de los contenedores. Ver [`specs/roadmap.md`](specs/roadmap.md) para el plan día a día.
 
