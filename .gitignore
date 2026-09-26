@@ -24,3 +24,6 @@ out/
 
 # Referencias sin trackeo
 prototype/referencias
+
+# Corpus del experimento: no es entregable del repo (ver docs/corpus.md)
+/corpus/

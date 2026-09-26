@@ -8,6 +8,8 @@ x-pipeline: &pipeline
     - ./pipeline:/workspace/pipeline
     - ./contracts:/workspace/contracts:ro
     - ./out:/workspace/out
+    # Reglas del corpus del experimento (fuera de Git; ver docs/corpus.md).
+    - ./corpus:/workspace/corpus
     - sandbox-io:/io
   working_dir: /workspace/pipeline
   # Las claves las nombra llm.toml (api_key_env), así que se pasa .env entero.

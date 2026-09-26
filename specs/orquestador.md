@@ -48,6 +48,13 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 - Los casos corren en secuencia. No agregar concurrencia sin revisar las cuotas del pool (`specs/llm-client.md`).
 - Test de punta a punta sin red: `tests/test_cli.py` responde con el `llm_raw` y el `python_code` de cada fixture y usa engine, sandbox y mypy reales.
 
+## Verificación del corpus (`python -m pipeline check-case`)
+
+- Código: `pipeline/pipeline/corpus.py`. Guía para humanos: `docs/corpus.md`. El corpus no es entregable del repo (`/corpus/` está en `.gitignore`); los ejemplos válidos viven en `pipeline/tests/data/corpus/` y los tests los verifican.
+- `check-case <archivos|directorios> [--write]`. Por regla: campos del corpus (`category` 1-3, `domain`, `gamma`, `canonical_ast`, `canonical_python`), `load_case`, `gamma` igual al de `case_gamma`, el engine **ejecuta** `canonical_ast` en cada escenario (si bloquea o falla, error), el Python canónico da el mismo `Result` en el sandbox, `expected` declarado igual al calculado, y balance (booleanas: ambos valores y diferencia <= 1, si no aviso; otras: al menos dos resultados distintos).
+- `expected` lo calcula siempre el engine. `--write` solo completa los que faltan y solo si la regla no tiene errores; nunca pisa uno existente. Sale con 1 si alguna regla tiene errores.
+- No usar `check-case` para calcular métricas ni comparar grupos: verifica el corpus, no resultados del experimento.
+
 ## Errores del engine en validación
 
 - Exit 0 a 3: el veredicto debe tener exactamente las claves `outcome`, `stage`, `result` y `error`, y `stage` debe coincidir con el código de salida (0 execution, 1 parse, 2 scope, 3 typecheck). Si no, `EngineError`.

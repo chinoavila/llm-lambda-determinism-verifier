@@ -114,11 +114,16 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"
 docker compose run --rm run python -m pipeline run --repetitions 3
 docker compose run --rm run python -m pipeline run --help
 
+# Corpus del experimento (carpeta corpus/, fuera de Git): verificar las reglas,
+# completar expected con el engine y correrlas
+docker compose run --rm pipeline python -m pipeline check-case /workspace/corpus --write
+docker compose run --rm run python -m pipeline run /workspace/corpus --repetitions 3
+
 # Apagar el sandbox
 docker compose down
 ```
 
-Cada renglón del JSONL es un escenario de una generación ([`contracts/output-record-schema.json`](contracts/output-record-schema.json)). Calcular métricas a partir de ahí es trabajo del experimento, no de este repositorio.
+Cada renglón del JSONL es un escenario de una generación ([`contracts/output-record-schema.json`](contracts/output-record-schema.json)). Calcular métricas a partir de ahí es trabajo del experimento, no de este repositorio. Cómo armar el corpus: [`docs/corpus.md`](docs/corpus.md).
 
 No hace falta instalar GHC ni Python localmente: todo corre dentro de los contenedores. Ver [`specs/roadmap.md`](specs/roadmap.md) para el plan día a día.
 

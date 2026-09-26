@@ -1,0 +1,95 @@
+{
+  "case_id": "EJ-CAT2-BENEFICIO",
+  "category": 2,
+  "domain": "elegibilidad",
+  "description": "Otorgar el beneficio si la categoría del cliente es Gold o Platinum y tiene al menos 2 años de antigüedad. El nivel de riesgo del cliente no interviene en esta regla.",
+  "gamma": {
+    "antiguedad": "Int",
+    "customer_tier": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "In",
+        "value": {
+          "type": "Var",
+          "name": "customer_tier"
+        },
+        "options": [
+          {
+            "type": "Literal",
+            "value": "Gold",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "Platinum",
+            "value_type": "String"
+          }
+        ]
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": ">=",
+        "left": {
+          "type": "Var",
+          "name": "antiguedad"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 2,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['customer_tier'] in ('Gold', 'Platinum') and data['antiguedad'] >= 2\n",
+  "scenarios": [
+    {
+      "scenario_id": "S1",
+      "env": {
+        "customer_tier": "Gold",
+        "antiguedad": 2
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "S2",
+      "env": {
+        "customer_tier": "Platinum",
+        "antiguedad": 5
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "S3",
+      "env": {
+        "customer_tier": "Gold",
+        "antiguedad": 1
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "S4",
+      "env": {
+        "customer_tier": "Silver",
+        "antiguedad": 3
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

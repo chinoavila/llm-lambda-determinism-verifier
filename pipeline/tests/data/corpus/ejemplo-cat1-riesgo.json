@@ -1,0 +1,142 @@
+{
+  "case_id": "EJ-CAT1-RIESGO",
+  "category": 1,
+  "domain": "credito",
+  "description": "Clasificar el riesgo del préstamo según el puntaje crediticio: si es menor a 600 el riesgo es Alto; si es menor a 700, Medio; si es menor a 800, Bajo; y en cualquier otro caso, Mínimo.",
+  "gamma": {
+    "credit_score": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "credit_score"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 600,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "Alto",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "credit_score"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 700,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Medio",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "credit_score"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 800,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": "Bajo",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "Literal",
+            "value": "Mínimo",
+            "value_type": "String"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    s = data['credit_score']\n    if s < 600:\n        return 'Alto'\n    if s < 700:\n        return 'Medio'\n    if s < 800:\n        return 'Bajo'\n    return 'Mínimo'\n",
+  "scenarios": [
+    {
+      "scenario_id": "S1",
+      "env": {
+        "credit_score": 599
+      },
+      "expected": {
+        "type": "String",
+        "value": "Alto"
+      }
+    },
+    {
+      "scenario_id": "S2",
+      "env": {
+        "credit_score": 600
+      },
+      "expected": {
+        "type": "String",
+        "value": "Medio"
+      }
+    },
+    {
+      "scenario_id": "S3",
+      "env": {
+        "credit_score": 699
+      },
+      "expected": {
+        "type": "String",
+        "value": "Medio"
+      }
+    },
+    {
+      "scenario_id": "S4",
+      "env": {
+        "credit_score": 700
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo"
+      }
+    },
+    {
+      "scenario_id": "S5",
+      "env": {
+        "credit_score": 799
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo"
+      }
+    },
+    {
+      "scenario_id": "S6",
+      "env": {
+        "credit_score": 800
+      },
+      "expected": {
+        "type": "String",
+        "value": "Mínimo"
+      }
+    }
+  ]
+}

@@ -1,6 +1,7 @@
-"""Comando de punta a punta: `python -m pipeline run`. Ver specs/orquestador.md.
+"""Comandos: `python -m pipeline run` (punta a punta, specs/orquestador.md) y
+`python -m pipeline check-case` (verificación del corpus, docs/corpus.md).
 
-Lee los casos, verifica todos antes de la primera llamada al LLM (formato y Γ común),
+`run` lee los casos, verifica todos antes de la primera llamada al LLM (formato y Γ común),
 arma el balanceador y corre cada caso con los tres grupos. Los registros de cada caso se
 agregan al JSONL apenas termina, así una corrida cortada conserva lo hecho.
 """
@@ -20,6 +21,7 @@ from typing import Protocol
 from pipeline.baselines.baseline1 import run_baseline_1
 from pipeline.baselines.baseline2 import StaticCheckError, run_baseline_2_scenarios
 from pipeline.baselines.sandbox import SandboxError
+from pipeline.corpus import check_case, write_expected
 from pipeline.llm import (
     ConfigError,
     MissingCredentials,
@@ -116,6 +118,35 @@ def run(
     return written
 
 
+def check_cases(
+    paths: Sequence[Path],
+    *,
+    write: bool = False,
+    out: Callable[[str], None] = print,
+) -> int:
+    """`check-case`: reporta cada regla y sale con 1 si alguna tiene errores."""
+    try:
+        files = case_paths(paths)
+    except CaseError as e:
+        out(f"error: {e}")
+        return 1
+    failed = 0
+    for path in files:
+        report, data = check_case(path)
+        status = "OK" if report.ok else "ERROR"
+        out(f"{status} {report.case_id} ({path.name})")
+        for level, msg in report.issues:
+            out(f"  {level}: {msg}")
+        if not report.ok:
+            failed += 1
+        elif write and data is not None:
+            filled = write_expected(path, data, report)
+            if filled:
+                out(f"  escrito: {filled} expected calculados por el engine")
+    out(f"{len(files) - failed}/{len(files)} reglas sin errores")
+    return 1 if failed else 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m pipeline")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -127,7 +158,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_run.add_argument("--repetitions", type=int, default=1, help="rondas de triple llamada por caso")
     p_run.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     p_run.add_argument("--run-id", default=None, help="por defecto, fecha y hora UTC más un sufijo")
+    p_check = sub.add_parser("check-case", help="verifica reglas del corpus (docs/corpus.md)")
+    p_check.add_argument("cases", nargs="+", type=Path, help="archivos o directorios de reglas")
+    p_check.add_argument(
+        "--write", action="store_true",
+        help="completa los expected que faltan con lo que calcula el engine (nunca pisa uno existente)",
+    )  # fmt: skip
     args = parser.parse_args(argv)
+
+    if args.command == "check-case":
+        return check_cases(args.cases, write=args.write)
 
     if args.repetitions < 1:
         parser.error("--repetitions debe ser >= 1")
