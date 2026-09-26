@@ -17,9 +17,43 @@ services:
       - ./pipeline:/workspace/pipeline
       - ./contracts:/workspace/contracts:ro
       - ./out:/workspace/out
+      - sandbox-io:/io
     working_dir: /workspace/pipeline
     # Las claves las nombra llm.toml (api_key_env), así que se pasa .env entero.
     env_file:
       - path: .env
         required: false
+    environment:
+      SANDBOX_IO: /io
+    # Los baselines ejecutan en el sandbox; el engine sigue siendo subproceso local.
+    depends_on:
+      - sandbox
     command: ["sh", "-c", "mypy . && pytest"]
+
+  # Ejecución del código de los baselines (ver docs/sandbox.md). Sin red, sin
+  # .env y sin volúmenes del repo: solo la cola compartida con pipeline.
+  sandbox:
+    build:
+      context: .
+      target: sandbox
+    network_mode: none
+    # tini como PID 1: recoge los procesos huérfanos que deja el código del LLM.
+    init: true
+    read_only: true
+    tmpfs:
+      - /work:mode=0700,size=16m
+    volumes:
+      - sandbox-io:/io
+    # El worker necesita cambiar al usuario sandbox (SETUID/SETGID) y matar
+    # sus procesos (KILL); nada más.
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID, KILL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 64
+    restart: unless-stopped
+
+volumes:
+  sandbox-io:

@@ -1,6 +1,7 @@
 # Imagen del laboratorio, una etapa por componente (ver docs/docker.md).
 #   target engine-build -> servicio engine   (C-1, Haskell: build y tests)
 #   target pipeline     -> servicio pipeline (C-2/C-3, Python + binario del engine)
+#   target sandbox      -> servicio sandbox  (C-3, ejecución aislada de los baselines)
 
 # --- C-1: engine (Haskell STLC) -------------------------------------------
 FROM haskell:9.6-slim AS engine-build
@@ -43,3 +44,15 @@ COPY pipeline/ ./
 RUN pip install --no-cache-dir -e .
 
 CMD ["sh", "-c", "mypy . && pytest"]
+
+# --- C-3: sandbox de los baselines (sin red, ver docs/sandbox.md) -----------
+FROM python:3.12-slim AS sandbox
+
+# Usuario sin privilegios con el que corre el código del LLM.
+RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin sandbox
+
+# Solo el worker (stdlib): nada del repo más allá de este archivo.
+COPY pipeline/pipeline/baselines/sandbox_worker.py /opt/sandbox/worker.py
+
+ENV SANDBOX_IO=/io SANDBOX_WORK=/work PYTHONDONTWRITEBYTECODE=1
+CMD ["python", "-I", "/opt/sandbox/worker.py"]

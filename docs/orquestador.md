@@ -27,3 +27,13 @@ flowchart TD
 - **Runners intercambiables.** Cada grupo tiene un runner `(llm_raw, env) -> veredicto`. El del Tratamiento es `run_engine`; los de los baselines los aporta el carril C-3.
 - **Registro append-only.** `append_jsonl` agrega renglones sin reescribir lo ya registrado, así una corrida cortada conserva los casos terminados.
 - **Errores del engine.** Exit 70 se registra como `runtime_error` (`ENGINE_INTERNAL`) y un timeout como `timeout`; exit 64 o un veredicto que no coincide con su código de salida abortan la corrida, porque son bugs del sistema, no resultados.
+- **"Triple llamada" es una llamada por grupo**, no tres repeticiones de cada grupo. El registro de salida no tiene campo para numerar repeticiones; si hicieran falta, habría que cambiar el contrato.
+
+## Pendiente
+
+- Los códigos `missing_content` y `TIMEOUT`, y el uso del desenlace de la llamada como código de error, son convenciones del orquestador que todavía no figuran en [`contracts/README.md`](../contracts/README.md).
+- Los prompts de `build_messages` son provisorios. Influyen en el experimento, así que el equipo tiene que revisarlos.
+- Los runners de los baselines dependen del [sandbox](sandbox.md) (carril C-3).
+- Falta el comando que corre todos los casos de punta a punta (roadmap, Día 5).
+
+Reglas exactas para agentes: [`specs/orquestador.md`](../specs/orquestador.md).

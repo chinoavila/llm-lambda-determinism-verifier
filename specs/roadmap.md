@@ -30,16 +30,16 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 
 ## Carril B — `pipeline/` orquestador (C-2, Python)
 
-- [ ] Día 1-2: cliente de LLM con salida estructurada (no partir de `prototype/gemini_mockup_pipeline.py`, no es normativo); ruteo por grupo.
-- [ ] Día 3: integración por subproceso con el binario de `engine/` (contrato de CLI del Día 0); primer caso de punta a punta.
-- [ ] Día 4: registro JSON Lines según el contrato; persistencia de la respuesta cruda del LLM sin transformar.
+- [x] Día 1-2: cliente de LLM con salida estructurada (no partir de `prototype/gemini_mockup_pipeline.py`, no es normativo); ruteo por grupo.
+- [ ] Día 3: integración por subproceso con el binario de `engine/` (contrato de CLI del Día 0); primer caso de punta a punta. — *integración por subproceso hecha (`run_engine`); falta el primer caso de punta a punta con el LLM real.*
+- [x] Día 4: registro JSON Lines según el contrato; persistencia de la respuesta cruda del LLM sin transformar. — *ver [`specs/orquestador.md`](./orquestador.md).*
 - [ ] Día 5: correr los tres grupos sobre las fixtures del Día 0 con un solo comando.
 
 **Listo cuando:** un comando corre el grupo Tratamiento de punta a punta y escribe el archivo de registros.
 
 ## Carril C — `pipeline/` baselines (C-3, Python)
 
-- [ ] Día 1-2: sandbox de ejecución aislado (sin red, sin acceso al filesystem del repo, con timeout) — lo van a compartir Baseline 1 y 2.
+- [x] Día 1-2: sandbox de ejecución aislado (sin red, sin acceso al filesystem del repo, con timeout) — lo van a compartir Baseline 1 y 2. — *contenedor `sandbox`, ver [`specs/sandbox.md`](./sandbox.md).*
 - [ ] Día 3: Baseline 1 (ejecución directa dentro del sandbox).
 - [ ] Día 4: Baseline 2 (`ast` + `mypy --strict` antes de ejecutar; firma tipada obligatoria en el código generado, si no el control no sirve).
 - [ ] Día 5: mismo formato de registro que el carril B; integración con el runner común.

@@ -1,6 +1,6 @@
 # Docker: cómo llega el engine al pipeline
 
-El orquestador (Python) ejecuta el engine (Haskell) como **subproceso**, según el contrato CLI de [`contracts/README.md`](../contracts/README.md) §2. Para eso el binario tiene que estar dentro del contenedor `pipeline`. No hay comunicación entre contenedores.
+El orquestador (Python) ejecuta el engine (Haskell) como **subproceso**, según el contrato CLI de [`contracts/README.md`](../contracts/README.md) §2. Para eso el binario tiene que estar dentro del contenedor `pipeline`. No hay comunicación entre contenedores. El código de los baselines, en cambio, corre en un tercer contenedor sin red: ver [`sandbox.md`](sandbox.md).
 
 ## Decisión
 

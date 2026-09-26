@@ -40,7 +40,7 @@
 | **Baseline 1** | Ejecuta el script Python del LLM tal cual | Ninguna |
 | **Baseline 2** | Analiza con `ast` + `mypy` y solo ejecuta si pasa | Estática del ecosistema Python |
 
-**Sandbox obligatorio para ambos:** subproceso aislado, sin red, sin acceso al filesystem del proyecto, con timeout.
+**Sandbox obligatorio para ambos:** la ejecución corre en el contenedor `sandbox` (`network_mode: none`, sin `.env`, sin volúmenes del repo, solo lectura), en un proceso hijo nuevo por caso, como usuario sin privilegios, sin entorno y con timeout y límites de recursos. `pipeline` se comunica con él solo por una cola de archivos en el volumen `sandbox-io`. El análisis estático de Baseline 2 no ejecuta código y corre en `pipeline`. Detalle en `docs/sandbox.md`.
 
 ## 4. Prohibiciones
 
@@ -61,8 +61,10 @@ Un solo `Dockerfile`, en la raíz, con una etapa por componente; cada servicio e
 |---|---|---|---|
 | `engine` | `engine-build` | `haskell:9.6-slim` | Corre build y tests C-1: `docker compose run --rm engine cabal test` |
 | `pipeline` | `pipeline` | `python:3.12-slim` | Instala C-2/C-3 y corre gates: `docker compose run --rm pipeline sh -c "mypy . && pytest"` |
+| `sandbox` | `sandbox` | `python:3.12-slim` | Ejecuta el código de los baselines, sin red (`docs/sandbox.md`) |
 
 - La etapa `engine-build` compila y corre `cabal test`; solo si pasa, deja el binario en `/usr/local/bin/engine`.
 - La etapa `pipeline` copia ese binario (`COPY --from=engine-build`) y el orquestador lo lanza como subproceso según el contrato CLI de `contracts/README.md` §2. En ejecución el pipeline no depende del contenedor `engine`: no se usa `depends_on`.
-- `docker-compose.yml` monta `engine/`, `pipeline/` y `contracts/` como volúmenes, así que los cambios de código no requieren rebuild de imagen (solo si cambian dependencias). Excepción: el binario del engine dentro de `pipeline` es el de la última build; un cambio en `engine/` requiere `docker compose build pipeline` para llegar al orquestador.
+- `pipeline` sí usa `depends_on: sandbox`: los tests del sandbox y los baselines necesitan el worker corriendo. El worker no termina solo; tras `docker compose up`, cortar con `docker compose down`.
+- `docker-compose.yml` monta `engine/`, `pipeline/` y `contracts/` como volúmenes, así que los cambios de código no requieren rebuild de imagen (solo si cambian dependencias). Excepción: el binario del engine dentro de `pipeline` es el de la última build; un cambio en `engine/` requiere `docker compose build pipeline` para llegar al orquestador. Lo mismo con `sandbox_worker.py`: la imagen `sandbox` lleva una copia, así que un cambio requiere `docker compose build sandbox`.
 - `docker compose up --build` corre ambos servicios y sus gates en un solo paso.
