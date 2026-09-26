@@ -78,11 +78,19 @@ El riesgo más importante es común a las dos opciones: el código comparte el c
 - `sandbox_worker.py` se copia a la imagen: después de cambiarlo, `docker compose build sandbox`.
 - Los tests de [`test_sandbox.py`](../pipeline/tests/test_sandbox.py) usan el sandbox real y se saltean fuera de Compose.
 
-## Pendiente (etapa 2 en adelante)
+## Cómo lo usan los baselines
 
-Estas decisiones siguen abiertas. Las propuestas están en [`specs/sandbox.md`](../specs/sandbox.md):
+- **Cada baseline extrae el código.** Recibe la respuesta del LLM completa, lee `code` del JSON y recién ahí la manda al sandbox. No repara nada: si la respuesta no es un objeto JSON con `code`, eso es un resultado.
+- **Baseline 1 siempre llega a `execution`.** Una respuesta sin `code` se registra como `runtime_error` con código `InvalidResponse`, sin pasar por el sandbox. Todo lo demás, incluido un `SyntaxError`, aparece recién al ejecutar: justamente lo que este baseline quiere mostrar.
+- **Timeout de 5 s**, con el mismo código `TIMEOUT` que usa el engine.
+- **Traducción al registro:**
+  - `ok` → `executed`;
+  - `exception` → `runtime_error`, con el nombre de la excepción como código;
+  - `timeout` → `timeout`;
+  - `crash` → `runtime_error` con `SANDBOX_CRASH`.
 
-- quién extrae `code` de la respuesta y cómo se registra una respuesta ilegible;
-- el timeout de ejecución (propuesta: 5 s);
-- cómo se traduce cada `status` del sandbox al registro;
-- el tipo de `data` en la firma tipada que exige Baseline 2.
+Con las fixtures compartidas se ve la diferencia con el Tratamiento. En `rule-005`, las ramas devuelven `Int` o `String`: el engine lo bloquea (`BRANCH_MISMATCH`), mientras que Baseline 1 lo ejecuta y devuelve `"Rejected"` sin avisar nada.
+
+## Pendiente
+
+- El tipo de `data` en la firma tipada que exige Baseline 2. Las opciones están en [`specs/sandbox.md`](../specs/sandbox.md).

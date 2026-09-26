@@ -22,7 +22,7 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 - Un runner es `(llm_raw, env) -> Verdict`, donde `Verdict` son los campos `outcome`, `stage`, `result` y `error` del registro. El resto del registro lo pone el orquestador.
 - `duration_ms` lo mide el orquestador alrededor de la llamada al runner.
 - Runner de `treatment`: `run_engine`. Escribe `llm_raw` en el stdin del engine y copia el veredicto sin transformarlo.
-- Runners de `baseline1` y `baseline2`: los aporta el carril C-3 y se pasan en `runners`. Reciben `llm_raw` completo, no el código ya extraído.
+- Runners de `baseline1` y `baseline2`: viven en `pipeline/pipeline/baselines/` y se pasan en `runners`. Reciben `llm_raw` completo y extraen `code` ellos mismos (ver `specs/sandbox.md`). `baseline1` ya existe: `run_baseline_1`.
 
 ## Errores del engine en validación
 

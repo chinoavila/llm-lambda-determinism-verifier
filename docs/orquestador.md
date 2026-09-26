@@ -33,7 +33,7 @@ flowchart TD
 
 - Los códigos `missing_content` y `TIMEOUT`, y el uso del desenlace de la llamada como código de error, son convenciones del orquestador que todavía no figuran en [`contracts/README.md`](../contracts/README.md).
 - Los prompts de `build_messages` son provisorios. Influyen en el experimento, así que el equipo tiene que revisarlos.
-- Los runners de los baselines dependen del [sandbox](sandbox.md) (carril C-3).
+- Baseline 1 ya ejecuta en el [sandbox](sandbox.md); falta el runner de Baseline 2.
 - Falta el comando que corre todos los casos de punta a punta (roadmap, Día 5).
 
 Reglas exactas para agentes: [`specs/orquestador.md`](../specs/orquestador.md).

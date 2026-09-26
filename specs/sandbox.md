@@ -47,13 +47,18 @@ Código: `pipeline/pipeline/baselines/sandbox.py` (cliente, corre en `pipeline`)
 - Un cambio en `sandbox_worker.py` requiere `docker compose build sandbox`.
 - `tests/test_sandbox.py` usa el sandbox real y se saltea si no existe `SANDBOX_IO`. Si se cambia una capa de aislamiento, agregar o ajustar el test que la prueba.
 
-## Pendiente de decisión (etapa 2 en adelante, no implementar sin acuerdo)
+## Baselines sobre el sandbox (decidido)
 
-- Quién extrae `code` del JSON `{"code": ...}` y en qué etapa se registra una respuesta ilegible o sin `code`. Propuesta: el runner del baseline, con `stage: "execution"` y `error.code: "InvalidResponse"` en Baseline 1.
-- Timeout de ejecución de los baselines. Propuesta: 5 s (`DEFAULT_TIMEOUT_SECONDS`).
-- Mapeo de `status` al registro. Propuesta:
-  - `exception` → `runtime_error`, con el nombre de la excepción como `error.code`;
-  - `timeout` → `timeout`;
-  - `crash` → `runtime_error` con `SANDBOX_CRASH`.
+- Cada baseline es un runner `(llm_raw, env) -> Verdict` y extrae `code` él mismo (`extract_code` en `baseline1.py`). `llm_raw` debe ser un objeto JSON con `code` de tipo string. Se toleran claves extra; no se repara nada.
+- Baseline 1 llega siempre a `execution`. Una respuesta ilegible o sin `code` se registra como `outcome: "runtime_error"`, `stage: "execution"`, `error.code: "InvalidResponse"`, y no llega al sandbox.
+- Timeout de ejecución: 5 s (`DEFAULT_TIMEOUT_SECONDS` en `sandbox.py`).
+- `to_verdict` en `sandbox.py` mapea el resultado a la etapa `execution`, y lo usan ambos baselines:
+  - `ok` → `executed`, con `result` igual a `type` y `value`;
+  - `exception` → `runtime_error`, con `error.code` igual al nombre de la excepción (`SyntaxError`, `KeyError`, `NameError`...);
+  - `timeout` → `timeout`, con `error.code: "TIMEOUT"` (el mismo código que usa el engine);
+  - `crash` → `runtime_error`, con `error.code: "SANDBOX_CRASH"`.
+
+## Pendiente de decisión (no implementar sin acuerdo)
+
 - Tipo de `data` en la firma que exige Baseline 2: `dict[str, Any]`, un `TypedDict` construido desde Γ, o un parámetro por variable. Con `dict[str, object]`, `mypy --strict` rechaza casi toda regla por la firma y no por el modelo.
 - `mypy` pasa de dependencia de desarrollo a dependencia real en `pyproject.toml` cuando se implemente Baseline 2.

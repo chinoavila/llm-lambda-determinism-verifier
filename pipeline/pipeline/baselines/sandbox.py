@@ -15,6 +15,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from pipeline.orchestrator import Verdict
+
 DEFAULT_TIMEOUT_SECONDS = 5.0
 # Margen sobre el timeout del job: arranque del hijo y otros jobs en la cola.
 QUEUE_MARGIN_SECONDS = 30.0
@@ -71,3 +73,23 @@ def run_in_sandbox(
     if not isinstance(result, dict) or result.get("status") not in STATUSES:
         raise SandboxError(f"resultado del job {job_id} fuera de protocolo: {result!r}")
     return result
+
+
+def to_verdict(result: Mapping[str, Any]) -> Verdict:
+    """Mapea el resultado del sandbox a la etapa `execution` del registro (ver specs/sandbox.md)."""
+    status = result["status"]
+    if status == "ok":
+        return {
+            "outcome": "executed",
+            "stage": "execution",
+            "result": {"type": result["type"], "value": result["value"]},
+            "error": None,
+        }
+    if status == "exception":
+        error = {"code": str(result["name"]), "message": str(result["message"])}
+        return {"outcome": "runtime_error", "stage": "execution", "result": None, "error": error}
+    if status == "timeout":
+        error = {"code": "TIMEOUT", "message": f"superó {result.get('timeout_seconds')}s"}
+        return {"outcome": "timeout", "stage": "execution", "result": None, "error": error}
+    error = {"code": "SANDBOX_CRASH", "message": str(result.get("message", ""))}
+    return {"outcome": "runtime_error", "stage": "execution", "result": None, "error": error}
