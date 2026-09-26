@@ -9,8 +9,8 @@ common warnings
 library
     import:           warnings
     hs-source-dirs:   src
-    exposed-modules:  Engine.Types
-    build-depends:    base >=4.14 && <5, aeson >=2.0
+    exposed-modules:  Engine.Types, Engine.Env, Engine.Json, Engine.TypeCheck
+    build-depends:    base >=4.14 && <5, aeson >=2.0, bytestring
     default-language: GHC2021
 
 executable engine
@@ -25,5 +25,5 @@ test-suite engine-test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Spec.hs
-    build-depends:    base >=4.14 && <5, engine, hspec >=2.9, QuickCheck >=2.14
+    build-depends:    base >=4.14 && <5, engine, aeson >=2.0, bytestring, hspec >=2.9, QuickCheck >=2.14
     default-language: GHC2021
