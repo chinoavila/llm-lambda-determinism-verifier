@@ -78,6 +78,7 @@ Está terminado cuando alguien puede clonar el repositorio, configurar credencia
 ├── contracts/             # JSON Schema compartido entre engine/ y pipeline/ (acordar Día 0)
 ├── engine/                # C-1: motor de validación STLC (Haskell)
 ├── pipeline/              # C-2 orquestador + C-3 baselines (Python)
+├── corpus/                # reglas del experimento, una por archivo (docs/corpus.md)
 ├── prototype/             # mockup de referencia, NO normativo (ver aviso en el archivo)
 ├── Dockerfile             # imagen única, una etapa por componente (ver docs/docker.md)
 └── docker-compose.yml     # entorno de laboratorio
@@ -114,7 +115,7 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"
 docker compose run --rm run python -m pipeline run --repetitions 3
 docker compose run --rm run python -m pipeline run --help
 
-# Corpus del experimento (carpeta corpus/, fuera de Git): verificar las reglas,
+# Corpus del experimento (carpeta corpus/): verificar las reglas,
 # completar expected con el engine y correrlas
 docker compose run --rm pipeline python -m pipeline check-case /workspace/corpus --write
 docker compose run --rm run python -m pipeline run /workspace/corpus --repetitions 3

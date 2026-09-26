@@ -27,7 +27,8 @@ from pipeline.orchestrator import (
 )
 
 CATEGORIES = (1, 2, 3)
-CORPUS_FIELDS = ("category", "domain", "gamma", "canonical_ast", "canonical_python")
+CORPUS_FIELDS = ("category", "domain", "source", "gamma", "canonical_ast", "canonical_python")
+SOURCE_KINDS = ("adapted", "original")
 
 Level = Literal["error", "aviso"]
 
@@ -70,6 +71,8 @@ def check_fields(data: Mapping[str, Any], report: Report) -> None:
         report.error(f"category debe ser 1, 2 o 3, no {data['category']!r}")
     if "domain" in data and not (isinstance(data["domain"], str) and data["domain"]):
         report.error("domain debe ser un texto no vacío")
+    if "source" in data:
+        check_source(data["source"], report)
     if "gamma" in data and not isinstance(data["gamma"], dict):
         report.error("gamma debe ser un objeto {nombre: tipo}")
     ast = data.get("canonical_ast")
@@ -77,6 +80,18 @@ def check_fields(data: Mapping[str, Any], report: Report) -> None:
         report.error('canonical_ast debe ser un programa {"expr": ...}')
     if "canonical_python" in data and not isinstance(data["canonical_python"], str):
         report.error("canonical_python debe ser el código como texto")
+
+
+def check_source(source: Any, report: Report) -> None:
+    """Origen de la regla: `original` (escrita para el corpus) o `adapted` (de una fuente
+    real de reuso libre, con `reference` y `license`). Ver docs/corpus-fuentes.md."""
+    if not isinstance(source, dict) or source.get("kind") not in SOURCE_KINDS:
+        report.error('source debe ser {"kind": "adapted" | "original", ...}')
+        return
+    if source["kind"] == "adapted":
+        for key in ("reference", "license"):
+            if not (isinstance(source.get(key), str) and source[key]):
+                report.error(f"una regla adaptada necesita source.{key} (texto no vacío)")
 
 
 def check_balance(results: Sequence[Mapping[str, Any]], report: Report) -> None:

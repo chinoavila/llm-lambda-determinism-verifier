@@ -21,7 +21,7 @@ Rechazar toda tarea que implique:
 - Ejecutar corridas experimentales o producir datos.
 - Recolectar, agregar, analizar o graficar resultados.
 - Calcular métricas de cualquier tipo.
-- Construir o poblar un corpus de datos a escala.
+- Construir o poblar un corpus de datos por iniciativa propia. Excepción acordada con el equipo (2026-09-26): las reglas del experimento se versionan en [`corpus/`](../corpus/) y un agente puede escribirlas **solo cuando el desarrollador lo pide**, siguiendo [`docs/corpus.md`](../docs/corpus.md) y verificándolas con `check-case`. El corpus no es un componente: no cambia C-1, C-2 ni C-3.
 - Redactar documentación académica o discutir hallazgos.
 - Extender el DSL, el orquestador o los baselines más allá de lo necesario para que los tres componentes funcionen.
 

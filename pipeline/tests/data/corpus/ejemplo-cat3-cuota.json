@@ -2,6 +2,7 @@
   "case_id": "EJ-CAT3-CUOTA",
   "category": 3,
   "domain": "credito",
+  "source": { "kind": "original" },
   "description": "Aprobar el préstamo si la cuota mensual no supera el 30 % del ingreso mensual, salvo que el cliente tenga morosidades.",
   "gamma": {
     "cuota": "Decimal",

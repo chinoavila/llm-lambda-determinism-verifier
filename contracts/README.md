@@ -204,7 +204,7 @@ Lo que el orquestador recibe por cada regla del corpus, en [`case-schema.json`](
 | `scenarios[].scenario_id` | identificador del escenario, único dentro del caso | orquestador (va al registro) |
 | `scenarios[].env` | datos del escenario, tal como se pasan a `--env` y al sandbox | orquestador |
 | `scenarios[].expected` | resultado esperado, con la forma de `Result` | experimento |
-| otros (`category`, `domain`, `gamma`, `canonical_ast`, `canonical_python`) | los define el corpus ([`docs/corpus.md`](../docs/corpus.md)) | experimento |
+| otros (`category`, `domain`, `source`, `gamma`, `canonical_ast`, `canonical_python`) | los define el corpus ([`docs/corpus.md`](../docs/corpus.md)) | experimento |
 
 Antes de llamar al LLM, el orquestador valida lo que el schema no expresa, y si algo falla aborta la corrida (es un error del corpus, no del modelo):
 

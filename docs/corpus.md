@@ -18,7 +18,7 @@ La sección 8 del proyecto, validada por la cátedra, establece:
 
 ## Dónde vive
 
-- **Una regla por archivo JSON**, en la carpeta `corpus/` de la raíz del repo. Está en `.gitignore`: el corpus no se versiona acá. Los contenedores la ven en `/workspace/corpus`.
+- **Una regla por archivo JSON**, en la carpeta [`corpus/`](../corpus/) de la raíz del repo, versionada junto al pipeline. Los contenedores la ven en `/workspace/corpus`. Solo entran reglas de fuentes de reuso libre (dominio público, CC BY) y reglas propias.
 - **Ejemplos:** hay tres reglas terminadas, una por categoría, en [`pipeline/tests/data/corpus/`](../pipeline/tests/data/corpus/). Los tests verifican que sigan siendo válidas, así que sirven de plantilla:
   - [`ejemplo-cat1-riesgo.json`](../pipeline/tests/data/corpus/ejemplo-cat1-riesgo.json)
   - [`ejemplo-cat2-beneficio.json`](../pipeline/tests/data/corpus/ejemplo-cat2-beneficio.json)
@@ -33,6 +33,7 @@ Extiende el caso de entrada del pipeline ([`contracts/case-schema.json`](../cont
 | `case_id` | identificador único en todo el corpus | pipeline y experimento |
 | `category` | `1`, `2` o `3` (ver abajo) | experimento |
 | `domain` | `credito`, `fiscal`, `elegibilidad`, `precios`, `triaje`… | experimento (estratificación) |
+| `source` | `{"kind": "original"}` si la regla es propia; `{"kind": "adapted", "reference": ..., "license": ...}` si viene de una fuente real ([`corpus-fuentes.md`](corpus-fuentes.md)) | experimento (separar reglas adaptadas de propias) |
 | `description` | la regla en lenguaje natural: **lo único que ve el LLM** | pipeline |
 | `gamma` | `{variable: tipo}`, igual al que deduce el engine | verificación |
 | `canonical_ast` | la regla correcta en el DSL: `{"expr": ...}` ([contracts §1](../contracts/README.md)) | verificación y `expected` |
@@ -44,6 +45,7 @@ Extiende el caso de entrada del pipeline ([`contracts/case-schema.json`](../cont
   "case_id": "EJ-CAT3-CUOTA",
   "category": 3,
   "domain": "credito",
+  "source": { "kind": "original" },
   "description": "Aprobar el préstamo si la cuota mensual no supera el 30 % del ingreso mensual, salvo que el cliente tenga morosidades.",
   "gamma": { "cuota": "Decimal", "ingreso": "Int", "tiene_morosidades": "Bool" },
   "canonical_ast": { "expr": { "type": "BinaryOp", "op": "AND", "left": { "...": "cuota <= ingreso * 0.30" }, "right": { "...": "NOT tiene_morosidades" } } },
@@ -83,12 +85,11 @@ flowchart TD
     R --> F["Regla lista en corpus/"]
 ```
 
-1. **Dominio y categoría.** Elegí la celda de la matriz de estratificación que falta completar. Inspirate en dominios reales, sin copiar texto:
-   - las descripciones de decisiones de Goossens et al. (IMC, licencia, vacaciones, beca);
-   - los desafíos de la Decision Management Community (préstamos, tarjetas, impuestos, seguros);
-   - los topes fiscales de Veeramani et al.
+1. **Dominio, categoría y fuente.** Elegí la celda de la matriz de estratificación que falta completar.
+   - **Regla adaptada** (`source.kind = "adapted"`): la lógica y los escenarios de partida salen de una fuente de reuso libre, y el enunciado se redacta de nuevo con la técnica de la categoría. Las del dominio `fiscal` salen del examen VITA del IRS, según la selección de [`corpus-fuentes.md`](corpus-fuentes.md). Los parámetros (topes, edades, tasas) se toman de la publicación del IRS que define la regla, no de las preguntas del examen.
+   - **Regla propia** (`source.kind = "original"`): para los demás dominios. Inspirate en dominios reales **sin copiar texto**: las descripciones de Goossens et al. (licencia, vacaciones, beca), los desafíos de la Decision Management Community (préstamos, tarjetas, seguros) y los topes fiscales de Veeramani et al. Sus términos no autorizan el reuso. La excepción es la descripción de IMC de Goossens, publicada con CC BY 4.0: esa se adapta citándola.
 
-   Sus términos no autorizan el reuso, y escribir reglas nuevas también reduce el riesgo de que los modelos las hayan visto al entrenarse (Zhang et al. lo declara como amenaza).
+   El enunciado siempre es nuestro, también en las adaptadas. Así se reduce el riesgo de que los modelos lo hayan visto al entrenarse (Zhang et al. lo declara como amenaza) y la tentación de la categoría queda en la redacción.
 2. **AST canónico primero.** Escribir la regla en el DSL antes que el texto fija su semántica exacta y permite controlar la complejidad, como hacen LTLBench y BLInD. Contá variables (de 1 a 5) y operadores (de 1 a 8), y anotá si usa `IF`, `Lam` o `IN`.
 3. **Enunciado.** Redactalo para alguien de negocio, sin nombres técnicos del DSL, usando la técnica de la categoría. Los nombres de las variables tienen que ser reconocibles en el texto: el LLM recibe Γ con esos nombres.
 4. **Python canónico.** La misma regla como `evaluate_rule(data)`. Para campos `Decimal`, operá con `decimal.Decimal` (`Decimal('0.30')`, no `0.30`): es lo que reciben los baselines, y mezclar `Decimal` con `float` falla en Python.
@@ -122,11 +123,21 @@ Los antecedentes usan conjuntos chicos y curados:
 - λRepair: 50 por categoría;
 - Tang: 200 ítems para evaluar.
 
-Una base razonable:
+El corpus del experimento:
 - **30 reglas por categoría** (90 en total);
-- 4 o 5 dominios repartidos por igual dentro de cada categoría;
+- **5 dominios con 6 reglas por celda**, así ningún dominio pesa más que otro;
 - **de 6 a 10 escenarios por regla**;
 - complejidad variada dentro de cada celda (pocas y muchas variables, con y sin `IF`).
+
+| Dominio | Cat. 1 | Cat. 2 | Cat. 3 | Fuente |
+|---|---|---|---|---|
+| `fiscal` | 6 | 6 | 6 | adaptadas del examen VITA del IRS ([`corpus-fuentes.md`](corpus-fuentes.md)) |
+| `salud` | 6 | 6 | 6 | propias, salvo la de IMC, adaptada de Goossens et al. (CC BY 4.0) |
+| `credito` | 6 | 6 | 6 | propias |
+| `seguros` | 6 | 6 | 6 | propias |
+| `laboral` | 6 | 6 | 6 | propias (licencias, vacaciones, horas extra) |
+
+Quedan 19 reglas adaptadas y 71 propias. Las 9 reglas del IRS que no entran quedan de reserva, para reemplazar alguna que no pase la revisión humana.
 
 ## Correr el experimento con el corpus
 
@@ -143,6 +154,7 @@ docker compose run --rm run python -m pipeline run /workspace/corpus --repetitio
 ## Checklist por regla
 
 - [ ] `case_id` único; `category` y `domain` coherentes con la matriz.
+- [ ] `source` completo: en las adaptadas, referencia precisa (documento, escenario, publicación) y licencia.
 - [ ] El AST canónico es la única lectura correcta del enunciado (revisión humana hecha).
 - [ ] El enunciado usa la técnica de su categoría y no nombra construcciones del DSL.
 - [ ] El Python canónico usa `decimal.Decimal` para los campos `Decimal`.

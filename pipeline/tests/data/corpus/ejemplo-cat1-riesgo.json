@@ -2,6 +2,7 @@
   "case_id": "EJ-CAT1-RIESGO",
   "category": 1,
   "domain": "credito",
+  "source": { "kind": "original" },
   "description": "Clasificar el riesgo del préstamo según el puntaje crediticio: si es menor a 600 el riesgo es Alto; si es menor a 700, Medio; si es menor a 800, Bajo; y en cualquier otro caso, Mínimo.",
   "gamma": {
     "credit_score": "Int"

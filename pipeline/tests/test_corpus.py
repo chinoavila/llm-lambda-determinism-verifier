@@ -10,7 +10,15 @@ from typing import Any
 import pytest
 
 from pipeline.cli import check_cases, main
-from pipeline.corpus import Report, check_balance, check_case, check_fields, plain, write_expected
+from pipeline.corpus import (
+    Report,
+    check_balance,
+    check_case,
+    check_fields,
+    check_source,
+    plain,
+    write_expected,
+)
 from pipeline.orchestrator import CaseError
 
 EXAMPLES = Path(__file__).parent / "data" / "corpus"
@@ -39,10 +47,14 @@ def edited(tmp_path: Path, change: Any, source: Path = CUOTA) -> Path:
 
 def test_check_fields_reports_each_problem() -> None:
     report = Report(Path("x.json"))
-    check_fields({"category": 4, "domain": "", "gamma": [], "canonical_ast": {}, "canonical_python": 1}, report)
+    check_fields(
+        {"category": 4, "domain": "", "source": "IRS", "gamma": [], "canonical_ast": {}, "canonical_python": 1},
+        report,
+    )
     assert issues(report) == [
         "error: category debe ser 1, 2 o 3, no 4",
         "error: domain debe ser un texto no vacío",
+        'error: source debe ser {"kind": "adapted" | "original", ...}',
         "error: gamma debe ser un objeto {nombre: tipo}",
         'error: canonical_ast debe ser un programa {"expr": ...}',
         "error: canonical_python debe ser el código como texto",
@@ -50,8 +62,28 @@ def test_check_fields_reports_each_problem() -> None:
     missing = Report(Path("x.json"))
     check_fields({}, missing)
     assert issues(missing) == [
-        "error: faltan campos del corpus: ['category', 'domain', 'gamma', 'canonical_ast', 'canonical_python']"
+        "error: faltan campos del corpus: "
+        "['category', 'domain', 'source', 'gamma', 'canonical_ast', 'canonical_python']"
     ]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ({"kind": "original"}, []),
+        ({"kind": "adapted", "reference": "IRS Form 6744 (2025), B3", "license": "dominio público"}, []),
+        (
+            {"kind": "adapted", "reference": "IRS Form 6744 (2025), B3"},
+            ["error: una regla adaptada necesita source.license (texto no vacío)"],
+        ),
+        ({"kind": "copiada"}, ['error: source debe ser {"kind": "adapted" | "original", ...}']),
+    ],
+    ids=["original", "adaptada", "adaptada-sin-licencia", "kind-invalido"],
+)
+def test_check_source(source: dict[str, str], expected: list[str]) -> None:
+    report = Report(Path("x.json"))
+    check_source(source, report)
+    assert issues(report) == expected
 
 
 @pytest.mark.parametrize(

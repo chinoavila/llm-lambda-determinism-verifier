@@ -2,6 +2,7 @@
   "case_id": "EJ-CAT2-BENEFICIO",
   "category": 2,
   "domain": "elegibilidad",
+  "source": { "kind": "original" },
   "description": "Otorgar el beneficio si la categoría del cliente es Gold o Platinum y tiene al menos 2 años de antigüedad. El nivel de riesgo del cliente no interviene en esta regla.",
   "gamma": {
     "antiguedad": "Int",

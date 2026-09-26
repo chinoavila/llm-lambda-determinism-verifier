@@ -136,6 +136,7 @@ Verificado en la web el 2026-09-26. "Sin licencia" significa que el repositorio 
 | Escenarios fiscales (20) | [16] | "A pedido de los autores" (autora de contacto en el paper) | — | **Muy relevante:** umbrales y topes fiscales. Vale la pena pedirlos |
 | Batería clínica | [4] | No publicada; solo el cuestionario, a pedido | — | Solo el método |
 | VITA test: 130 preguntas y 260 variantes perturbadas | citado por [16] (Gogani-Khiabani et al. 2025, `10.1007/s10506-025-09465-7`) | Sin enlace público encontrado | — | Relevante: declaraciones de impuestos. Pedir a los autores |
+| Examen de certificación VITA/TCE (Form 6744, año fiscal 2025), de donde sale el VITA test | IRS | [irs.gov/pub/irs-pdf/f6744.pdf](https://www.irs.gov/pub/irs-pdf/f6744.pdf) | Dominio público (17 U.S.C. § 105), salvo capturas de TaxSlayer | **Fuente principal de reglas reales:** 27 reglas inventariadas en [`corpus-fuentes.md`](corpus-fuentes.md) |
 | MindGames | [15] | [huggingface.co/datasets/sileod/mindgames](https://huggingface.co/datasets/sileod/mindgames) | Apache-2.0 | No aplica (teoría de la mente); solo el criterio 50/50 |
 | ToMBench | [15] | [github.com/zhchen18/ToMBench](https://github.com/zhchen18/ToMBench) | MIT | No aplica |
 | HaluEval | [5] | [github.com/RUCAIBox/HaluEval](https://github.com/RUCAIBox/HaluEval) | MIT | No aplica (factualidad) |

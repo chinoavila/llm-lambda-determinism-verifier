@@ -50,8 +50,8 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 
 ## Verificación del corpus (`python -m pipeline check-case`)
 
-- Código: `pipeline/pipeline/corpus.py`. Guía para humanos: `docs/corpus.md`. El corpus no es entregable del repo (`/corpus/` está en `.gitignore`); los ejemplos válidos viven en `pipeline/tests/data/corpus/` y los tests los verifican.
-- `check-case <archivos|directorios> [--write]`. Por regla: campos del corpus (`category` 1-3, `domain`, `gamma`, `canonical_ast`, `canonical_python`), `load_case`, `gamma` igual al de `case_gamma`, el engine **ejecuta** `canonical_ast` en cada escenario (si bloquea o falla, error), el Python canónico da el mismo `Result` en el sandbox, `expected` declarado igual al calculado, y balance (booleanas: ambos valores y diferencia <= 1, si no aviso; otras: al menos dos resultados distintos).
+- Código: `pipeline/pipeline/corpus.py`. Guía para humanos: `docs/corpus.md`. Las reglas del experimento se versionan en `corpus/` (ver `specs/mission.md` §2); los ejemplos válidos viven en `pipeline/tests/data/corpus/` y los tests los verifican.
+- `check-case <archivos|directorios> [--write]`. Por regla: campos del corpus (`category` 1-3, `domain`, `source` con `kind` `original` o `adapted`, y en `adapted` también `reference` y `license` no vacíos, `gamma`, `canonical_ast`, `canonical_python`), `load_case`, `gamma` igual al de `case_gamma`, el engine **ejecuta** `canonical_ast` en cada escenario (si bloquea o falla, error), el Python canónico da el mismo `Result` en el sandbox, `expected` declarado igual al calculado, y balance (booleanas: ambos valores y diferencia <= 1, si no aviso; otras: al menos dos resultados distintos).
 - `expected` lo calcula siempre el engine. `--write` solo completa los que faltan y solo si la regla no tiene errores; nunca pisa uno existente. Sale con 1 si alguna regla tiene errores.
 - No usar `check-case` para calcular métricas ni comparar grupos: verifica el corpus, no resultados del experimento.
 
