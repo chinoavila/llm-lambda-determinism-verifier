@@ -1,5 +1,7 @@
 # Guía Metodológica para la Construcción del Corpus de Entrada para la Evaluación del Pipeline Neuro-Simbólico
 
+> **Reemplazada por [`docs/corpus.md`](../docs/corpus.md).** Esta guía se conserva como borrador histórico. Contrastada con las referencias, tiene errores: la tabla "Correcciones a la guía original" de `docs/corpus.md` los detalla. El análisis de las fuentes está en [`docs/antecedentes.md`](../docs/antecedentes.md).
+
 ## Resumen Ejecutivo
 Esta guía establece la metodología paso a paso para la selección, estructuración, curaduría y auditoría del **corpus de entrada** destinado a la evaluación empírica del pipeline neuro-simbólico definido en **DI_PF_TFI_ENTREGA1_v5.pdf**. 
 
