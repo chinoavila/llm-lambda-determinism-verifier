@@ -80,3 +80,8 @@
     @apply outline-2 outline-offset-2 outline-accent;
   }
 }
+
+@keyframes slide {
+  from { transform: translateX(24px); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
