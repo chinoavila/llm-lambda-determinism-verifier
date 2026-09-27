@@ -60,8 +60,8 @@ docker compose run --rm pipeline sh -c "mypy . && pytest"   # carriles Orquestad
 Extensión decidida por el equipo el 2026-09-26. Reglas en [`ui.md`](./ui.md).
 
 - [x] Etapa 1: servidor (`python -m pipeline serve`), `GET /api/health`, SPA con navegación y barra de estado, servicio `ui` en compose.
-- [ ] Etapa 2: CRUD de `corpus/` desde la UI, con `check-case` al guardar.
-- [ ] Etapa 3: lanzar corridas con confirmación de cuota, log en vivo, cancelación y exploración de registros.
+- [x] Etapa 2: CRUD de `corpus/` desde la UI, con `check-case` al guardar.
+- [x] Etapa 3: lanzar corridas con confirmación de cuota, log en vivo, cancelación y exploración de registros.
 
 **Listo cuando:** desde `http://localhost:8000` se puede editar una regla, verificarla, correr el pipeline sobre el corpus y revisar sus registros sin usar la terminal.
 

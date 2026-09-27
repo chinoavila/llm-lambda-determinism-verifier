@@ -14,6 +14,19 @@
 - Todas las rutas bajo `/api/` responden JSON (`application/json; charset=utf-8`, `Cache-Control: no-store`). Errores: `{"error": "<mensaje en español>"}` con 404 (no existe), 405 (método no admitido) o el código que corresponda.
 - Cualquier otra ruta `GET` sirve la SPA desde `ui/dist` (`resolve_static`): un archivo existente se sirve tal cual; una ruta sin extensión devuelve `index.html`; un archivo con extensión que no existe o una ruta que sale de `ui/dist` da 404.
 - `GET /api/health`: `engine` (binario en el PATH), `sandbox_queue` (hay `SANDBOX_IO`), `llm` (`ready`, `models`, `error`), `corpus_rules` (cantidad de `corpus/*.json`), `runs` (cantidad de `out/*.jsonl`).
+- Corpus (`pipeline/pipeline/store.py`, clase `RuleStore`):
+  - `GET /api/rules` y `GET /api/rules/{id}`: reglas de `corpus/*.json`, cada una con `_version` (hash del archivo) y `_file`. Los JSON ilegibles o sin `case_id` no se listan.
+  - `POST /api/rules` crea `corpus/<slug del id>.json` (409 si el id o el archivo existen). `PUT /api/rules/{id}` reemplaza la regla; exige la `_version` leída (409 si el archivo cambió) y no permite cambiar el id. Ambas corren `check_case` + `write_expected` y responden `{"rule", "check"}`: la regla queda guardada aunque `check` tenga errores, para no perder el trabajo.
+  - `reconcile_expected` al guardar: si cambió el AST se quitan todos los `expected`; si cambió el `env` de un escenario, el suyo. Un `expected` editado a mano con el mismo AST y `env` se conserva, y `check-case` lo marca si difiere del engine.
+  - `DELETE /api/rules/{id}?version=...` (409 si la versión no coincide). `POST /api/rules/{id}/check` verifica y completa `expected`; `POST /api/rules/check` verifica todas sin escribir.
+  - `_version` y `_file` nunca se escriben en el archivo. `review` (`status`: `pendiente` | `aprobada` | `cambios`, `comments`: `[{author, text, at}]`) es un campo del corpus que la UI edita; `check-case` y el orquestador lo ignoran.
+- Corridas (`pipeline/pipeline/jobs.py`, clase `RunManager`):
+  - `POST /api/runs/estimate` con `{"source": "corpus" | "fixtures", "case_ids"?: [...], "repetitions": 1-20}` devuelve `{cases, repetitions, calls}`, con `calls = casos × 3 × repeticiones`.
+  - `POST /api/runs` con la misma selección más `confirm_calls`: lanza `python -m pipeline run` como subproceso (`pipeline_command`), con `--run-id` y la salida en `out/<run_id>.log`. 409 si `confirm_calls` no es exactamente `calls`, si ya hay una corrida en curso o si faltan credenciales del LLM. A lo sumo una corrida a la vez.
+  - `GET /api/runs`: `{active, runs}`, con las corridas de `out/` (registros, log, última escritura y, si se lanzó desde este servidor, su estado). `POST /api/runs/{id}/cancel` termina el subproceso (los casos ya escritos quedan). `GET /api/runs/{id}/log?offset=n` devuelve el log desde `n` para leerlo de a partes.
+  - `GET /api/runs/{id}/records`: los renglones del JSONL, filtrables por igualdad en `case_id`, `scenario_id`, `group`, `repetition`, `outcome`, `stage` y `model`, cada uno con el `expected` de su escenario si la regla está en `corpus/`. Nunca conteos, tasas ni resúmenes.
+  - `run_id` solo admite letras, dígitos, `-` y `_`: no puede salir de `out/`.
+- Errores de la verificación o de la corrida por el engine o el sandbox caídos: 503.
 - **Nunca** devolver una clave de API, ni parte de ella, ni el contenido de `.env`. De la configuración del LLM solo se expone si está lista, los nombres de modelo y el mensaje de `ConfigError` (que nombra la variable, no su valor). Lo verifica `test_health_never_returns_the_api_key`.
 
 ## Seguridad
@@ -39,5 +52,10 @@
 ## Etapas
 
 1. Base: servidor, `GET /api/health`, SPA con navegación (Corpus, Corridas, Registros) y barra de estado. Hecha.
-2. Corpus: CRUD de `corpus/*.json` desde la UI, con `check-case` al guardar.
-3. Corridas y registros: lanzar `run` con confirmación de cuota, log en vivo, cancelación y exploración de `out/<run_id>.jsonl`.
+2. Corpus: CRUD de `corpus/*.json` desde la UI, con `check-case` al guardar. Hecha.
+3. Corridas y registros: lanzar `run` con confirmación de cuota, log en vivo, cancelación y exploración de `out/<run_id>.jsonl`. Hecha.
+
+## Relación con los generadores del corpus
+
+- Las reglas que escribe un script de `corpus/tools/` llevan `generated_by`. La UI avisa que un cambio hecho ahí se pierde si se vuelve a correr el script; el cambio tiene que llevarse también al script.
+- Los scripts conservan `review` y los `expected` que siguen valiendo (`corpus/tools/dsl.py`, `write_rule`).
