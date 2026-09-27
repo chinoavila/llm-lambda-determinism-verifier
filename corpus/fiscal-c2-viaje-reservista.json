@@ -1,0 +1,136 @@
+{
+  "case_id": "FIS-C2-VIAJE-RESERVISTA",
+  "category": 2,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Military Scenario 1; IRS Pub. 3 (2025), Armed Forces Reservists y standard mileage rate",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c2.py",
+  "description": "Calcular cuánto puede deducir en 2025 un miembro de la reserva por viajar en su auto a las prácticas. Solo hay deducción si la base está a más de 100 millas de su casa; en ese caso deduce las millas recorridas a 0.70 dólares por milla, más lo que pagó de peajes y estacionamiento. Si la base está a 100 millas o menos, la deducción es 0.0. Las comidas y los uniformes no se deducen por esta vía.",
+  "gamma": {
+    "distancia_millas": "Int",
+    "millas_recorridas": "Int",
+    "peajes_y_estacionamiento": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "Var",
+          "name": "distancia_millas"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 100,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "BinaryOp",
+        "op": "+",
+        "left": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "millas_recorridas"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0.7,
+            "value_type": "Decimal"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "peajes_y_estacionamiento"
+        }
+      },
+      "else": {
+        "type": "Literal",
+        "value": 0.0,
+        "value_type": "Decimal"
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    if data['distancia_millas'] > 100:\n        return data['millas_recorridas'] * Decimal('0.70') + data['peajes_y_estacionamiento']\n    return Decimal('0')\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-M1-MALIK",
+      "env": {
+        "distancia_millas": 150,
+        "millas_recorridas": 3600,
+        "peajes_y_estacionamiento": 92
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "2612"
+      }
+    },
+    {
+      "scenario_id": "V1-DISTANCIA-100",
+      "env": {
+        "distancia_millas": 100,
+        "millas_recorridas": 2400,
+        "peajes_y_estacionamiento": 50
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V2-DISTANCIA-101",
+      "env": {
+        "distancia_millas": 101,
+        "millas_recorridas": 2424,
+        "peajes_y_estacionamiento": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1696.8"
+      }
+    },
+    {
+      "scenario_id": "V3-DISTANCIA-99",
+      "env": {
+        "distancia_millas": 99,
+        "millas_recorridas": 2376,
+        "peajes_y_estacionamiento": 30
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V4-SIN-PEAJES",
+      "env": {
+        "distancia_millas": 250,
+        "millas_recorridas": 1000,
+        "peajes_y_estacionamiento": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "700"
+      }
+    },
+    {
+      "scenario_id": "V5-UNA-MILLA",
+      "env": {
+        "distancia_millas": 500,
+        "millas_recorridas": 1,
+        "peajes_y_estacionamiento": 3
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "3.7"
+      }
+    }
+  ]
+}

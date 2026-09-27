@@ -1,0 +1,129 @@
+{
+  "case_id": "FIS-C3-PERDIDAS-JUEGO",
+  "category": 3,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Advanced Scenario 5; IRS Instructions for Schedule A (2025), line 16",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c3.py",
+  "description": "Calcular cuánto de sus pérdidas de juego puede deducir el contribuyente en 2025, en dólares. Solo se deducen si detalla sus deducciones en lugar de usar la deducción estándar, y nunca más que lo que ganó en el juego ese año: si perdió más de lo que ganó, deduce lo ganado. Si no detalla, deduce 0.",
+  "gamma": {
+    "detalla_deducciones": "Bool",
+    "ganancias_juego": "Int",
+    "perdidas_juego": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "Var",
+        "name": "detalla_deducciones"
+      },
+      "then": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "perdidas_juego"
+          },
+          "right": {
+            "type": "Var",
+            "name": "ganancias_juego"
+          }
+        },
+        "then": {
+          "type": "Var",
+          "name": "perdidas_juego"
+        },
+        "else": {
+          "type": "Var",
+          "name": "ganancias_juego"
+        }
+      },
+      "else": {
+        "type": "Literal",
+        "value": 0,
+        "value_type": "Int"
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    if not data['detalla_deducciones']:\n        return 0\n    return min(data['perdidas_juego'], data['ganancias_juego'])\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-A5-JULIA",
+      "env": {
+        "detalla_deducciones": true,
+        "ganancias_juego": 3000,
+        "perdidas_juego": 2000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 2000
+      }
+    },
+    {
+      "scenario_id": "V1-NO-DETALLA",
+      "env": {
+        "detalla_deducciones": false,
+        "ganancias_juego": 3000,
+        "perdidas_juego": 2000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 0
+      }
+    },
+    {
+      "scenario_id": "V2-PERDIO-MAS",
+      "env": {
+        "detalla_deducciones": true,
+        "ganancias_juego": 3000,
+        "perdidas_juego": 5000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 3000
+      }
+    },
+    {
+      "scenario_id": "V3-IGUALES",
+      "env": {
+        "detalla_deducciones": true,
+        "ganancias_juego": 3000,
+        "perdidas_juego": 3000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 3000
+      }
+    },
+    {
+      "scenario_id": "V4-SIN-GANANCIAS",
+      "env": {
+        "detalla_deducciones": true,
+        "ganancias_juego": 0,
+        "perdidas_juego": 800
+      },
+      "expected": {
+        "type": "Int",
+        "value": 0
+      }
+    },
+    {
+      "scenario_id": "V5-UN-DOLAR-MENOS",
+      "env": {
+        "detalla_deducciones": true,
+        "ganancias_juego": 1200,
+        "perdidas_juego": 1199
+      },
+      "expected": {
+        "type": "Int",
+        "value": 1199
+      }
+    }
+  ]
+}

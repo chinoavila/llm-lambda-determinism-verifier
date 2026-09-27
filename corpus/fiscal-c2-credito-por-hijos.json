@@ -1,0 +1,489 @@
+{
+  "case_id": "FIS-C2-CREDITO-HIJOS",
+  "category": 2,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenario 3 y Advanced Scenario 2; IRS Instructions for Schedule 8812 (2025), Credit Limit Worksheet A",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c2.py",
+  "description": "Calcular el crédito por hijos y por otros dependientes de 2025, en dólares, antes del límite por impuesto. Son 2200 dólares por cada hijo calificable menor de 17 años más 500 por cada otro dependiente. Si el ingreso bruto ajustado modificado (MAGI) supera 400000 dólares en una declaración conjunta, o 200000 en cualquier otra, el crédito se reduce 50 dólares por cada 1000 dólares o fracción de exceso: 1 dólar de exceso ya reduce 50, 1000 de exceso reducen 50 y 1001 reducen 100. El crédito nunca es negativo: si la reducción lo supera, vale 0.0.",
+  "gamma": {
+    "declaracion_conjunta": "Bool",
+    "hijos_menores_17": "Int",
+    "magi": "Int",
+    "otros_dependientes": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "BinaryOp",
+          "op": "-",
+          "left": {
+            "type": "BinaryOp",
+            "op": "+",
+            "left": {
+              "type": "BinaryOp",
+              "op": "*",
+              "left": {
+                "type": "Var",
+                "name": "hijos_menores_17"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 2200,
+                "value_type": "Int"
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "*",
+              "left": {
+                "type": "Var",
+                "name": "otros_dependientes"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 500,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": ">",
+              "left": {
+                "type": "Var",
+                "name": "magi"
+              },
+              "right": {
+                "type": "IfThenElse",
+                "condition": {
+                  "type": "Var",
+                  "name": "declaracion_conjunta"
+                },
+                "then": {
+                  "type": "Literal",
+                  "value": 400000,
+                  "value_type": "Int"
+                },
+                "else": {
+                  "type": "Literal",
+                  "value": 200000,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "then": {
+              "type": "BinaryOp",
+              "op": "*",
+              "left": {
+                "type": "BinaryOp",
+                "op": "/",
+                "left": {
+                  "type": "BinaryOp",
+                  "op": "-",
+                  "left": {
+                    "type": "BinaryOp",
+                    "op": "+",
+                    "left": {
+                      "type": "BinaryOp",
+                      "op": "-",
+                      "left": {
+                        "type": "Var",
+                        "name": "magi"
+                      },
+                      "right": {
+                        "type": "IfThenElse",
+                        "condition": {
+                          "type": "Var",
+                          "name": "declaracion_conjunta"
+                        },
+                        "then": {
+                          "type": "Literal",
+                          "value": 400000,
+                          "value_type": "Int"
+                        },
+                        "else": {
+                          "type": "Literal",
+                          "value": 200000,
+                          "value_type": "Int"
+                        }
+                      }
+                    },
+                    "right": {
+                      "type": "Literal",
+                      "value": 999,
+                      "value_type": "Int"
+                    }
+                  },
+                  "right": {
+                    "type": "BinaryOp",
+                    "op": "%",
+                    "left": {
+                      "type": "BinaryOp",
+                      "op": "+",
+                      "left": {
+                        "type": "BinaryOp",
+                        "op": "-",
+                        "left": {
+                          "type": "Var",
+                          "name": "magi"
+                        },
+                        "right": {
+                          "type": "IfThenElse",
+                          "condition": {
+                            "type": "Var",
+                            "name": "declaracion_conjunta"
+                          },
+                          "then": {
+                            "type": "Literal",
+                            "value": 400000,
+                            "value_type": "Int"
+                          },
+                          "else": {
+                            "type": "Literal",
+                            "value": 200000,
+                            "value_type": "Int"
+                          }
+                        }
+                      },
+                      "right": {
+                        "type": "Literal",
+                        "value": 999,
+                        "value_type": "Int"
+                      }
+                    },
+                    "right": {
+                      "type": "Literal",
+                      "value": 1000,
+                      "value_type": "Int"
+                    }
+                  }
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 1000,
+                  "value_type": "Int"
+                }
+              },
+              "right": {
+                "type": "Literal",
+                "value": 50,
+                "value_type": "Int"
+              }
+            },
+            "else": {
+              "type": "Literal",
+              "value": 0.0,
+              "value_type": "Decimal"
+            }
+          }
+        },
+        "right": {
+          "type": "Literal",
+          "value": 0,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "BinaryOp",
+        "op": "-",
+        "left": {
+          "type": "BinaryOp",
+          "op": "+",
+          "left": {
+            "type": "BinaryOp",
+            "op": "*",
+            "left": {
+              "type": "Var",
+              "name": "hijos_menores_17"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 2200,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "*",
+            "left": {
+              "type": "Var",
+              "name": "otros_dependientes"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 500,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": ">",
+            "left": {
+              "type": "Var",
+              "name": "magi"
+            },
+            "right": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "Var",
+                "name": "declaracion_conjunta"
+              },
+              "then": {
+                "type": "Literal",
+                "value": 400000,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "Literal",
+                "value": 200000,
+                "value_type": "Int"
+              }
+            }
+          },
+          "then": {
+            "type": "BinaryOp",
+            "op": "*",
+            "left": {
+              "type": "BinaryOp",
+              "op": "/",
+              "left": {
+                "type": "BinaryOp",
+                "op": "-",
+                "left": {
+                  "type": "BinaryOp",
+                  "op": "+",
+                  "left": {
+                    "type": "BinaryOp",
+                    "op": "-",
+                    "left": {
+                      "type": "Var",
+                      "name": "magi"
+                    },
+                    "right": {
+                      "type": "IfThenElse",
+                      "condition": {
+                        "type": "Var",
+                        "name": "declaracion_conjunta"
+                      },
+                      "then": {
+                        "type": "Literal",
+                        "value": 400000,
+                        "value_type": "Int"
+                      },
+                      "else": {
+                        "type": "Literal",
+                        "value": 200000,
+                        "value_type": "Int"
+                      }
+                    }
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 999,
+                    "value_type": "Int"
+                  }
+                },
+                "right": {
+                  "type": "BinaryOp",
+                  "op": "%",
+                  "left": {
+                    "type": "BinaryOp",
+                    "op": "+",
+                    "left": {
+                      "type": "BinaryOp",
+                      "op": "-",
+                      "left": {
+                        "type": "Var",
+                        "name": "magi"
+                      },
+                      "right": {
+                        "type": "IfThenElse",
+                        "condition": {
+                          "type": "Var",
+                          "name": "declaracion_conjunta"
+                        },
+                        "then": {
+                          "type": "Literal",
+                          "value": 400000,
+                          "value_type": "Int"
+                        },
+                        "else": {
+                          "type": "Literal",
+                          "value": 200000,
+                          "value_type": "Int"
+                        }
+                      }
+                    },
+                    "right": {
+                      "type": "Literal",
+                      "value": 999,
+                      "value_type": "Int"
+                    }
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 1000,
+                    "value_type": "Int"
+                  }
+                }
+              },
+              "right": {
+                "type": "Literal",
+                "value": 1000,
+                "value_type": "Int"
+              }
+            },
+            "right": {
+              "type": "Literal",
+              "value": 50,
+              "value_type": "Int"
+            }
+          },
+          "else": {
+            "type": "Literal",
+            "value": 0.0,
+            "value_type": "Decimal"
+          }
+        }
+      },
+      "else": {
+        "type": "Literal",
+        "value": 0.0,
+        "value_type": "Decimal"
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    umbral = 400000 if data['declaracion_conjunta'] else 200000\n    base = data['hijos_menores_17'] * 2200 + data['otros_dependientes'] * 500\n    reduccion = Decimal('0')\n    if data['magi'] > umbral:\n        miles = (data['magi'] - umbral + 999) // 1000\n        reduccion = Decimal(miles * 50)\n    total = base - reduccion\n    return total if total > 0 else Decimal('0')\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-B3-RAMIREZ",
+      "env": {
+        "hijos_menores_17": 2,
+        "otros_dependientes": 0,
+        "declaracion_conjunta": true,
+        "magi": 34500
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "4400"
+      }
+    },
+    {
+      "scenario_id": "F6744-A2-SUMMER",
+      "env": {
+        "hijos_menores_17": 1,
+        "otros_dependientes": 1,
+        "declaracion_conjunta": true,
+        "magi": 54000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "2700"
+      }
+    },
+    {
+      "scenario_id": "V1-EN-EL-UMBRAL",
+      "env": {
+        "hijos_menores_17": 1,
+        "otros_dependientes": 0,
+        "declaracion_conjunta": false,
+        "magi": 200000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "2200"
+      }
+    },
+    {
+      "scenario_id": "V2-UN-DOLAR-DE-EXCESO",
+      "env": {
+        "hijos_menores_17": 1,
+        "otros_dependientes": 0,
+        "declaracion_conjunta": false,
+        "magi": 200001
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "2150"
+      }
+    },
+    {
+      "scenario_id": "V3-MIL-DE-EXCESO",
+      "env": {
+        "hijos_menores_17": 1,
+        "otros_dependientes": 0,
+        "declaracion_conjunta": false,
+        "magi": 201000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "2150"
+      }
+    },
+    {
+      "scenario_id": "V4-MIL-UNO-DE-EXCESO",
+      "env": {
+        "hijos_menores_17": 1,
+        "otros_dependientes": 0,
+        "declaracion_conjunta": false,
+        "magi": 201001
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "2100"
+      }
+    },
+    {
+      "scenario_id": "V5-CONJUNTA-ALTA",
+      "env": {
+        "hijos_menores_17": 3,
+        "otros_dependientes": 0,
+        "declaracion_conjunta": true,
+        "magi": 450000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "4100"
+      }
+    },
+    {
+      "scenario_id": "V6-REDUCCION-TOTAL",
+      "env": {
+        "hijos_menores_17": 1,
+        "otros_dependientes": 0,
+        "declaracion_conjunta": false,
+        "magi": 300000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V7-SOLO-OTROS",
+      "env": {
+        "hijos_menores_17": 0,
+        "otros_dependientes": 2,
+        "declaracion_conjunta": false,
+        "magi": 80000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1000"
+      }
+    }
+  ]
+}

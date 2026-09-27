@@ -1,0 +1,134 @@
+{
+  "case_id": "FIS-C3-MILLAS-MUDANZA",
+  "category": 3,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Military Scenario 2; IRS Pub. 3 (2025), Moving Expenses (Travel)",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c3.py",
+  "description": "Calcular el gasto de auto deducible en la mudanza de un militar por cambio permanente de destino en 2025. Se deducen 0.21 dólares por milla más los peajes y el estacionamiento. Las desviaciones innecesarias no se deducen: si las millas recorridas superan las de la ruta más directa, se usan las de la ruta más directa; si no, las recorridas. Las comidas y el hotel no entran en este cálculo.",
+  "gamma": {
+    "millas_recorridas": "Int",
+    "millas_ruta_directa": "Int",
+    "peajes_y_estacionamiento": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "+",
+      "left": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": ">",
+            "left": {
+              "type": "Var",
+              "name": "millas_recorridas"
+            },
+            "right": {
+              "type": "Var",
+              "name": "millas_ruta_directa"
+            }
+          },
+          "then": {
+            "type": "Var",
+            "name": "millas_ruta_directa"
+          },
+          "else": {
+            "type": "Var",
+            "name": "millas_recorridas"
+          }
+        },
+        "right": {
+          "type": "Literal",
+          "value": 0.21,
+          "value_type": "Decimal"
+        }
+      },
+      "right": {
+        "type": "Var",
+        "name": "peajes_y_estacionamiento"
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    millas = min(data['millas_recorridas'], data['millas_ruta_directa'])\n    return millas * Decimal('0.21') + data['peajes_y_estacionamiento']\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-M2-RIVERS",
+      "env": {
+        "millas_recorridas": 878,
+        "millas_ruta_directa": 618,
+        "peajes_y_estacionamiento": 305
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "434.78"
+      }
+    },
+    {
+      "scenario_id": "V1-SIN-DESVIO",
+      "env": {
+        "millas_recorridas": 618,
+        "millas_ruta_directa": 618,
+        "peajes_y_estacionamiento": 305
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "434.78"
+      }
+    },
+    {
+      "scenario_id": "V2-MENOS-QUE-LA-DIRECTA",
+      "env": {
+        "millas_recorridas": 600,
+        "millas_ruta_directa": 618,
+        "peajes_y_estacionamiento": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "126"
+      }
+    },
+    {
+      "scenario_id": "V3-SIN-PEAJES",
+      "env": {
+        "millas_recorridas": 1500,
+        "millas_ruta_directa": 1200,
+        "peajes_y_estacionamiento": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "252"
+      }
+    },
+    {
+      "scenario_id": "V4-UNA-MILLA-DE-DESVIO",
+      "env": {
+        "millas_recorridas": 1001,
+        "millas_ruta_directa": 1000,
+        "peajes_y_estacionamiento": 40
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "250"
+      }
+    },
+    {
+      "scenario_id": "V5-DESVIO-LARGO",
+      "env": {
+        "millas_recorridas": 3000,
+        "millas_ruta_directa": 900,
+        "peajes_y_estacionamiento": 12
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "201"
+      }
+    }
+  ]
+}

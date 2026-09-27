@@ -1,0 +1,133 @@
+{
+  "case_id": "FIS-C2-INGRESO-GANADO",
+  "category": 2,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Military Scenario 4 y Basic Scenario 2; IRS Pub. 596 (2025) e IRS Pub. 3 (2025), Nontaxable combat pay election",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c2.py",
+  "description": "Calcular el ingreso del trabajo de un hogar militar para el crédito por ingreso del trabajo de 2025. Es la suma de los salarios imponibles (con centavos), la ganancia neta del trabajo independiente (en dólares enteros, puede ser negativa si hubo pérdida) y la paga de combate no imponible, que solo se suma si el contribuyente elige incluirla; si no la elige, esa parte vale cero. Los intereses, los dividendos, el seguro de desempleo y las jubilaciones no son ingreso del trabajo y no entran en el cálculo.",
+  "gamma": {
+    "incluye_combate": "Bool",
+    "paga_combate": "Decimal",
+    "salarios": "Decimal",
+    "trabajo_independiente": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "+",
+      "left": {
+        "type": "BinaryOp",
+        "op": "+",
+        "left": {
+          "type": "Var",
+          "name": "salarios"
+        },
+        "right": {
+          "type": "Var",
+          "name": "trabajo_independiente"
+        }
+      },
+      "right": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "Var",
+          "name": "incluye_combate"
+        },
+        "then": {
+          "type": "Var",
+          "name": "paga_combate"
+        },
+        "else": {
+          "type": "Literal",
+          "value": 0.0,
+          "value_type": "Decimal"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    combate = data['paga_combate'] if data['incluye_combate'] else Decimal('0')\n    return data['salarios'] + data['trabajo_independiente'] + combate\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-M4-WATERS-SIN-ELEGIR",
+      "env": {
+        "salarios": 53500.25,
+        "paga_combate": 6000.5,
+        "incluye_combate": false,
+        "trabajo_independiente": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "53500.25"
+      }
+    },
+    {
+      "scenario_id": "F6744-M4-WATERS-ELIGE",
+      "env": {
+        "salarios": 53500.25,
+        "paga_combate": 6000.5,
+        "incluye_combate": true,
+        "trabajo_independiente": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "59500.75"
+      }
+    },
+    {
+      "scenario_id": "V1-INDEPENDIENTE-ELIGE",
+      "env": {
+        "salarios": 18000.5,
+        "paga_combate": 2400.25,
+        "incluye_combate": true,
+        "trabajo_independiente": 1200
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "21600.75"
+      }
+    },
+    {
+      "scenario_id": "V2-PERDIDA-INDEPENDIENTE",
+      "env": {
+        "salarios": 30000.5,
+        "paga_combate": 1000.5,
+        "incluye_combate": false,
+        "trabajo_independiente": -800
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "29200.5"
+      }
+    },
+    {
+      "scenario_id": "V3-COMBATE-IGUAL-A-SALARIO",
+      "env": {
+        "salarios": 12000.75,
+        "paga_combate": 12000.25,
+        "incluye_combate": true,
+        "trabajo_independiente": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "24001"
+      }
+    },
+    {
+      "scenario_id": "V4-CENTAVOS",
+      "env": {
+        "salarios": 9999.99,
+        "paga_combate": 5000.01,
+        "incluye_combate": false,
+        "trabajo_independiente": 500
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "10499.99"
+      }
+    }
+  ]
+}

@@ -1,0 +1,204 @@
+{
+  "case_id": "FIS-C3-NO-CASADO",
+  "category": 3,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Advanced Scenarios 1 y 4; IRS Pub. 501 (2025), Considered Unmarried",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c3.py",
+  "description": "Determinar si una persona casada puede considerarse no casada al 31 de diciembre de 2025 para presentar como jefe de hogar. Puede, si se cumplen todas estas condiciones: presenta una declaración separada de la de su cónyuge; pagó más de la mitad del costo de mantener su casa; su hijo vivió en esa casa más de la mitad del año (se cuentan meses completos) y lo puede declarar como dependiente; y el cónyuge no vivió en la casa durante los últimos 6 meses del año. Para esto último se informa el último mes de 2025 en que el cónyuge vivió en la casa (de 1 a 12), o 0 si no vivió allí en todo 2025.",
+  "gamma": {
+    "meses_hijo_en_casa": "Int",
+    "paga_mas_mitad_hogar": "Bool",
+    "presenta_por_separado": "Bool",
+    "puede_declarar_hijo": "Bool",
+    "ultimo_mes_conyuge_en_casa": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "Var",
+              "name": "presenta_por_separado"
+            },
+            "right": {
+              "type": "Var",
+              "name": "paga_mas_mitad_hogar"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": ">",
+            "left": {
+              "type": "Var",
+              "name": "meses_hijo_en_casa"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 6,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "puede_declarar_hijo"
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "<=",
+        "left": {
+          "type": "Var",
+          "name": "ultimo_mes_conyuge_en_casa"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 6,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return (\n        data['presenta_por_separado']\n        and data['paga_mas_mitad_hogar']\n        and data['meses_hijo_en_casa'] > 6\n        and data['puede_declarar_hijo']\n        and data['ultimo_mes_conyuge_en_casa'] <= 6\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-A1-JOY",
+      "env": {
+        "presenta_por_separado": true,
+        "paga_mas_mitad_hogar": true,
+        "ultimo_mes_conyuge_en_casa": 0,
+        "meses_hijo_en_casa": 12,
+        "puede_declarar_hijo": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-A4-AMY",
+      "env": {
+        "presenta_por_separado": true,
+        "paga_mas_mitad_hogar": false,
+        "ultimo_mes_conyuge_en_casa": 0,
+        "meses_hijo_en_casa": 12,
+        "puede_declarar_hijo": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V1-SE-FUE-EN-JUNIO",
+      "env": {
+        "presenta_por_separado": true,
+        "paga_mas_mitad_hogar": true,
+        "ultimo_mes_conyuge_en_casa": 6,
+        "meses_hijo_en_casa": 12,
+        "puede_declarar_hijo": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-SE-FUE-EN-JULIO",
+      "env": {
+        "presenta_por_separado": true,
+        "paga_mas_mitad_hogar": true,
+        "ultimo_mes_conyuge_en_casa": 7,
+        "meses_hijo_en_casa": 12,
+        "puede_declarar_hijo": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-PRESENTAN-JUNTOS",
+      "env": {
+        "presenta_por_separado": false,
+        "paga_mas_mitad_hogar": true,
+        "ultimo_mes_conyuge_en_casa": 0,
+        "meses_hijo_en_casa": 12,
+        "puede_declarar_hijo": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-HIJO-SEIS-MESES",
+      "env": {
+        "presenta_por_separado": true,
+        "paga_mas_mitad_hogar": true,
+        "ultimo_mes_conyuge_en_casa": 0,
+        "meses_hijo_en_casa": 6,
+        "puede_declarar_hijo": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-HIJO-SIETE-MESES",
+      "env": {
+        "presenta_por_separado": true,
+        "paga_mas_mitad_hogar": true,
+        "ultimo_mes_conyuge_en_casa": 3,
+        "meses_hijo_en_casa": 7,
+        "puede_declarar_hijo": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-NO-PUEDE-DECLARARLO",
+      "env": {
+        "presenta_por_separado": true,
+        "paga_mas_mitad_hogar": true,
+        "ultimo_mes_conyuge_en_casa": 0,
+        "meses_hijo_en_casa": 12,
+        "puede_declarar_hijo": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-SE-FUE-EN-ENERO",
+      "env": {
+        "presenta_por_separado": true,
+        "paga_mas_mitad_hogar": true,
+        "ultimo_mes_conyuge_en_casa": 1,
+        "meses_hijo_en_casa": 12,
+        "puede_declarar_hijo": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

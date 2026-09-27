@@ -1,0 +1,230 @@
+{
+  "case_id": "FIS-C2-CIUDADANIA",
+  "category": 2,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), International Scenario 2 y Basic Scenario 4; IRS Pub. 501 (2025), Citizen or Resident Test",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c2.py",
+  "description": "Determinar si una persona pasa la prueba de ciudadanía para poder ser declarada como dependiente en 2025. La pasa si su situación es \"ciudadano\", \"nacional\" o \"residente\" de los Estados Unidos (la otra situación posible es \"extranjero\"), o si vive en \"Canadá\" o en \"México\". También la pasa un hijo adoptado que vivió con el contribuyente los 12 meses del año, siempre que el contribuyente sea ciudadano o nacional de los Estados Unidos. La edad y los ingresos de la persona no importan para esta prueba.",
+  "gamma": {
+    "contribuyente_es_ciudadano": "Bool",
+    "es_adoptado": "Bool",
+    "meses_con_contribuyente": "Int",
+    "pais_residencia": "String",
+    "situacion": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "OR",
+      "left": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "In",
+          "value": {
+            "type": "Var",
+            "name": "situacion"
+          },
+          "options": [
+            {
+              "type": "Literal",
+              "value": "ciudadano",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "nacional",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "residente",
+              "value_type": "String"
+            }
+          ]
+        },
+        "right": {
+          "type": "In",
+          "value": {
+            "type": "Var",
+            "name": "pais_residencia"
+          },
+          "options": [
+            {
+              "type": "Literal",
+              "value": "Canadá",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "México",
+              "value_type": "String"
+            }
+          ]
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "Var",
+            "name": "es_adoptado"
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "meses_con_contribuyente"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 12,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "contribuyente_es_ciudadano"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return (\n        data['situacion'] in ('ciudadano', 'nacional', 'residente')\n        or data['pais_residencia'] in ('Canadá', 'México')\n        or (data['es_adoptado'] and data['meses_con_contribuyente'] == 12 and data['contribuyente_es_ciudadano'])\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-I2-BINDI",
+      "env": {
+        "situacion": "extranjero",
+        "pais_residencia": "Australia",
+        "es_adoptado": false,
+        "meses_con_contribuyente": 12,
+        "contribuyente_es_ciudadano": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "F6744-I2-JACKSON",
+      "env": {
+        "situacion": "ciudadano",
+        "pais_residencia": "Australia",
+        "es_adoptado": false,
+        "meses_con_contribuyente": 12,
+        "contribuyente_es_ciudadano": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-B4-KYLE",
+      "env": {
+        "situacion": "ciudadano",
+        "pais_residencia": "Estados Unidos",
+        "es_adoptado": false,
+        "meses_con_contribuyente": 12,
+        "contribuyente_es_ciudadano": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V1-VIVE-EN-MEXICO",
+      "env": {
+        "situacion": "extranjero",
+        "pais_residencia": "México",
+        "es_adoptado": false,
+        "meses_con_contribuyente": 0,
+        "contribuyente_es_ciudadano": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-VIVE-EN-CANADA",
+      "env": {
+        "situacion": "extranjero",
+        "pais_residencia": "Canadá",
+        "es_adoptado": false,
+        "meses_con_contribuyente": 0,
+        "contribuyente_es_ciudadano": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-ADOPTADO-12-MESES",
+      "env": {
+        "situacion": "extranjero",
+        "pais_residencia": "Francia",
+        "es_adoptado": true,
+        "meses_con_contribuyente": 12,
+        "contribuyente_es_ciudadano": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-ADOPTADO-11-MESES",
+      "env": {
+        "situacion": "extranjero",
+        "pais_residencia": "Francia",
+        "es_adoptado": true,
+        "meses_con_contribuyente": 11,
+        "contribuyente_es_ciudadano": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-ADOPTANTE-NO-CIUDADANO",
+      "env": {
+        "situacion": "extranjero",
+        "pais_residencia": "Francia",
+        "es_adoptado": true,
+        "meses_con_contribuyente": 12,
+        "contribuyente_es_ciudadano": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-EXTRANJERO-EN-FRANCIA",
+      "env": {
+        "situacion": "extranjero",
+        "pais_residencia": "Francia",
+        "es_adoptado": false,
+        "meses_con_contribuyente": 12,
+        "contribuyente_es_ciudadano": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

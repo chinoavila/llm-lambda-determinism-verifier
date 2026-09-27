@@ -1,0 +1,206 @@
+{
+  "case_id": "FIS-C2-DEDUCCION-STD",
+  "category": 2,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenarios 1, 5 y 7 y Advanced Scenario 5; IRS Pub. 501 (2025), Tables 6 y 7",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c2.py",
+  "description": "Calcular la deducción estándar de 2025 en dólares. El estado civil viene como \"soltero\", \"jefe_de_hogar\", \"casado_conjunta\", \"casado_separado\" o \"viudo_calificado\". El monto base es 31500 para casado_conjunta y viudo_calificado, 23625 para jefe_de_hogar y 15750 para soltero y casado_separado. A ese monto se le suma un adicional por cada casilla marcada: se marca una casilla por tener 65 años o más y otra por ser ciego, para el contribuyente y también para su cónyuge si presentan juntos, así que puede haber de 0 a 4 casillas. El adicional por casilla es de 2000 dólares para soltero y jefe_de_hogar, y de 1600 para los demás. La edad y la ceguera ya vienen contadas en la cantidad de casillas.",
+  "gamma": {
+    "casillas": "Int",
+    "estado_civil": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "+",
+      "left": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "In",
+          "value": {
+            "type": "Var",
+            "name": "estado_civil"
+          },
+          "options": [
+            {
+              "type": "Literal",
+              "value": "casado_conjunta",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "viudo_calificado",
+              "value_type": "String"
+            }
+          ]
+        },
+        "then": {
+          "type": "Literal",
+          "value": 31500,
+          "value_type": "Int"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "estado_civil"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "jefe_de_hogar",
+              "value_type": "String"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 23625,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "Literal",
+            "value": 15750,
+            "value_type": "Int"
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "casillas"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "In",
+            "value": {
+              "type": "Var",
+              "name": "estado_civil"
+            },
+            "options": [
+              {
+                "type": "Literal",
+                "value": "soltero",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "jefe_de_hogar",
+                "value_type": "String"
+              }
+            ]
+          },
+          "then": {
+            "type": "Literal",
+            "value": 2000,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "Literal",
+            "value": 1600,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    estado = data['estado_civil']\n    if estado in ('casado_conjunta', 'viudo_calificado'):\n        base = 31500\n    elif estado == 'jefe_de_hogar':\n        base = 23625\n    else:\n        base = 15750\n    adicional = 2000 if estado in ('soltero', 'jefe_de_hogar') else 1600\n    return base + data['casillas'] * adicional\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-B1-FRED",
+      "env": {
+        "estado_civil": "jefe_de_hogar",
+        "casillas": 1
+      },
+      "expected": {
+        "type": "Int",
+        "value": 25625
+      }
+    },
+    {
+      "scenario_id": "F6744-B5-NEIL",
+      "env": {
+        "estado_civil": "soltero",
+        "casillas": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 15750
+      }
+    },
+    {
+      "scenario_id": "F6744-B7-KNOX",
+      "env": {
+        "estado_civil": "casado_conjunta",
+        "casillas": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 31500
+      }
+    },
+    {
+      "scenario_id": "V1-SOLTERO-DOS-CASILLAS",
+      "env": {
+        "estado_civil": "soltero",
+        "casillas": 2
+      },
+      "expected": {
+        "type": "Int",
+        "value": 19750
+      }
+    },
+    {
+      "scenario_id": "V2-CONJUNTA-CUATRO",
+      "env": {
+        "estado_civil": "casado_conjunta",
+        "casillas": 4
+      },
+      "expected": {
+        "type": "Int",
+        "value": 37900
+      }
+    },
+    {
+      "scenario_id": "V3-SEPARADO-DOS",
+      "env": {
+        "estado_civil": "casado_separado",
+        "casillas": 2
+      },
+      "expected": {
+        "type": "Int",
+        "value": 18950
+      }
+    },
+    {
+      "scenario_id": "V4-VIUDO-UNA",
+      "env": {
+        "estado_civil": "viudo_calificado",
+        "casillas": 1
+      },
+      "expected": {
+        "type": "Int",
+        "value": 33100
+      }
+    },
+    {
+      "scenario_id": "V5-JEFE-SIN-CASILLAS",
+      "env": {
+        "estado_civil": "jefe_de_hogar",
+        "casillas": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 23625
+      }
+    }
+  ]
+}

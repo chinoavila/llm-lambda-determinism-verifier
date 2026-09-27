@@ -1,0 +1,241 @@
+{
+  "case_id": "FIS-C3-CUIDADO-FAMILIAR",
+  "category": 3,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Advanced Scenario 2; IRS Pub. 503 (2025), Payments to Relatives or Dependents",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c3.py",
+  "description": "Determinar si lo que el contribuyente le pagó en 2025 a un familiar por cuidar a su hijo cuenta para el crédito por cuidado de dependientes. Los pagos a familiares cuentan, salvo en cuatro casos: si el cuidador es dependiente del contribuyente; si es hijo del contribuyente y tenía menos de 19 años al 31 de diciembre; si fue su cónyuge en algún momento del año; o si es el padre o la madre del niño cuidado y ese niño tiene menos de 13 años.",
+  "gamma": {
+    "cuidador_es_dependiente": "Bool",
+    "cuidador_es_hijo": "Bool",
+    "cuidador_es_padre_del_nino": "Bool",
+    "cuidador_fue_conyuge": "Bool",
+    "edad_cuidador": "Int",
+    "edad_nino": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "UnaryOp",
+      "op": "NOT",
+      "operand": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "BinaryOp",
+            "op": "OR",
+            "left": {
+              "type": "Var",
+              "name": "cuidador_es_dependiente"
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "Var",
+                "name": "cuidador_es_hijo"
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "<",
+                "left": {
+                  "type": "Var",
+                  "name": "edad_cuidador"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 19,
+                  "value_type": "Int"
+                }
+              }
+            }
+          },
+          "right": {
+            "type": "Var",
+            "name": "cuidador_fue_conyuge"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "Var",
+            "name": "cuidador_es_padre_del_nino"
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "edad_nino"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 13,
+              "value_type": "Int"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    excluido = (\n        data['cuidador_es_dependiente']\n        or (data['cuidador_es_hijo'] and data['edad_cuidador'] < 19)\n        or data['cuidador_fue_conyuge']\n        or (data['cuidador_es_padre_del_nino'] and data['edad_nino'] < 13)\n    )\n    return not excluido\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-A2-SUMMER-JACK",
+      "env": {
+        "cuidador_es_dependiente": true,
+        "cuidador_es_hijo": true,
+        "edad_cuidador": 17,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": false,
+        "edad_nino": 8
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V1-HIJO-19",
+      "env": {
+        "cuidador_es_dependiente": false,
+        "cuidador_es_hijo": true,
+        "edad_cuidador": 19,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": false,
+        "edad_nino": 8
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-HIJO-18",
+      "env": {
+        "cuidador_es_dependiente": false,
+        "cuidador_es_hijo": true,
+        "edad_cuidador": 18,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": false,
+        "edad_nino": 8
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-ABUELA",
+      "env": {
+        "cuidador_es_dependiente": false,
+        "cuidador_es_hijo": false,
+        "edad_cuidador": 67,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": false,
+        "edad_nino": 8
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-EX-CONYUGE",
+      "env": {
+        "cuidador_es_dependiente": false,
+        "cuidador_es_hijo": false,
+        "edad_cuidador": 40,
+        "cuidador_fue_conyuge": true,
+        "cuidador_es_padre_del_nino": false,
+        "edad_nino": 8
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-PADRE-NINO-12",
+      "env": {
+        "cuidador_es_dependiente": false,
+        "cuidador_es_hijo": false,
+        "edad_cuidador": 40,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": true,
+        "edad_nino": 12
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-PADRE-NINO-13",
+      "env": {
+        "cuidador_es_dependiente": false,
+        "cuidador_es_hijo": false,
+        "edad_cuidador": 40,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": true,
+        "edad_nino": 13
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V7-TIA-DEPENDIENTE",
+      "env": {
+        "cuidador_es_dependiente": true,
+        "cuidador_es_hijo": false,
+        "edad_cuidador": 70,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": false,
+        "edad_nino": 8
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-HERMANA-16",
+      "env": {
+        "cuidador_es_dependiente": false,
+        "cuidador_es_hijo": false,
+        "edad_cuidador": 16,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": false,
+        "edad_nino": 8
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-TIO",
+      "env": {
+        "cuidador_es_dependiente": false,
+        "cuidador_es_hijo": false,
+        "edad_cuidador": 45,
+        "cuidador_fue_conyuge": false,
+        "cuidador_es_padre_del_nino": false,
+        "edad_nino": 8
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

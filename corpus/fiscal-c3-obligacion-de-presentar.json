@@ -1,0 +1,256 @@
+{
+  "case_id": "FIS-C3-OBLIGACION",
+  "category": 3,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenario 5; IRS Pub. 501 (2025), Table 1",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "generated_by": "corpus/tools/fiscal_c3.py",
+  "description": "Determinar si el contribuyente está obligado a presentar la declaración de 2025. Lo está si su ingreso bruto llega al menos al umbral de su estado civil (\"soltero\", \"jefe_de_hogar\", \"casado_conjunta\", \"casado_separado\" o \"viudo_calificado\"). El umbral es 15750 dólares para soltero, 23625 para jefe_de_hogar y 31500 para casado_conjunta y viudo_calificado, más un adicional por cada persona de 65 años o más (el contribuyente, y en la declaración conjunta también el cónyuge): 2000 dólares para soltero y jefe_de_hogar, 1600 para los demás. La excepción es casado_separado: tiene que presentar con 5 dólares de ingreso bruto, cualquiera sea su edad.",
+  "gamma": {
+    "cantidad_65_o_mas": "Int",
+    "estado_civil": "String",
+    "ingreso_bruto": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": ">=",
+      "left": {
+        "type": "Var",
+        "name": "ingreso_bruto"
+      },
+      "right": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "==",
+          "left": {
+            "type": "Var",
+            "name": "estado_civil"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "casado_separado",
+            "value_type": "String"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": 5,
+          "value_type": "Int"
+        },
+        "else": {
+          "type": "BinaryOp",
+          "op": "+",
+          "left": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "In",
+              "value": {
+                "type": "Var",
+                "name": "estado_civil"
+              },
+              "options": [
+                {
+                  "type": "Literal",
+                  "value": "casado_conjunta",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "viudo_calificado",
+                  "value_type": "String"
+                }
+              ]
+            },
+            "then": {
+              "type": "Literal",
+              "value": 31500,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "BinaryOp",
+                "op": "==",
+                "left": {
+                  "type": "Var",
+                  "name": "estado_civil"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": "jefe_de_hogar",
+                  "value_type": "String"
+                }
+              },
+              "then": {
+                "type": "Literal",
+                "value": 23625,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "Literal",
+                "value": 15750,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "*",
+            "left": {
+              "type": "Var",
+              "name": "cantidad_65_o_mas"
+            },
+            "right": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "In",
+                "value": {
+                  "type": "Var",
+                  "name": "estado_civil"
+                },
+                "options": [
+                  {
+                    "type": "Literal",
+                    "value": "soltero",
+                    "value_type": "String"
+                  },
+                  {
+                    "type": "Literal",
+                    "value": "jefe_de_hogar",
+                    "value_type": "String"
+                  }
+                ]
+              },
+              "then": {
+                "type": "Literal",
+                "value": 2000,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "Literal",
+                "value": 1600,
+                "value_type": "Int"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    estado = data['estado_civil']\n    if estado == 'casado_separado':\n        umbral = 5\n    else:\n        if estado in ('casado_conjunta', 'viudo_calificado'):\n            base = 31500\n        elif estado == 'jefe_de_hogar':\n            base = 23625\n        else:\n            base = 15750\n        adicional = 2000 if estado in ('soltero', 'jefe_de_hogar') else 1600\n        umbral = base + data['cantidad_65_o_mas'] * adicional\n    return data['ingreso_bruto'] >= umbral\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-B5-NEIL",
+      "env": {
+        "estado_civil": "soltero",
+        "cantidad_65_o_mas": 0,
+        "ingreso_bruto": 9250
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V1-JUSTO-EN-EL-UMBRAL",
+      "env": {
+        "estado_civil": "soltero",
+        "cantidad_65_o_mas": 0,
+        "ingreso_bruto": 15750
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-UN-DOLAR-MENOS",
+      "env": {
+        "estado_civil": "soltero",
+        "cantidad_65_o_mas": 0,
+        "ingreso_bruto": 15749
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-MAYOR-DEBAJO",
+      "env": {
+        "estado_civil": "soltero",
+        "cantidad_65_o_mas": 1,
+        "ingreso_bruto": 17749
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-CONJUNTA-DOS-MAYORES",
+      "env": {
+        "estado_civil": "casado_conjunta",
+        "cantidad_65_o_mas": 2,
+        "ingreso_bruto": 34700
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V5-SEPARADO-CINCO",
+      "env": {
+        "estado_civil": "casado_separado",
+        "cantidad_65_o_mas": 0,
+        "ingreso_bruto": 5
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-SEPARADO-CUATRO",
+      "env": {
+        "estado_civil": "casado_separado",
+        "cantidad_65_o_mas": 1,
+        "ingreso_bruto": 4
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-JEFE-MAYOR",
+      "env": {
+        "estado_civil": "jefe_de_hogar",
+        "cantidad_65_o_mas": 1,
+        "ingreso_bruto": 25625
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V8-CONJUNTA-UN-MAYOR-DEBAJO",
+      "env": {
+        "estado_civil": "casado_conjunta",
+        "cantidad_65_o_mas": 1,
+        "ingreso_bruto": 33099
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}
