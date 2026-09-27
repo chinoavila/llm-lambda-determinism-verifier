@@ -1,0 +1,82 @@
+@import "tailwindcss";
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+/* Paleta del prototipo aprobado (Mesa de revisión del corpus), en tokens que
+   cambian con el tema del sistema. Las clases usan los nombres semánticos:
+   bg-surface, text-muted, border-line, bg-accent, text-bad… */
+:root {
+  --bg: #f4f6f6;
+  --surface: #ffffff;
+  --hover: #f0f4f3;
+  --ink: #16201f;
+  --muted: #5f6d6b;
+  --faint: #8a9896;
+  --line: #e1e7e6;
+  --accent: #0f6e66;
+  --accent-ink: #ffffff;
+  --accent-soft: #e0f0ee;
+  --ok: #1f7a45;
+  --ok-soft: #e3f3e9;
+  --warn: #99620d;
+  --warn-soft: #fbefd9;
+  --bad: #b3322b;
+  --bad-soft: #fbe6e4;
+  --code: #f6f8f8;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1514;
+    --surface: #161e1d;
+    --hover: #1c2625;
+    --ink: #e5edeb;
+    --muted: #9aa9a6;
+    --faint: #6f7e7b;
+    --line: #26322f;
+    --accent: #5cc2b5;
+    --accent-ink: #0b1413;
+    --accent-soft: #173331;
+    --ok: #6cc98f;
+    --ok-soft: #16301f;
+    --warn: #e2b05b;
+    --warn-soft: #362914;
+    --bad: #f08a80;
+    --bad-soft: #3a1c19;
+    --code: #121918;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --font-sans: "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-hover: var(--hover);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-code: var(--code);
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-ink font-sans text-sm antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+}
