@@ -1,0 +1,309 @@
+{
+  "case_id": "SAL-C1-IMC",
+  "category": 1,
+  "domain": "salud",
+  "source": {
+    "kind": "adapted",
+    "reference": "Goossens, Vandevelde, Vanthienen y Vennekens (2023), GPT-3 for Decision Logic Modeling, CEUR-WS Vol-3485, descripción BMI (tomada a su vez del desafío DMN Community de enero de 2016)",
+    "license": "CC BY 4.0"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Clasificar el nivel de índice de masa corporal (IMC) de una persona. El IMC se calcula con el peso en kilogramos y la altura en metros, con la fórmula peso / (altura * altura). Si el IMC es 30 o más, el nivel es \"Obesidad\". Si el IMC es menor que 18.5, el nivel es \"Bajo peso severo\" para el sexo \"masculino\" y \"Bajo peso\" para el sexo \"femenino\". Si está entre 18.5 y 25 (sin incluir 25), el nivel es \"Bajo peso\" para masculino y \"Normal\" para femenino. Por último, si está entre 25 y 30 (sin incluir 30), el nivel es \"Normal\" para masculino y \"Sobrepeso\" para femenino.",
+  "gamma": {
+    "altura_m": "Decimal",
+    "peso_kg": "Decimal",
+    "sexo": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">=",
+        "left": {
+          "type": "BinaryOp",
+          "op": "/",
+          "left": {
+            "type": "Var",
+            "name": "peso_kg"
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "*",
+            "left": {
+              "type": "Var",
+              "name": "altura_m"
+            },
+            "right": {
+              "type": "Var",
+              "name": "altura_m"
+            }
+          }
+        },
+        "right": {
+          "type": "Literal",
+          "value": 30,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "Obesidad",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "BinaryOp",
+            "op": "/",
+            "left": {
+              "type": "Var",
+              "name": "peso_kg"
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "*",
+              "left": {
+                "type": "Var",
+                "name": "altura_m"
+              },
+              "right": {
+                "type": "Var",
+                "name": "altura_m"
+              }
+            }
+          },
+          "right": {
+            "type": "Literal",
+            "value": 18.5,
+            "value_type": "Decimal"
+          }
+        },
+        "then": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "sexo"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "masculino",
+              "value_type": "String"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": "Bajo peso severo",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "Literal",
+            "value": "Bajo peso",
+            "value_type": "String"
+          }
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "BinaryOp",
+              "op": "/",
+              "left": {
+                "type": "Var",
+                "name": "peso_kg"
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "*",
+                "left": {
+                  "type": "Var",
+                  "name": "altura_m"
+                },
+                "right": {
+                  "type": "Var",
+                  "name": "altura_m"
+                }
+              }
+            },
+            "right": {
+              "type": "Literal",
+              "value": 25,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "sexo"
+              },
+              "right": {
+                "type": "Literal",
+                "value": "masculino",
+                "value_type": "String"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": "Bajo peso",
+              "value_type": "String"
+            },
+            "else": {
+              "type": "Literal",
+              "value": "Normal",
+              "value_type": "String"
+            }
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "sexo"
+              },
+              "right": {
+                "type": "Literal",
+                "value": "masculino",
+                "value_type": "String"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": "Normal",
+              "value_type": "String"
+            },
+            "else": {
+              "type": "Literal",
+              "value": "Sobrepeso",
+              "value_type": "String"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    imc = data['peso_kg'] / (data['altura_m'] * data['altura_m'])\n    masculino = data['sexo'] == 'masculino'\n    if imc >= 30:\n        return 'Obesidad'\n    if imc < Decimal('18.5'):\n        return 'Bajo peso severo' if masculino else 'Bajo peso'\n    if imc < 25:\n        return 'Bajo peso' if masculino else 'Normal'\n    return 'Normal' if masculino else 'Sobrepeso'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-ENTRE-18-5-Y-25-F",
+      "env": {
+        "peso_kg": 70.5,
+        "altura_m": 1.75,
+        "sexo": "femenino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Normal"
+      }
+    },
+    {
+      "scenario_id": "V2-ENTRE-18-5-Y-25-M",
+      "env": {
+        "peso_kg": 70.5,
+        "altura_m": 1.75,
+        "sexo": "masculino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo peso"
+      }
+    },
+    {
+      "scenario_id": "V3-BAJO-MASCULINO",
+      "env": {
+        "peso_kg": 55.5,
+        "altura_m": 1.8,
+        "sexo": "masculino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo peso severo"
+      }
+    },
+    {
+      "scenario_id": "V4-BAJO-FEMENINO",
+      "env": {
+        "peso_kg": 55.5,
+        "altura_m": 1.8,
+        "sexo": "femenino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo peso"
+      }
+    },
+    {
+      "scenario_id": "V5-ENTRE-25-Y-30-F",
+      "env": {
+        "peso_kg": 80.5,
+        "altura_m": 1.75,
+        "sexo": "femenino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Sobrepeso"
+      }
+    },
+    {
+      "scenario_id": "V6-ENTRE-25-Y-30-M",
+      "env": {
+        "peso_kg": 80.5,
+        "altura_m": 1.75,
+        "sexo": "masculino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Normal"
+      }
+    },
+    {
+      "scenario_id": "V7-EXACTO-30",
+      "env": {
+        "peso_kg": 67.5,
+        "altura_m": 1.5,
+        "sexo": "femenino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Obesidad"
+      }
+    },
+    {
+      "scenario_id": "V8-EXACTO-25-F",
+      "env": {
+        "peso_kg": 62.41,
+        "altura_m": 1.58,
+        "sexo": "femenino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Sobrepeso"
+      }
+    },
+    {
+      "scenario_id": "V9-EXACTO-18-5-M",
+      "env": {
+        "peso_kg": 47.36,
+        "altura_m": 1.6,
+        "sexo": "masculino"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo peso"
+      }
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "case_id": "SAL-C3-DOSIS-DIARIA",
+  "category": 3,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Determinar si una indicación supera la dosis máxima diaria de un medicamento. La dosis diaria es la dosis por toma, en miligramos, por la cantidad de tomas por día. La indicación supera el máximo solo si la dosis diaria es mayor que el máximo diario; si es igual, no lo supera.",
+  "gamma": {
+    "dosis_mg": "Int",
+    "maximo_diario_mg": "Int",
+    "tomas_por_dia": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": ">",
+      "left": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "dosis_mg"
+        },
+        "right": {
+          "type": "Var",
+          "name": "tomas_por_dia"
+        }
+      },
+      "right": {
+        "type": "Var",
+        "name": "maximo_diario_mg"
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['dosis_mg'] * data['tomas_por_dia'] > data['maximo_diario_mg']\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-IGUAL-AL-MAXIMO",
+      "env": {
+        "dosis_mg": 1000,
+        "tomas_por_dia": 4,
+        "maximo_diario_mg": 4000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V2-SUPERA",
+      "env": {
+        "dosis_mg": 1000,
+        "tomas_por_dia": 5,
+        "maximo_diario_mg": 4000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-DEBAJO",
+      "env": {
+        "dosis_mg": 500,
+        "tomas_por_dia": 3,
+        "maximo_diario_mg": 4000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-UN-MG-DE-MAS",
+      "env": {
+        "dosis_mg": 401,
+        "tomas_por_dia": 3,
+        "maximo_diario_mg": 1202
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V5-UNA-TOMA",
+      "env": {
+        "dosis_mg": 200,
+        "tomas_por_dia": 1,
+        "maximo_diario_mg": 1200
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-MUCHAS-TOMAS",
+      "env": {
+        "dosis_mg": 250,
+        "tomas_por_dia": 6,
+        "maximo_diario_mg": 1200
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "case_id": "SAL-C2-DOSIS",
+  "category": 2,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Calcular la dosis de paracetamol por toma, en miligramos, para un paciente según su peso en kilogramos (con decimales). La dosis es de 15 mg por kilo, con un máximo de 1000.0 mg por toma. Si el paciente pesa menos de 5.0 kg, no se calcula dosis y el resultado es 0.0. La edad del paciente y la presentación del medicamento (jarabe o comprimidos) no cambian el cálculo.",
+  "gamma": {
+    "peso_kg": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "peso_kg"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 5.0,
+          "value_type": "Decimal"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": 0.0,
+        "value_type": "Decimal"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": ">",
+          "left": {
+            "type": "BinaryOp",
+            "op": "*",
+            "left": {
+              "type": "Var",
+              "name": "peso_kg"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 15,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "Literal",
+            "value": 1000,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": 1000.0,
+          "value_type": "Decimal"
+        },
+        "else": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "peso_kg"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 15,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    peso = data['peso_kg']\n    if peso < Decimal('5.0'):\n        return Decimal('0')\n    return min(peso * 15, Decimal('1000.0'))\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-MENOS-DE-5",
+      "env": {
+        "peso_kg": 4.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V2-5-Y-MEDIO",
+      "env": {
+        "peso_kg": 5.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "82.5"
+      }
+    },
+    {
+      "scenario_id": "V3-NINO",
+      "env": {
+        "peso_kg": 20.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "307.5"
+      }
+    },
+    {
+      "scenario_id": "V4-JUSTO-DEBAJO-DEL-TOPE",
+      "env": {
+        "peso_kg": 66.6
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "999"
+      }
+    },
+    {
+      "scenario_id": "V5-JUSTO-ARRIBA-DEL-TOPE",
+      "env": {
+        "peso_kg": 66.7
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1000"
+      }
+    },
+    {
+      "scenario_id": "V6-ADULTO",
+      "env": {
+        "peso_kg": 80.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1000"
+      }
+    }
+  ]
+}

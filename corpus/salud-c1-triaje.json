@@ -1,0 +1,279 @@
+{
+  "case_id": "SAL-C1-TRIAJE",
+  "category": 1,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Asignar el color de triaje a un paciente que llega a la guardia, revisando los criterios en este orden y quedándose con el primero que se cumpla. Es \"Rojo\" si el paciente no está consciente o si su saturación de oxígeno es menor que 90 %. Si no, es \"Naranja\" si la saturación es menor que 94 %, si la frecuencia cardíaca supera 120 latidos por minuto o si el dolor, en una escala de 0 a 10, es 8 o más. Si tampoco, es \"Amarillo\" si la temperatura llega a 38.5 grados o si el dolor es 5 o más. En cualquier otro caso es \"Verde\". La temperatura se informa con un decimal; la saturación, la frecuencia y el dolor, como enteros.",
+  "gamma": {
+    "consciente": "Bool",
+    "dolor": "Int",
+    "frecuencia_cardiaca": "Int",
+    "saturacion": "Int",
+    "temperatura": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "Var",
+            "name": "consciente"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "saturacion"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 90,
+            "value_type": "Int"
+          }
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "Rojo",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "BinaryOp",
+            "op": "OR",
+            "left": {
+              "type": "BinaryOp",
+              "op": "<",
+              "left": {
+                "type": "Var",
+                "name": "saturacion"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 94,
+                "value_type": "Int"
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">",
+              "left": {
+                "type": "Var",
+                "name": "frecuencia_cardiaca"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 120,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": ">=",
+            "left": {
+              "type": "Var",
+              "name": "dolor"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 8,
+              "value_type": "Int"
+            }
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Naranja",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "OR",
+            "left": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "temperatura"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 38.5,
+                "value_type": "Decimal"
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "dolor"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 5,
+                "value_type": "Int"
+              }
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": "Amarillo",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "Literal",
+            "value": "Verde",
+            "value_type": "String"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    if not data['consciente'] or data['saturacion'] < 90:\n        return 'Rojo'\n    if data['saturacion'] < 94 or data['frecuencia_cardiaca'] > 120 or data['dolor'] >= 8:\n        return 'Naranja'\n    if data['temperatura'] >= Decimal('38.5') or data['dolor'] >= 5:\n        return 'Amarillo'\n    return 'Verde'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-INCONSCIENTE",
+      "env": {
+        "consciente": false,
+        "saturacion": 98,
+        "frecuencia_cardiaca": 80,
+        "temperatura": 36.5,
+        "dolor": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Rojo"
+      }
+    },
+    {
+      "scenario_id": "V2-SATURACION-89",
+      "env": {
+        "consciente": true,
+        "saturacion": 89,
+        "frecuencia_cardiaca": 80,
+        "temperatura": 36.5,
+        "dolor": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Rojo"
+      }
+    },
+    {
+      "scenario_id": "V3-SATURACION-90",
+      "env": {
+        "consciente": true,
+        "saturacion": 90,
+        "frecuencia_cardiaca": 80,
+        "temperatura": 36.5,
+        "dolor": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Naranja"
+      }
+    },
+    {
+      "scenario_id": "V4-TAQUICARDIA",
+      "env": {
+        "consciente": true,
+        "saturacion": 97,
+        "frecuencia_cardiaca": 121,
+        "temperatura": 36.8,
+        "dolor": 2
+      },
+      "expected": {
+        "type": "String",
+        "value": "Naranja"
+      }
+    },
+    {
+      "scenario_id": "V5-FRECUENCIA-120",
+      "env": {
+        "consciente": true,
+        "saturacion": 97,
+        "frecuencia_cardiaca": 120,
+        "temperatura": 36.8,
+        "dolor": 2
+      },
+      "expected": {
+        "type": "String",
+        "value": "Verde"
+      }
+    },
+    {
+      "scenario_id": "V6-FIEBRE-38-5",
+      "env": {
+        "consciente": true,
+        "saturacion": 97,
+        "frecuencia_cardiaca": 90,
+        "temperatura": 38.5,
+        "dolor": 1
+      },
+      "expected": {
+        "type": "String",
+        "value": "Amarillo"
+      }
+    },
+    {
+      "scenario_id": "V7-DOLOR-8",
+      "env": {
+        "consciente": true,
+        "saturacion": 96,
+        "frecuencia_cardiaca": 90,
+        "temperatura": 37.2,
+        "dolor": 8
+      },
+      "expected": {
+        "type": "String",
+        "value": "Naranja"
+      }
+    },
+    {
+      "scenario_id": "V8-DOLOR-5",
+      "env": {
+        "consciente": true,
+        "saturacion": 96,
+        "frecuencia_cardiaca": 90,
+        "temperatura": 37.2,
+        "dolor": 5
+      },
+      "expected": {
+        "type": "String",
+        "value": "Amarillo"
+      }
+    },
+    {
+      "scenario_id": "V9-ESTABLE",
+      "env": {
+        "consciente": true,
+        "saturacion": 98,
+        "frecuencia_cardiaca": 72,
+        "temperatura": 38.4,
+        "dolor": 4
+      },
+      "expected": {
+        "type": "String",
+        "value": "Verde"
+      }
+    }
+  ]
+}

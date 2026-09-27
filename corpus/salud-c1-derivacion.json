@@ -1,0 +1,271 @@
+{
+  "case_id": "SAL-C1-DERIVACION",
+  "category": 1,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Indicar a qué especialidad se deriva a un paciente según su motivo de consulta. Los menores de 15 años van siempre a \"Pediatría\", sin importar el motivo. Para los demás: los motivos \"dolor_toracico\", \"palpitaciones\" e \"hipertension\" van a \"Cardiología\"; \"cefalea\", \"convulsiones\", \"mareos\" y \"perdida_de_memoria\", a \"Neurología\"; \"tos_cronica\", \"disnea\" y \"asma\", a \"Neumonología\"; \"erupcion\", \"picazon\", \"lunar_cambiante\" y \"acne\", a \"Dermatología\". Cualquier otro motivo va a \"Clínica médica\".",
+  "gamma": {
+    "edad": "Int",
+    "motivo": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "edad"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 15,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "Pediatría",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "In",
+          "value": {
+            "type": "Var",
+            "name": "motivo"
+          },
+          "options": [
+            {
+              "type": "Literal",
+              "value": "dolor_toracico",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "palpitaciones",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "hipertension",
+              "value_type": "String"
+            }
+          ]
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Cardiología",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "In",
+            "value": {
+              "type": "Var",
+              "name": "motivo"
+            },
+            "options": [
+              {
+                "type": "Literal",
+                "value": "cefalea",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "convulsiones",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "mareos",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "perdida_de_memoria",
+                "value_type": "String"
+              }
+            ]
+          },
+          "then": {
+            "type": "Literal",
+            "value": "Neurología",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "In",
+              "value": {
+                "type": "Var",
+                "name": "motivo"
+              },
+              "options": [
+                {
+                  "type": "Literal",
+                  "value": "tos_cronica",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "disnea",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "asma",
+                  "value_type": "String"
+                }
+              ]
+            },
+            "then": {
+              "type": "Literal",
+              "value": "Neumonología",
+              "value_type": "String"
+            },
+            "else": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "In",
+                "value": {
+                  "type": "Var",
+                  "name": "motivo"
+                },
+                "options": [
+                  {
+                    "type": "Literal",
+                    "value": "erupcion",
+                    "value_type": "String"
+                  },
+                  {
+                    "type": "Literal",
+                    "value": "picazon",
+                    "value_type": "String"
+                  },
+                  {
+                    "type": "Literal",
+                    "value": "lunar_cambiante",
+                    "value_type": "String"
+                  },
+                  {
+                    "type": "Literal",
+                    "value": "acne",
+                    "value_type": "String"
+                  }
+                ]
+              },
+              "then": {
+                "type": "Literal",
+                "value": "Dermatología",
+                "value_type": "String"
+              },
+              "else": {
+                "type": "Literal",
+                "value": "Clínica médica",
+                "value_type": "String"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "CARDIO = ('dolor_toracico', 'palpitaciones', 'hipertension')\nNEURO = ('cefalea', 'convulsiones', 'mareos', 'perdida_de_memoria')\nNEUMO = ('tos_cronica', 'disnea', 'asma')\nDERMA = ('erupcion', 'picazon', 'lunar_cambiante', 'acne')\n\ndef evaluate_rule(data):\n    if data['edad'] < 15:\n        return 'Pediatría'\n    motivo = data['motivo']\n    if motivo in CARDIO:\n        return 'Cardiología'\n    if motivo in NEURO:\n        return 'Neurología'\n    if motivo in NEUMO:\n        return 'Neumonología'\n    if motivo in DERMA:\n        return 'Dermatología'\n    return 'Clínica médica'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-NINO-CON-ASMA",
+      "env": {
+        "edad": 14,
+        "motivo": "asma"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Pediatría"
+      }
+    },
+    {
+      "scenario_id": "V2-15-ASMA",
+      "env": {
+        "edad": 15,
+        "motivo": "asma"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Neumonología"
+      }
+    },
+    {
+      "scenario_id": "V3-PALPITACIONES",
+      "env": {
+        "edad": 50,
+        "motivo": "palpitaciones"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Cardiología"
+      }
+    },
+    {
+      "scenario_id": "V4-MEMORIA",
+      "env": {
+        "edad": 78,
+        "motivo": "perdida_de_memoria"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Neurología"
+      }
+    },
+    {
+      "scenario_id": "V5-ACNE",
+      "env": {
+        "edad": 19,
+        "motivo": "acne"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Dermatología"
+      }
+    },
+    {
+      "scenario_id": "V6-DOLOR-DE-RODILLA",
+      "env": {
+        "edad": 40,
+        "motivo": "dolor_de_rodilla"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Clínica médica"
+      }
+    },
+    {
+      "scenario_id": "V7-HIPERTENSION",
+      "env": {
+        "edad": 60,
+        "motivo": "hipertension"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Cardiología"
+      }
+    },
+    {
+      "scenario_id": "V8-MAREOS",
+      "env": {
+        "edad": 35,
+        "motivo": "mareos"
+      },
+      "expected": {
+        "type": "String",
+        "value": "Neurología"
+      }
+    }
+  ]
+}

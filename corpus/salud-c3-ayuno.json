@@ -1,0 +1,154 @@
+{
+  "case_id": "SAL-C3-AYUNO",
+  "category": 3,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Determinar si un paciente cumple el ayuno para ser anestesiado. Lo cumple si lleva al menos 8 horas sin comer sólidos y al menos 2 horas sin tomar líquidos claros. Si la cirugía es de urgencia, se anestesia igual, aunque no cumpla ninguna de las dos condiciones.",
+  "gamma": {
+    "horas_sin_liquidos": "Int",
+    "horas_sin_solidos": "Int",
+    "urgencia": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "OR",
+      "left": {
+        "type": "Var",
+        "name": "urgencia"
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": ">=",
+          "left": {
+            "type": "Var",
+            "name": "horas_sin_solidos"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 8,
+            "value_type": "Int"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": ">=",
+          "left": {
+            "type": "Var",
+            "name": "horas_sin_liquidos"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 2,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['urgencia'] or (data['horas_sin_solidos'] >= 8 and data['horas_sin_liquidos'] >= 2)\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-CUMPLE",
+      "env": {
+        "horas_sin_solidos": 8,
+        "horas_sin_liquidos": 2,
+        "urgencia": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-SOLIDOS-7",
+      "env": {
+        "horas_sin_solidos": 7,
+        "horas_sin_liquidos": 5,
+        "urgencia": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-LIQUIDOS-1",
+      "env": {
+        "horas_sin_solidos": 10,
+        "horas_sin_liquidos": 1,
+        "urgencia": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-URGENCIA",
+      "env": {
+        "horas_sin_solidos": 1,
+        "horas_sin_liquidos": 0,
+        "urgencia": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V5-NADA",
+      "env": {
+        "horas_sin_solidos": 3,
+        "horas_sin_liquidos": 1,
+        "urgencia": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-URGENCIA-CON-AYUNO",
+      "env": {
+        "horas_sin_solidos": 12,
+        "horas_sin_liquidos": 6,
+        "urgencia": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V7-SOLO-SOLIDOS",
+      "env": {
+        "horas_sin_solidos": 12,
+        "horas_sin_liquidos": 0,
+        "urgencia": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-LARGO",
+      "env": {
+        "horas_sin_solidos": 14,
+        "horas_sin_liquidos": 3,
+        "urgencia": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

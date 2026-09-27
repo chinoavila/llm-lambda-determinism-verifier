@@ -1,0 +1,287 @@
+{
+  "case_id": "SAL-C1-ALTA",
+  "category": 1,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Determinar si un paciente internado puede recibir el alta. Puede, solo si se cumplen todas estas condiciones: lleva al menos 24 horas sin fiebre; su saturación de oxígeno es 94 % o más; tolera la alimentación por boca; su dolor, en una escala de 0 a 10, es 3 o menos; no tiene drenajes colocados; y, si vive solo, cuenta con un acompañante para los primeros días. Si no vive solo, no hace falta el acompañante.",
+  "gamma": {
+    "dolor": "Int",
+    "horas_sin_fiebre": "Int",
+    "saturacion": "Int",
+    "tiene_acompanante": "Bool",
+    "tiene_drenajes": "Bool",
+    "tolera_via_oral": "Bool",
+    "vive_solo": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "BinaryOp",
+                "op": ">=",
+                "left": {
+                  "type": "Var",
+                  "name": "horas_sin_fiebre"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 24,
+                  "value_type": "Int"
+                }
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": ">=",
+                "left": {
+                  "type": "Var",
+                  "name": "saturacion"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 94,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "right": {
+              "type": "Var",
+              "name": "tolera_via_oral"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<=",
+            "left": {
+              "type": "Var",
+              "name": "dolor"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 3,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "Var",
+            "name": "tiene_drenajes"
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "Var",
+            "name": "vive_solo"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "tiene_acompanante"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return (\n        data['horas_sin_fiebre'] >= 24\n        and data['saturacion'] >= 94\n        and data['tolera_via_oral']\n        and data['dolor'] <= 3\n        and not data['tiene_drenajes']\n        and (not data['vive_solo'] or data['tiene_acompanante'])\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-ALTA",
+      "env": {
+        "horas_sin_fiebre": 24,
+        "saturacion": 94,
+        "tolera_via_oral": true,
+        "dolor": 3,
+        "tiene_drenajes": false,
+        "vive_solo": false,
+        "tiene_acompanante": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-23-HORAS",
+      "env": {
+        "horas_sin_fiebre": 23,
+        "saturacion": 97,
+        "tolera_via_oral": true,
+        "dolor": 1,
+        "tiene_drenajes": false,
+        "vive_solo": false,
+        "tiene_acompanante": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-SATURACION-93",
+      "env": {
+        "horas_sin_fiebre": 48,
+        "saturacion": 93,
+        "tolera_via_oral": true,
+        "dolor": 1,
+        "tiene_drenajes": false,
+        "vive_solo": false,
+        "tiene_acompanante": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-NO-TOLERA",
+      "env": {
+        "horas_sin_fiebre": 48,
+        "saturacion": 97,
+        "tolera_via_oral": false,
+        "dolor": 1,
+        "tiene_drenajes": false,
+        "vive_solo": false,
+        "tiene_acompanante": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-DOLOR-4",
+      "env": {
+        "horas_sin_fiebre": 48,
+        "saturacion": 97,
+        "tolera_via_oral": true,
+        "dolor": 4,
+        "tiene_drenajes": false,
+        "vive_solo": false,
+        "tiene_acompanante": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-DRENAJE",
+      "env": {
+        "horas_sin_fiebre": 48,
+        "saturacion": 97,
+        "tolera_via_oral": true,
+        "dolor": 0,
+        "tiene_drenajes": true,
+        "vive_solo": false,
+        "tiene_acompanante": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-SOLO-SIN-ACOMPANANTE",
+      "env": {
+        "horas_sin_fiebre": 48,
+        "saturacion": 97,
+        "tolera_via_oral": true,
+        "dolor": 0,
+        "tiene_drenajes": false,
+        "vive_solo": true,
+        "tiene_acompanante": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-SOLO-CON-ACOMPANANTE",
+      "env": {
+        "horas_sin_fiebre": 48,
+        "saturacion": 97,
+        "tolera_via_oral": true,
+        "dolor": 0,
+        "tiene_drenajes": false,
+        "vive_solo": true,
+        "tiene_acompanante": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-ACOMPANADO-SIN-NECESIDAD",
+      "env": {
+        "horas_sin_fiebre": 72,
+        "saturacion": 99,
+        "tolera_via_oral": true,
+        "dolor": 2,
+        "tiene_drenajes": false,
+        "vive_solo": false,
+        "tiene_acompanante": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V10-SOLO-ACOMPANADO-LIMITES",
+      "env": {
+        "horas_sin_fiebre": 24,
+        "saturacion": 94,
+        "tolera_via_oral": true,
+        "dolor": 3,
+        "tiene_drenajes": false,
+        "vive_solo": true,
+        "tiene_acompanante": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V11-SIN-DOLOR",
+      "env": {
+        "horas_sin_fiebre": 30,
+        "saturacion": 96,
+        "tolera_via_oral": true,
+        "dolor": 0,
+        "tiene_drenajes": false,
+        "vive_solo": false,
+        "tiene_acompanante": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

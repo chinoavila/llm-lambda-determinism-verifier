@@ -1,0 +1,143 @@
+{
+  "case_id": "SAL-C2-GESTACION",
+  "category": 2,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Clasificar un parto según la edad gestacional. Se recibe la cantidad de días de gestación (entero) y se calculan las semanas como días / 7, con decimales. Si las semanas son menos de 37, el parto es \"Pretérmino\"; si son 37 o más pero menos de 42, es \"A término\"; con 42 semanas o más, es \"Postérmino\". La fecha de la última menstruación ya está reflejada en los días de gestación.",
+  "gamma": {
+    "dias_gestacion": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "BinaryOp",
+          "op": "/",
+          "left": {
+            "type": "Var",
+            "name": "dias_gestacion"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 7,
+            "value_type": "Int"
+          }
+        },
+        "right": {
+          "type": "Literal",
+          "value": 37,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "Pretérmino",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "BinaryOp",
+            "op": "/",
+            "left": {
+              "type": "Var",
+              "name": "dias_gestacion"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 7,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "Literal",
+            "value": 42,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "A término",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "Literal",
+          "value": "Postérmino",
+          "value_type": "String"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    semanas = Decimal(data['dias_gestacion']) / 7\n    if semanas < 37:\n        return 'Pretérmino'\n    if semanas < 42:\n        return 'A término'\n    return 'Postérmino'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-258-DIAS",
+      "env": {
+        "dias_gestacion": 258
+      },
+      "expected": {
+        "type": "String",
+        "value": "Pretérmino"
+      }
+    },
+    {
+      "scenario_id": "V2-259-DIAS",
+      "env": {
+        "dias_gestacion": 259
+      },
+      "expected": {
+        "type": "String",
+        "value": "A término"
+      }
+    },
+    {
+      "scenario_id": "V3-280-DIAS",
+      "env": {
+        "dias_gestacion": 280
+      },
+      "expected": {
+        "type": "String",
+        "value": "A término"
+      }
+    },
+    {
+      "scenario_id": "V4-293-DIAS",
+      "env": {
+        "dias_gestacion": 293
+      },
+      "expected": {
+        "type": "String",
+        "value": "A término"
+      }
+    },
+    {
+      "scenario_id": "V5-294-DIAS",
+      "env": {
+        "dias_gestacion": 294
+      },
+      "expected": {
+        "type": "String",
+        "value": "Postérmino"
+      }
+    },
+    {
+      "scenario_id": "V6-200-DIAS",
+      "env": {
+        "dias_gestacion": 200
+      },
+      "expected": {
+        "type": "String",
+        "value": "Pretérmino"
+      }
+    }
+  ]
+}

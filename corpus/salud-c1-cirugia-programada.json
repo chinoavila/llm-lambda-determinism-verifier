@@ -1,0 +1,303 @@
+{
+  "case_id": "SAL-C1-CIRUGIA",
+  "category": 1,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Determinar si un paciente está en condiciones de entrar a una cirugía programada. Lo está solo si se cumplen todas estas condiciones: firmó el consentimiento informado; lleva al menos 8 horas de ayuno; su hemoglobina es de 10.0 g/dL o más (se informa con un decimal); no está tomando anticoagulantes; su riesgo anestésico ASA es 1, 2 o 3; y, si tiene 70 años o más, ya pasó por la evaluación cardiológica. Un paciente menor de 70 no necesita la evaluación cardiológica.",
+  "gamma": {
+    "anticoagulado": "Bool",
+    "consentimiento": "Bool",
+    "edad": "Int",
+    "evaluacion_cardiologica": "Bool",
+    "hemoglobina": "Decimal",
+    "horas_ayuno": "Int",
+    "riesgo_asa": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "Var",
+                "name": "consentimiento"
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": ">=",
+                "left": {
+                  "type": "Var",
+                  "name": "horas_ayuno"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 8,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "hemoglobina"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 10.0,
+                "value_type": "Decimal"
+              }
+            }
+          },
+          "right": {
+            "type": "UnaryOp",
+            "op": "NOT",
+            "operand": {
+              "type": "Var",
+              "name": "anticoagulado"
+            }
+          }
+        },
+        "right": {
+          "type": "In",
+          "value": {
+            "type": "Var",
+            "name": "riesgo_asa"
+          },
+          "options": [
+            {
+              "type": "Literal",
+              "value": 1,
+              "value_type": "Int"
+            },
+            {
+              "type": "Literal",
+              "value": 2,
+              "value_type": "Int"
+            },
+            {
+              "type": "Literal",
+              "value": 3,
+              "value_type": "Int"
+            }
+          ]
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "edad"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 70,
+            "value_type": "Int"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "evaluacion_cardiologica"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    return (\n        data['consentimiento']\n        and data['horas_ayuno'] >= 8\n        and data['hemoglobina'] >= Decimal('10.0')\n        and not data['anticoagulado']\n        and data['riesgo_asa'] in (1, 2, 3)\n        and (data['edad'] < 70 or data['evaluacion_cardiologica'])\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-APTO",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 8,
+        "hemoglobina": 12.5,
+        "anticoagulado": false,
+        "riesgo_asa": 2,
+        "edad": 45,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-SIN-CONSENTIMIENTO",
+      "env": {
+        "consentimiento": false,
+        "horas_ayuno": 10,
+        "hemoglobina": 12.5,
+        "anticoagulado": false,
+        "riesgo_asa": 1,
+        "edad": 45,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-AYUNO-7",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 7,
+        "hemoglobina": 12.5,
+        "anticoagulado": false,
+        "riesgo_asa": 1,
+        "edad": 45,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-HEMOGLOBINA-9-9",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 9,
+        "hemoglobina": 9.9,
+        "anticoagulado": false,
+        "riesgo_asa": 1,
+        "edad": 45,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-HEMOGLOBINA-10-5",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 9,
+        "hemoglobina": 10.5,
+        "anticoagulado": false,
+        "riesgo_asa": 3,
+        "edad": 69,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-ANTICOAGULADO",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 9,
+        "hemoglobina": 13.5,
+        "anticoagulado": true,
+        "riesgo_asa": 2,
+        "edad": 50,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-ASA-4",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 9,
+        "hemoglobina": 13.5,
+        "anticoagulado": false,
+        "riesgo_asa": 4,
+        "edad": 50,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-70-SIN-EVALUACION",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 9,
+        "hemoglobina": 13.5,
+        "anticoagulado": false,
+        "riesgo_asa": 2,
+        "edad": 70,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V9-70-CON-EVALUACION",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 9,
+        "hemoglobina": 13.5,
+        "anticoagulado": false,
+        "riesgo_asa": 2,
+        "edad": 70,
+        "evaluacion_cardiologica": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V10-ASA-1-JOVEN",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 12,
+        "hemoglobina": 11.2,
+        "anticoagulado": false,
+        "riesgo_asa": 1,
+        "edad": 30,
+        "evaluacion_cardiologica": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V11-MAYOR-EVALUADO",
+      "env": {
+        "consentimiento": true,
+        "horas_ayuno": 10,
+        "hemoglobina": 12.1,
+        "anticoagulado": false,
+        "riesgo_asa": 3,
+        "edad": 82,
+        "evaluacion_cardiologica": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

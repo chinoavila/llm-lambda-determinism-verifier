@@ -1,0 +1,268 @@
+{
+  "case_id": "SAL-C1-VACUNA-GRIPE",
+  "category": 1,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Determinar si una persona recibe gratis la vacuna antigripal. La recibe si cumple al menos uno de estos criterios: tiene 65 años o más; tiene menos de 2 años; está embarazada; trabaja en salud; o tiene una de estas condiciones, informadas con estos códigos exactos: \"diabetes\", \"asma\", \"epoc\", \"cardiopatia\", \"insuficiencia_renal\", \"inmunodepresion\", \"obesidad_morbida\", \"cancer_en_tratamiento\" o \"trasplante\". Si no tiene ninguna condición, el código es \"ninguna\"; cualquier otro código (por ejemplo \"hipertension\" o \"alergia\") no da derecho a la vacuna gratuita.",
+  "gamma": {
+    "condicion": "String",
+    "edad": "Int",
+    "embarazada": "Bool",
+    "personal_salud": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "OR",
+      "left": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "BinaryOp",
+            "op": "OR",
+            "left": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "edad"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 65,
+                "value_type": "Int"
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "<",
+              "left": {
+                "type": "Var",
+                "name": "edad"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 2,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "Var",
+            "name": "embarazada"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "personal_salud"
+        }
+      },
+      "right": {
+        "type": "In",
+        "value": {
+          "type": "Var",
+          "name": "condicion"
+        },
+        "options": [
+          {
+            "type": "Literal",
+            "value": "diabetes",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "asma",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "epoc",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "cardiopatia",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "insuficiencia_renal",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "inmunodepresion",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "obesidad_morbida",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "cancer_en_tratamiento",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "trasplante",
+            "value_type": "String"
+          }
+        ]
+      }
+    }
+  },
+  "canonical_python": "CONDICIONES = ('diabetes', 'asma', 'epoc', 'cardiopatia', 'insuficiencia_renal', 'inmunodepresion', 'obesidad_morbida', 'cancer_en_tratamiento', 'trasplante')\n\ndef evaluate_rule(data):\n    return (\n        data['edad'] >= 65\n        or data['edad'] < 2\n        or data['embarazada']\n        or data['personal_salud']\n        or data['condicion'] in CONDICIONES\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-MAYOR-65",
+      "env": {
+        "edad": 65,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "ninguna"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-64-SANO",
+      "env": {
+        "edad": 64,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "ninguna"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-BEBE-1",
+      "env": {
+        "edad": 1,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "ninguna"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-NINO-2",
+      "env": {
+        "edad": 2,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "ninguna"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-EMBARAZADA",
+      "env": {
+        "edad": 30,
+        "embarazada": true,
+        "personal_salud": false,
+        "condicion": "ninguna"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-ENFERMERO",
+      "env": {
+        "edad": 40,
+        "embarazada": false,
+        "personal_salud": true,
+        "condicion": "ninguna"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V7-TRASPLANTE",
+      "env": {
+        "edad": 50,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "trasplante"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V8-HIPERTENSION",
+      "env": {
+        "edad": 50,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "hipertension"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V9-ALERGIA",
+      "env": {
+        "edad": 33,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "alergia"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V10-ASMA",
+      "env": {
+        "edad": 12,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "asma"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V11-ADULTO-SANO",
+      "env": {
+        "edad": 25,
+        "embarazada": false,
+        "personal_salud": false,
+        "condicion": "ninguna"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

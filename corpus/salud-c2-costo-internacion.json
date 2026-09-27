@@ -1,0 +1,155 @@
+{
+  "case_id": "SAL-C2-INTERNACION",
+  "category": 2,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Calcular el costo de una internación en pesos con centavos. Es la cantidad de días internado (entero) por la tarifa diaria de la sala, más el costo de los insumos. La tarifa diaria es 4800.75 para \"terapia_intensiva\", 2500.50 para \"intermedia\" y 1200.25 para \"comun\". Los honorarios médicos se facturan aparte y no entran en este costo.",
+  "gamma": {
+    "dias": "Int",
+    "insumos": "Decimal",
+    "sala": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "+",
+      "left": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "dias"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "sala"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "terapia_intensiva",
+              "value_type": "String"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 4800.75,
+            "value_type": "Decimal"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "sala"
+              },
+              "right": {
+                "type": "Literal",
+                "value": "intermedia",
+                "value_type": "String"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 2500.5,
+              "value_type": "Decimal"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 1200.25,
+              "value_type": "Decimal"
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "Var",
+        "name": "insumos"
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\nTARIFAS = {'terapia_intensiva': Decimal('4800.75'), 'intermedia': Decimal('2500.50')}\n\ndef evaluate_rule(data):\n    tarifa = TARIFAS.get(data['sala'], Decimal('1200.25'))\n    return data['dias'] * tarifa + data['insumos']\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-COMUN",
+      "env": {
+        "sala": "comun",
+        "dias": 3,
+        "insumos": 1500.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "5101.25"
+      }
+    },
+    {
+      "scenario_id": "V2-INTERMEDIA",
+      "env": {
+        "sala": "intermedia",
+        "dias": 2,
+        "insumos": 800.25
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "5801.25"
+      }
+    },
+    {
+      "scenario_id": "V3-TERAPIA",
+      "env": {
+        "sala": "terapia_intensiva",
+        "dias": 5,
+        "insumos": 12000.75
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "36004.5"
+      }
+    },
+    {
+      "scenario_id": "V4-UN-DIA",
+      "env": {
+        "sala": "comun",
+        "dias": 1,
+        "insumos": 0.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1200.75"
+      }
+    },
+    {
+      "scenario_id": "V5-SIN-DIAS",
+      "env": {
+        "sala": "terapia_intensiva",
+        "dias": 0,
+        "insumos": 350.25
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "350.25"
+      }
+    },
+    {
+      "scenario_id": "V6-LARGA",
+      "env": {
+        "sala": "intermedia",
+        "dias": 30,
+        "insumos": 45000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "120015.5"
+      }
+    }
+  ]
+}

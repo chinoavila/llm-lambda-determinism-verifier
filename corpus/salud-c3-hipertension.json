@@ -1,0 +1,115 @@
+{
+  "case_id": "SAL-C3-HIPERTENSION",
+  "category": 3,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Determinar si una toma de presión arterial es compatible con hipertensión. Lo es si la presión sistólica es 140 o más, o si la diastólica es 90 o más: alcanza con que una de las dos esté alta. Con una sistólica de 139 y una diastólica de 89, la toma no es compatible con hipertensión.",
+  "gamma": {
+    "diastolica": "Int",
+    "sistolica": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "OR",
+      "left": {
+        "type": "BinaryOp",
+        "op": ">=",
+        "left": {
+          "type": "Var",
+          "name": "sistolica"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 140,
+          "value_type": "Int"
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": ">=",
+        "left": {
+          "type": "Var",
+          "name": "diastolica"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 90,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['sistolica'] >= 140 or data['diastolica'] >= 90\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-NORMAL",
+      "env": {
+        "sistolica": 120,
+        "diastolica": 80
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V2-SISTOLICA-140",
+      "env": {
+        "sistolica": 140,
+        "diastolica": 80
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-DIASTOLICA-90",
+      "env": {
+        "sistolica": 125,
+        "diastolica": 90
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-LIMITE-BAJO",
+      "env": {
+        "sistolica": 139,
+        "diastolica": 89
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-AMBAS-ALTAS",
+      "env": {
+        "sistolica": 165,
+        "diastolica": 100
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-BAJA",
+      "env": {
+        "sistolica": 95,
+        "diastolica": 60
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,234 @@
+{
+  "case_id": "SAL-C2-RIESGO-CV",
+  "category": 2,
+  "domain": "salud",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/salud.py",
+  "description": "Calcular el puntaje de riesgo cardiovascular de un paciente, como número entero. Se suman puntos así: 3 si fuma; 2 si tiene diabetes; 2 si tiene 55 años o más; 2 si su colesterol total supera 240 mg/dL; y 1 si su presión sistólica es 140 o más. Cada condición que no se cumple suma 0. Los antecedentes familiares se registran en la historia clínica, pero no suman en este puntaje.",
+  "gamma": {
+    "colesterol": "Int",
+    "diabetes": "Bool",
+    "edad": "Int",
+    "fuma": "Bool",
+    "sistolica": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "+",
+      "left": {
+        "type": "BinaryOp",
+        "op": "+",
+        "left": {
+          "type": "BinaryOp",
+          "op": "+",
+          "left": {
+            "type": "BinaryOp",
+            "op": "+",
+            "left": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "Var",
+                "name": "fuma"
+              },
+              "then": {
+                "type": "Literal",
+                "value": 3,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "Literal",
+                "value": 0,
+                "value_type": "Int"
+              }
+            },
+            "right": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "Var",
+                "name": "diabetes"
+              },
+              "then": {
+                "type": "Literal",
+                "value": 2,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "Literal",
+                "value": 0,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "edad"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 55,
+                "value_type": "Int"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 2,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 0,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": ">",
+            "left": {
+              "type": "Var",
+              "name": "colesterol"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 240,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 2,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "Literal",
+            "value": 0,
+            "value_type": "Int"
+          }
+        }
+      },
+      "right": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": ">=",
+          "left": {
+            "type": "Var",
+            "name": "sistolica"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 140,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": 1,
+          "value_type": "Int"
+        },
+        "else": {
+          "type": "Literal",
+          "value": 0,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    puntos = 0\n    if data['fuma']:\n        puntos += 3\n    if data['diabetes']:\n        puntos += 2\n    if data['edad'] >= 55:\n        puntos += 2\n    if data['colesterol'] > 240:\n        puntos += 2\n    if data['sistolica'] >= 140:\n        puntos += 1\n    return puntos\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SIN-RIESGO",
+      "env": {
+        "fuma": false,
+        "diabetes": false,
+        "edad": 40,
+        "colesterol": 180,
+        "sistolica": 120
+      },
+      "expected": {
+        "type": "Int",
+        "value": 0
+      }
+    },
+    {
+      "scenario_id": "V2-TODO",
+      "env": {
+        "fuma": true,
+        "diabetes": true,
+        "edad": 60,
+        "colesterol": 260,
+        "sistolica": 150
+      },
+      "expected": {
+        "type": "Int",
+        "value": 10
+      }
+    },
+    {
+      "scenario_id": "V3-LIMITES-QUE-SUMAN",
+      "env": {
+        "fuma": false,
+        "diabetes": false,
+        "edad": 55,
+        "colesterol": 241,
+        "sistolica": 140
+      },
+      "expected": {
+        "type": "Int",
+        "value": 5
+      }
+    },
+    {
+      "scenario_id": "V4-LIMITES-QUE-NO-SUMAN",
+      "env": {
+        "fuma": false,
+        "diabetes": false,
+        "edad": 54,
+        "colesterol": 240,
+        "sistolica": 139
+      },
+      "expected": {
+        "type": "Int",
+        "value": 0
+      }
+    },
+    {
+      "scenario_id": "V5-FUMADOR-JOVEN",
+      "env": {
+        "fuma": true,
+        "diabetes": false,
+        "edad": 30,
+        "colesterol": 200,
+        "sistolica": 118
+      },
+      "expected": {
+        "type": "Int",
+        "value": 3
+      }
+    },
+    {
+      "scenario_id": "V6-DIABETICO",
+      "env": {
+        "fuma": false,
+        "diabetes": true,
+        "edad": 58,
+        "colesterol": 210,
+        "sistolica": 135
+      },
+      "expected": {
+        "type": "Int",
+        "value": 4
+      }
+    }
+  ]
+}
