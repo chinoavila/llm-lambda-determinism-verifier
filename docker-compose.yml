@@ -8,7 +8,7 @@ x-pipeline: &pipeline
     - ./pipeline:/workspace/pipeline
     - ./contracts:/workspace/contracts:ro
     - ./out:/workspace/out
-    # Reglas del corpus del experimento (fuera de Git; ver docs/corpus.md).
+    # Reglas del corpus del experimento (ver docs/corpus.md).
     - ./corpus:/workspace/corpus
     - sandbox-io:/io
   working_dir: /workspace/pipeline

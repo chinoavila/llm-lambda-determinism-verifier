@@ -7,6 +7,7 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 - "Triple llamada por grupo" significa una llamada al LLM por grupo del caso: `treatment`, `baseline1` y `baseline2`, en ese orden. No son repeticiones dentro de un grupo.
 - Las tres llamadas usan el mismo `ModelAssignment` (un modelo por caso, ver `specs/llm-client.md`). Nunca pedir otro modelo dentro de un caso.
 - Cada grupo recibe su propio prompt (`build_messages`). Los tres piden JSON.
+- El LLM solo ve `description` y Γ (más las instrucciones de su grupo). `canonical_ast`, `canonical_python`, `expected`, `source` y el resto de los campos del corpus son la clave de respuestas y nunca van al prompt. Lo verifican `test_corpus_answer_key_never_reaches_the_llm` (marcas en cada campo) y `test_corpus_descriptions_do_not_embed_the_answer_key` (cada regla de `corpus/`) en `pipeline/tests/test_orchestrator.py`.
 - `run_case(case, assignment, runners, gamma, run_id=, repetitions=1)` hace `repetitions` rondas de triple llamada, todas con el mismo `ModelAssignment`. Cada llamada es una **generación**, identificada por `(run_id, case_id, group, repetition)`; `repetition` empieza en 1.
 - La salida de una generación se ejecuta contra el `env` de **cada escenario** del caso, en orden, y produce un registro por escenario con su `scenario_id`. Nunca llamar al LLM por escenario.
 - `run_case` devuelve los registros; no los escribe. Obtener el modelo (`balancer.acquire()`) y Γ (`case_gamma`) es responsabilidad de quien llama.

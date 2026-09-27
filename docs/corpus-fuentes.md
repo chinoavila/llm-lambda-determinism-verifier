@@ -80,7 +80,7 @@ Las 27 son del mismo dominio. La matriz de [`corpus.md`](corpus.md) tiene 5 domi
 
 | Categoría | Entran | Reserva | Por qué quedan en reserva |
 |---|---|---|---|
-| 1 | IRS-01, 02, 03, 05, 07, 08 | IRS-04, 06 | El crédito educativo depende de una reducción gradual por MAGI; el desempate entre padre y abuela tiene un solo escenario real |
+| 1 | IRS-01, 02, 03, 04, 05, 07 | IRS-06, 08 | IRS-08 (Form 8843) calcula la misma exención por años que IRS-03, y las celdas no serían independientes; el desempate entre padre y abuela tiene un solo escenario real |
 | 2 | IRS-09, 10, 11, 13, 15, 16 | IRS-12, 14, 17 | Las tasas de tratado varían por país; ITIN tiene poca lógica; el tope de la HSA repite los datos de Nancy de IRS-05 |
 | 3 | IRS-18, 19, 21, 23, 25, 27 | IRS-20, 22, 24, 26 | IRS-24 e IRS-26 repiten los datos de IRS-23 e IRS-05; IRS-20 e IRS-22 son un solo umbral y se parecen a IRS-19 |
 
@@ -93,6 +93,21 @@ En cada regla adaptada, `source` queda así:
   "license": "Dominio público (17 U.S.C. § 105)"
 }
 ```
+
+## Reglas escritas
+
+Los `scenario_id` que empiezan con `F6744-` son escenarios del examen (por ejemplo, `F6744-B2-WALSH` es Basic Scenario 2). Los que empiezan con `V` son variantes en los bordes. Los parámetros salen de las publicaciones de 2025 que cita cada `source.reference`.
+
+**Fiscal, categoría 1** (en [`corpus/`](../corpus/), `check-case` 6/6 sin avisos):
+
+| Regla | Archivo | Escenarios | Simplificaciones respecto de la ley |
+|---|---|---|---|
+| IRS-01 | `fiscal-c1-eitc-sin-hijos.json` | 4 reales + 6 variantes | "Vivió en EE.UU. más de la mitad del año" pasa a 183 días o más. No contempla la declaración de casado por separado |
+| IRS-02 | `fiscal-c1-estado-civil.json` | 4 reales + 6 variantes | Un solo dato de "hijo o hijastro dependiente" para "considerado no casado" (la ley también acepta hijos de crianza) y para viudo calificado. Divorciado y soltero se tratan igual |
+| IRS-03 | `fiscal-c1-residencia-fiscal.json` | 5 reales + 5 variantes | Los días llegan ya sin los días exentos. Supuestos: Yvonne estuvo 212 días en 2025; Lucas volvió sin visa exenta |
+| IRS-04 | `fiscal-c1-credito-educativo.json` | 3 reales + 6 variantes | Solo la elegibilidad: la reducción gradual entre 80000 y 90000 dólares no cambia qué crédito corresponde. Supuestos: MAGI de los Knox 60000 y 3 años de AOTC ya pedidos; MAGI de Scott 34600 |
+| IRS-05 | `fiscal-c1-gasto-hsa.json` | 6 reales + 4 variantes | Lista cerrada de 15 tipos de gasto tomados de la Pub. 502; la ley define categorías, no una lista |
+| IRS-07 | `fiscal-c1-otros-dependientes.json` | 4 reales + 6 variantes | "Hijo calificable" llega como dato; no se calcula |
 
 ## Qué más hace falta
 

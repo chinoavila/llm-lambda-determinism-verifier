@@ -1,0 +1,316 @@
+{
+  "case_id": "FIS-C1-RESIDENCIA",
+  "category": 1,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Foreign Student Test, Residency Status preguntas 1-5; IRS Pub. 519 (2025), chapter 1",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "description": "Determinar la residencia fiscal en 2025 de un extranjero que está en los Estados Unidos: responder \"Residente\" o \"No residente\". Primero, la persona está exenta en 2025, y entonces es No residente, si es estudiante con visa F, J, M o Q y estuvo exenta como estudiante en menos de 5 años calendario anteriores, o si es docente o aprendiz con visa J o Q y estuvo exenta (como docente, aprendiz o estudiante) en menos de 2 de los 6 años calendario anteriores. Si no está exenta, es Residente cuando pasa la prueba de presencia sustancial: estuvo al menos 31 días en el país en 2025 y, además, los días de 2025, más un tercio de los días de 2024, más un sexto de los días de 2023, suman 183 o más. Los días de cada año ya vienen descontados de los días en que la persona estaba exenta. Si no pasa la prueba, es No residente.",
+  "gamma": {
+    "anios_exento_estudiante": "Int",
+    "anios_exento_ultimos_6": "Int",
+    "dias_2023": "Int",
+    "dias_2024": "Int",
+    "dias_2025": "Int",
+    "es_docente_o_aprendiz": "Bool",
+    "es_estudiante": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "Var",
+            "name": "es_estudiante"
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "anios_exento_estudiante"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 5,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "Var",
+            "name": "es_docente_o_aprendiz"
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "anios_exento_ultimos_6"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 2,
+              "value_type": "Int"
+            }
+          }
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "No residente",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": ">=",
+            "left": {
+              "type": "Var",
+              "name": "dias_2025"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 31,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": ">=",
+            "left": {
+              "type": "BinaryOp",
+              "op": "+",
+              "left": {
+                "type": "BinaryOp",
+                "op": "+",
+                "left": {
+                  "type": "Var",
+                  "name": "dias_2025"
+                },
+                "right": {
+                  "type": "BinaryOp",
+                  "op": "/",
+                  "left": {
+                    "type": "Var",
+                    "name": "dias_2024"
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 3,
+                    "value_type": "Int"
+                  }
+                }
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "/",
+                "left": {
+                  "type": "Var",
+                  "name": "dias_2023"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 6,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "right": {
+              "type": "Literal",
+              "value": 183,
+              "value_type": "Int"
+            }
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Residente",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "Literal",
+          "value": "No residente",
+          "value_type": "String"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    exento = (data['es_estudiante'] and data['anios_exento_estudiante'] < 5) or (\n        data['es_docente_o_aprendiz'] and data['anios_exento_ultimos_6'] < 2\n    )\n    if exento:\n        return 'No residente'\n    dias = Decimal(data['dias_2025']) + Decimal(data['dias_2024']) / 3 + Decimal(data['dias_2023']) / 6\n    if data['dias_2025'] >= 31 and dias >= 183:\n        return 'Residente'\n    return 'No residente'\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-E1-MAYLOR",
+      "env": {
+        "es_estudiante": true,
+        "es_docente_o_aprendiz": false,
+        "anios_exento_estudiante": 3,
+        "anios_exento_ultimos_6": 3,
+        "dias_2025": 365,
+        "dias_2024": 0,
+        "dias_2023": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "No residente"
+      }
+    },
+    {
+      "scenario_id": "F6744-E2-AMELIA",
+      "env": {
+        "es_estudiante": false,
+        "es_docente_o_aprendiz": true,
+        "anios_exento_estudiante": 3,
+        "anios_exento_ultimos_6": 3,
+        "dias_2025": 365,
+        "dias_2024": 12,
+        "dias_2023": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Residente"
+      }
+    },
+    {
+      "scenario_id": "F6744-E3-LUCAS",
+      "env": {
+        "es_estudiante": false,
+        "es_docente_o_aprendiz": false,
+        "anios_exento_estudiante": 4,
+        "anios_exento_ultimos_6": 4,
+        "dias_2025": 153,
+        "dias_2024": 0,
+        "dias_2023": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "No residente"
+      }
+    },
+    {
+      "scenario_id": "F6744-E4-ANTONIO",
+      "env": {
+        "es_estudiante": true,
+        "es_docente_o_aprendiz": false,
+        "anios_exento_estudiante": 4,
+        "anios_exento_ultimos_6": 4,
+        "dias_2025": 365,
+        "dias_2024": 0,
+        "dias_2023": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "No residente"
+      }
+    },
+    {
+      "scenario_id": "F6744-E5-YVONNE",
+      "env": {
+        "es_estudiante": false,
+        "es_docente_o_aprendiz": true,
+        "anios_exento_estudiante": 0,
+        "anios_exento_ultimos_6": 2,
+        "dias_2025": 212,
+        "dias_2024": 0,
+        "dias_2023": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Residente"
+      }
+    },
+    {
+      "scenario_id": "V1-ESTUDIANTE-6TO-ANIO",
+      "env": {
+        "es_estudiante": true,
+        "es_docente_o_aprendiz": false,
+        "anios_exento_estudiante": 5,
+        "anios_exento_ultimos_6": 5,
+        "dias_2025": 365,
+        "dias_2024": 0,
+        "dias_2023": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Residente"
+      }
+    },
+    {
+      "scenario_id": "V2-MENOS-DE-31-DIAS",
+      "env": {
+        "es_estudiante": true,
+        "es_docente_o_aprendiz": false,
+        "anios_exento_estudiante": 5,
+        "anios_exento_ultimos_6": 5,
+        "dias_2025": 30,
+        "dias_2024": 0,
+        "dias_2023": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "No residente"
+      }
+    },
+    {
+      "scenario_id": "V3-PRESENCIA-183",
+      "env": {
+        "es_estudiante": false,
+        "es_docente_o_aprendiz": false,
+        "anios_exento_estudiante": 0,
+        "anios_exento_ultimos_6": 0,
+        "dias_2025": 150,
+        "dias_2024": 90,
+        "dias_2023": 18
+      },
+      "expected": {
+        "type": "String",
+        "value": "Residente"
+      }
+    },
+    {
+      "scenario_id": "V4-PRESENCIA-182",
+      "env": {
+        "es_estudiante": false,
+        "es_docente_o_aprendiz": false,
+        "anios_exento_estudiante": 0,
+        "anios_exento_ultimos_6": 0,
+        "dias_2025": 150,
+        "dias_2024": 89,
+        "dias_2023": 18
+      },
+      "expected": {
+        "type": "String",
+        "value": "No residente"
+      }
+    },
+    {
+      "scenario_id": "V5-DOCENTE-EXENTO",
+      "env": {
+        "es_estudiante": false,
+        "es_docente_o_aprendiz": true,
+        "anios_exento_estudiante": 0,
+        "anios_exento_ultimos_6": 1,
+        "dias_2025": 365,
+        "dias_2024": 200,
+        "dias_2023": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "No residente"
+      }
+    }
+  ]
+}

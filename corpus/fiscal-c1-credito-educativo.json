@@ -1,0 +1,294 @@
+{
+  "case_id": "FIS-C1-EDUCACION",
+  "category": 1,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenarios 6 y 7 y Advanced Scenario 6; IRS Pub. 970 (2025), Tables 2-1 y 3-1",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "description": "Determinar qué crédito educativo puede pedir el contribuyente en 2025 por los gastos de un estudiante: \"AOTC\" (crédito de oportunidad estadounidense), \"LLC\" (crédito vitalicio por aprendizaje) o \"Ninguno\". El tipo de declaración viene como \"individual\", \"conjunta\" o \"separada\". Corresponde Ninguno si el tipo de declaración es separada, o si el ingreso bruto ajustado modificado (MAGI) llega a 90000 dólares, o a 180000 dólares cuando el tipo de declaración es conjunta. Si no, corresponde AOTC cuando se cumplen todas estas condiciones: el estudiante no completó los primeros 4 años de estudios superiores antes de 2025, el AOTC se pidió para él en menos de 4 años anteriores, cursa un programa que otorga un título, estuvo inscripto al menos a medio tiempo y no tiene condenas por delitos graves de drogas. Si alguna de esas condiciones no se cumple, corresponde LLC.",
+  "gamma": {
+    "al_menos_medio_tiempo": "Bool",
+    "anios_aotc_pedidos": "Int",
+    "completo_4_anios": "Bool",
+    "condena_drogas": "Bool",
+    "magi": "Int",
+    "programa_con_titulo": "Bool",
+    "tipo_declaracion": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "==",
+          "left": {
+            "type": "Var",
+            "name": "tipo_declaracion"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "separada",
+            "value_type": "String"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": ">=",
+          "left": {
+            "type": "Var",
+            "name": "magi"
+          },
+          "right": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "tipo_declaracion"
+              },
+              "right": {
+                "type": "Literal",
+                "value": "conjunta",
+                "value_type": "String"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 180000,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 90000,
+              "value_type": "Int"
+            }
+          }
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "Ninguno",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "BinaryOp",
+                "op": "AND",
+                "left": {
+                  "type": "UnaryOp",
+                  "op": "NOT",
+                  "operand": {
+                    "type": "Var",
+                    "name": "completo_4_anios"
+                  }
+                },
+                "right": {
+                  "type": "BinaryOp",
+                  "op": "<",
+                  "left": {
+                    "type": "Var",
+                    "name": "anios_aotc_pedidos"
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 4,
+                    "value_type": "Int"
+                  }
+                }
+              },
+              "right": {
+                "type": "Var",
+                "name": "programa_con_titulo"
+              }
+            },
+            "right": {
+              "type": "Var",
+              "name": "al_menos_medio_tiempo"
+            }
+          },
+          "right": {
+            "type": "UnaryOp",
+            "op": "NOT",
+            "operand": {
+              "type": "Var",
+              "name": "condena_drogas"
+            }
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "AOTC",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "Literal",
+          "value": "LLC",
+          "value_type": "String"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    tipo = data['tipo_declaracion']\n    tope = 180000 if tipo == 'conjunta' else 90000\n    if tipo == 'separada' or data['magi'] >= tope:\n        return 'Ninguno'\n    if (\n        not data['completo_4_anios']\n        and data['anios_aotc_pedidos'] < 4\n        and data['programa_con_titulo']\n        and data['al_menos_medio_tiempo']\n        and not data['condena_drogas']\n    ):\n        return 'AOTC'\n    return 'LLC'\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-B6-SCOTT",
+      "env": {
+        "tipo_declaracion": "individual",
+        "magi": 34600,
+        "completo_4_anios": true,
+        "anios_aotc_pedidos": 4,
+        "programa_con_titulo": false,
+        "al_menos_medio_tiempo": false,
+        "condena_drogas": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "LLC"
+      }
+    },
+    {
+      "scenario_id": "F6744-A6-CARLOS",
+      "env": {
+        "tipo_declaracion": "individual",
+        "magi": 21250,
+        "completo_4_anios": false,
+        "anios_aotc_pedidos": 0,
+        "programa_con_titulo": false,
+        "al_menos_medio_tiempo": false,
+        "condena_drogas": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "LLC"
+      }
+    },
+    {
+      "scenario_id": "F6744-B7-KNOX",
+      "env": {
+        "tipo_declaracion": "conjunta",
+        "magi": 60000,
+        "completo_4_anios": false,
+        "anios_aotc_pedidos": 3,
+        "programa_con_titulo": true,
+        "al_menos_medio_tiempo": true,
+        "condena_drogas": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "AOTC"
+      }
+    },
+    {
+      "scenario_id": "V1-SEPARADA",
+      "env": {
+        "tipo_declaracion": "separada",
+        "magi": 30000,
+        "completo_4_anios": false,
+        "anios_aotc_pedidos": 0,
+        "programa_con_titulo": true,
+        "al_menos_medio_tiempo": true,
+        "condena_drogas": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "Ninguno"
+      }
+    },
+    {
+      "scenario_id": "V2-MAGI-90000",
+      "env": {
+        "tipo_declaracion": "individual",
+        "magi": 90000,
+        "completo_4_anios": false,
+        "anios_aotc_pedidos": 0,
+        "programa_con_titulo": true,
+        "al_menos_medio_tiempo": true,
+        "condena_drogas": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "Ninguno"
+      }
+    },
+    {
+      "scenario_id": "V3-MAGI-89999",
+      "env": {
+        "tipo_declaracion": "individual",
+        "magi": 89999,
+        "completo_4_anios": false,
+        "anios_aotc_pedidos": 0,
+        "programa_con_titulo": true,
+        "al_menos_medio_tiempo": true,
+        "condena_drogas": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "AOTC"
+      }
+    },
+    {
+      "scenario_id": "V4-CUATRO-ANIOS-PEDIDOS",
+      "env": {
+        "tipo_declaracion": "conjunta",
+        "magi": 179999,
+        "completo_4_anios": false,
+        "anios_aotc_pedidos": 4,
+        "programa_con_titulo": true,
+        "al_menos_medio_tiempo": true,
+        "condena_drogas": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "LLC"
+      }
+    },
+    {
+      "scenario_id": "V5-MAGI-180000",
+      "env": {
+        "tipo_declaracion": "conjunta",
+        "magi": 180000,
+        "completo_4_anios": false,
+        "anios_aotc_pedidos": 0,
+        "programa_con_titulo": true,
+        "al_menos_medio_tiempo": true,
+        "condena_drogas": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "Ninguno"
+      }
+    },
+    {
+      "scenario_id": "V6-CONDENA",
+      "env": {
+        "tipo_declaracion": "individual",
+        "magi": 40000,
+        "completo_4_anios": false,
+        "anios_aotc_pedidos": 0,
+        "programa_con_titulo": true,
+        "al_menos_medio_tiempo": true,
+        "condena_drogas": true
+      },
+      "expected": {
+        "type": "String",
+        "value": "LLC"
+      }
+    }
+  ]
+}

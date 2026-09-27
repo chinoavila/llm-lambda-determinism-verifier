@@ -1,0 +1,245 @@
+{
+  "case_id": "FIS-C1-GASTO-HSA",
+  "category": 1,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Advanced Scenario 3; IRS Pub. 969 (2025) y Pub. 502 (2025)",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "description": "Determinar si un gasto se puede pagar con la cuenta de ahorro para la salud (HSA) como gasto médico calificado. El gasto califica solo si no fue reembolsado por un seguro, se hizo después de abrir la cuenta y su tipo es uno de estos: \"consulta_medica\", \"medicamento_recetado\", \"medicamento_venta_libre\", \"producto_menstrual\", \"fisioterapia\", \"tratamiento_dental\", \"limpieza_dental\", \"corona_dental\", \"anteojos\", \"lentes_de_contacto\", \"audifonos\", \"ambulancia\", \"analisis_laboratorio\", \"psiquiatria\" o \"internacion\". Los demás tipos, como \"gimnasio\", \"blanqueamiento_dental\", \"cirugia_estetica\", \"suplemento_nutricional\" o \"gastos_funerarios\", no califican.",
+  "gamma": {
+    "posterior_a_apertura": "Bool",
+    "reembolsado": "Bool",
+    "tipo_gasto": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "Var",
+            "name": "reembolsado"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "posterior_a_apertura"
+        }
+      },
+      "right": {
+        "type": "In",
+        "value": {
+          "type": "Var",
+          "name": "tipo_gasto"
+        },
+        "options": [
+          {
+            "type": "Literal",
+            "value": "consulta_medica",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "medicamento_recetado",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "medicamento_venta_libre",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "producto_menstrual",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "fisioterapia",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "tratamiento_dental",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "limpieza_dental",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "corona_dental",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "anteojos",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "lentes_de_contacto",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "audifonos",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "ambulancia",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "analisis_laboratorio",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "psiquiatria",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "internacion",
+            "value_type": "String"
+          }
+        ]
+      }
+    }
+  },
+  "canonical_python": "CALIFICAN = {\n    'consulta_medica',\n    'medicamento_recetado',\n    'medicamento_venta_libre',\n    'producto_menstrual',\n    'fisioterapia',\n    'tratamiento_dental',\n    'limpieza_dental',\n    'corona_dental',\n    'anteojos',\n    'lentes_de_contacto',\n    'audifonos',\n    'ambulancia',\n    'analisis_laboratorio',\n    'psiquiatria',\n    'internacion',\n}\n\ndef evaluate_rule(data):\n    return not data['reembolsado'] and data['posterior_a_apertura'] and data['tipo_gasto'] in CALIFICAN\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-A3-FISIOTERAPIA",
+      "env": {
+        "tipo_gasto": "fisioterapia",
+        "reembolsado": false,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-A3-MEDICO",
+      "env": {
+        "tipo_gasto": "consulta_medica",
+        "reembolsado": false,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-A3-RECETA",
+      "env": {
+        "tipo_gasto": "medicamento_recetado",
+        "reembolsado": false,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-A3-CORONA",
+      "env": {
+        "tipo_gasto": "corona_dental",
+        "reembolsado": false,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-A3-VENTA-LIBRE",
+      "env": {
+        "tipo_gasto": "medicamento_venta_libre",
+        "reembolsado": false,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-A3-GIMNASIO",
+      "env": {
+        "tipo_gasto": "gimnasio",
+        "reembolsado": false,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V1-BLANQUEAMIENTO",
+      "env": {
+        "tipo_gasto": "blanqueamiento_dental",
+        "reembolsado": false,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V2-CIRUGIA-ESTETICA",
+      "env": {
+        "tipo_gasto": "cirugia_estetica",
+        "reembolsado": false,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-REEMBOLSADO",
+      "env": {
+        "tipo_gasto": "consulta_medica",
+        "reembolsado": true,
+        "posterior_a_apertura": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-ANTES-DE-ABRIR",
+      "env": {
+        "tipo_gasto": "fisioterapia",
+        "reembolsado": false,
+        "posterior_a_apertura": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

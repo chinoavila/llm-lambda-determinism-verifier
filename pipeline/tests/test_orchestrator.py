@@ -452,3 +452,50 @@ def test_prompts_share_types_note_and_add_language_specifics() -> None:
     assert "decimal.Decimal" in systems["baseline1"] and "decimal.Decimal" in systems["baseline2"]
     assert "decimal.Decimal" not in systems["treatment"]
     assert "'cuota': Decimal" in systems["baseline2"]
+
+
+# --- La clave de respuestas del corpus no llega al LLM (docs/corpus.md) ------------
+
+REPO = Path(__file__).parents[2]
+CORPUS_RULES = sorted((REPO / "corpus").glob("*.json")) + sorted(
+    (Path(__file__).parent / "data" / "corpus").glob("*.json")
+)
+
+
+def prompts_of(path: Path, gamma: dict[str, str]) -> str:
+    """Todo lo que `run_case` le manda al LLM para la regla de `path`, en los tres grupos."""
+    case = read_case(path)
+    assignment = FakeAssignment([llm_call("quota_exhausted") for _ in GROUPS])
+    runners = {g: fixed_runner(OK_VERDICT, []) for g in GROUPS}
+    run_case(case, assignment, runners, gamma, run_id="r")
+    assert len(assignment.messages) == len(GROUPS)
+    return json.dumps(assignment.messages, ensure_ascii=False)
+
+
+def test_corpus_answer_key_never_reaches_the_llm(tmp_path: Path) -> None:
+    """Marcas en cada campo que el LLM no debe ver: ninguna aparece en los prompts."""
+    data = json.loads((Path(__file__).parent / "data" / "corpus" / "ejemplo-cat3-cuota.json").read_text("utf-8"))
+    data["canonical_ast"]["expr"]["right"] = {"type": "Literal", "value": "CANARIO_AST", "value_type": "String"}
+    data["canonical_python"] = "# CANARIO_PY\n" + data["canonical_python"]
+    data["source"] = {"kind": "adapted", "reference": "CANARIO_SOURCE", "license": "CANARIO_LICENSE"}
+    for s in data["scenarios"]:
+        s["expected"] = {"type": "String", "value": "CANARIO_EXPECTED"}
+    path = tmp_path / "regla.json"
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    prompts = prompts_of(path, data["gamma"])
+
+    assert "CANARIO" not in prompts
+    assert data["description"] in prompts
+
+
+@pytest.mark.parametrize("path", CORPUS_RULES, ids=lambda p: p.stem)
+def test_corpus_descriptions_do_not_embed_the_answer_key(path: Path) -> None:
+    """Ninguna regla del corpus copia su AST, su Python o sus expected en el enunciado."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    prompts = prompts_of(path, data["gamma"])
+
+    leaks = [json.dumps(data["canonical_ast"]["expr"], ensure_ascii=False), data["canonical_python"].strip()]
+    leaks += [json.dumps(s["expected"], ensure_ascii=False) for s in data["scenarios"] if "expected" in s]
+    for leak in leaks:
+        assert json.dumps(leak, ensure_ascii=False)[1:-1] not in prompts, leak[:80]

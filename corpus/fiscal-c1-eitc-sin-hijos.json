@@ -1,0 +1,408 @@
+{
+  "case_id": "FIS-C1-EITC",
+  "category": 1,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenarios 2, 5 y 6 y Advanced Scenario 6; IRS Pub. 596 (2025), Rules 1-15",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "description": "Determinar si el contribuyente puede pedir en su declaración de 2025 el crédito por ingreso del trabajo sin hijo calificable. Lo puede pedir solo si se cumplen todas estas condiciones: tiene un número de seguro social válido; nadie más puede declararlo como dependiente; vivió en los Estados Unidos al menos 183 días del año; su ingreso de inversión no supera los 11950 dólares; tuvo algún ingreso del trabajo (mayor que cero); y tanto su ingreso del trabajo como su ingreso bruto ajustado (AGI) son menores que 19104 dólares, o menores que 26214 dólares si presenta la declaración en forma conjunta con su cónyuge. Además, tiene que tener al menos 25 años y menos de 65; si presenta en forma conjunta, alcanza con que cumpla esa edad cualquiera de los dos cónyuges. La edad del cónyuge vale 0 cuando no presenta en forma conjunta.",
+  "gamma": {
+    "agi": "Int",
+    "declaracion_conjunta": "Bool",
+    "dias_en_eeuu": "Int",
+    "edad": "Int",
+    "edad_conyuge": "Int",
+    "ingreso_ganado": "Int",
+    "ingreso_inversion": "Int",
+    "puede_ser_dependiente": "Bool",
+    "tiene_ssn_valido": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "BinaryOp",
+                "op": "AND",
+                "left": {
+                  "type": "BinaryOp",
+                  "op": "AND",
+                  "left": {
+                    "type": "Var",
+                    "name": "tiene_ssn_valido"
+                  },
+                  "right": {
+                    "type": "UnaryOp",
+                    "op": "NOT",
+                    "operand": {
+                      "type": "Var",
+                      "name": "puede_ser_dependiente"
+                    }
+                  }
+                },
+                "right": {
+                  "type": "BinaryOp",
+                  "op": ">=",
+                  "left": {
+                    "type": "Var",
+                    "name": "dias_en_eeuu"
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 183,
+                    "value_type": "Int"
+                  }
+                }
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "<=",
+                "left": {
+                  "type": "Var",
+                  "name": "ingreso_inversion"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 11950,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">",
+              "left": {
+                "type": "Var",
+                "name": "ingreso_ganado"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 0,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "ingreso_ganado"
+            },
+            "right": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "Var",
+                "name": "declaracion_conjunta"
+              },
+              "then": {
+                "type": "Literal",
+                "value": 26214,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "Literal",
+                "value": 19104,
+                "value_type": "Int"
+              }
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "agi"
+          },
+          "right": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "Var",
+              "name": "declaracion_conjunta"
+            },
+            "then": {
+              "type": "Literal",
+              "value": 26214,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 19104,
+              "value_type": "Int"
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": ">=",
+            "left": {
+              "type": "Var",
+              "name": "edad"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 25,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "edad"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 65,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "Var",
+            "name": "declaracion_conjunta"
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "edad_conyuge"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 25,
+                "value_type": "Int"
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "<",
+              "left": {
+                "type": "Var",
+                "name": "edad_conyuge"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 65,
+                "value_type": "Int"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    tope = 26214 if data['declaracion_conjunta'] else 19104\n    def edad_ok(e):\n        return 25 <= e < 65\n    return (\n        data['tiene_ssn_valido']\n        and not data['puede_ser_dependiente']\n        and data['dias_en_eeuu'] >= 183\n        and data['ingreso_inversion'] <= 11950\n        and 0 < data['ingreso_ganado'] < tope\n        and data['agi'] < tope\n        and (edad_ok(data['edad']) or (data['declaracion_conjunta'] and edad_ok(data['edad_conyuge'])))\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-B2-WALSH",
+      "env": {
+        "declaracion_conjunta": true,
+        "edad": 31,
+        "edad_conyuge": 30,
+        "ingreso_ganado": 16000,
+        "agi": 16300,
+        "ingreso_inversion": 300,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-B5-NEIL",
+      "env": {
+        "declaracion_conjunta": false,
+        "edad": 63,
+        "edad_conyuge": 0,
+        "ingreso_ganado": 9250,
+        "agi": 9250,
+        "ingreso_inversion": 0,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-B6-SCOTT",
+      "env": {
+        "declaracion_conjunta": false,
+        "edad": 24,
+        "edad_conyuge": 0,
+        "ingreso_ganado": 27500,
+        "agi": 35500,
+        "ingreso_inversion": 0,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "F6744-A6-CARLOS",
+      "env": {
+        "declaracion_conjunta": false,
+        "edad": 28,
+        "edad_conyuge": 0,
+        "ingreso_ganado": 18500,
+        "agi": 21250,
+        "ingreso_inversion": 0,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V1-EDAD-25",
+      "env": {
+        "declaracion_conjunta": false,
+        "edad": 25,
+        "edad_conyuge": 0,
+        "ingreso_ganado": 19103,
+        "agi": 19103,
+        "ingreso_inversion": 11950,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-EDAD-65",
+      "env": {
+        "declaracion_conjunta": false,
+        "edad": 65,
+        "edad_conyuge": 0,
+        "ingreso_ganado": 12000,
+        "agi": 12000,
+        "ingreso_inversion": 0,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-CONYUGE-RESCATA",
+      "env": {
+        "declaracion_conjunta": true,
+        "edad": 24,
+        "edad_conyuge": 64,
+        "ingreso_ganado": 26213,
+        "agi": 26213,
+        "ingreso_inversion": 0,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-INVERSION",
+      "env": {
+        "declaracion_conjunta": false,
+        "edad": 40,
+        "edad_conyuge": 0,
+        "ingreso_ganado": 12000,
+        "agi": 12000,
+        "ingreso_inversion": 11951,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-DEPENDIENTE",
+      "env": {
+        "declaracion_conjunta": false,
+        "edad": 30,
+        "edad_conyuge": 0,
+        "ingreso_ganado": 12000,
+        "agi": 12000,
+        "ingreso_inversion": 0,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": true,
+        "dias_en_eeuu": 365
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-DIAS-183",
+      "env": {
+        "declaracion_conjunta": false,
+        "edad": 30,
+        "edad_conyuge": 0,
+        "ingreso_ganado": 12000,
+        "agi": 12000,
+        "ingreso_inversion": 0,
+        "tiene_ssn_valido": true,
+        "puede_ser_dependiente": false,
+        "dias_en_eeuu": 183
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,274 @@
+{
+  "case_id": "FIS-C1-OTROS-DEP",
+  "category": 1,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenario 4 e International Scenario 2; IRS Instructions for Schedule 8812 (2025)",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "description": "Determinar si una persona le da al contribuyente derecho al crédito por otros dependientes en 2025. Da derecho solo si se cumplen todas estas condiciones: el contribuyente la declara como dependiente; su situación en los Estados Unidos es \"ciudadano\", \"nacional\" o \"residente\" (la otra situación posible es \"no_residente\"); tiene un número de identificación de tipo \"SSN\", \"SSN_sin_permiso_laboral\", \"ITIN\" o \"ATIN\" (el otro valor posible es \"ninguna\"); y no le da derecho al crédito por hijos. Una persona le da derecho al crédito por hijos, y entonces no al de otros dependientes, cuando es hijo calificable, tiene menos de 17 años y su identificación es \"SSN\".",
+  "gamma": {
+    "edad": "Int",
+    "es_dependiente": "Bool",
+    "es_hijo_calificable": "Bool",
+    "identificacion": "String",
+    "situacion": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "Var",
+            "name": "es_dependiente"
+          },
+          "right": {
+            "type": "In",
+            "value": {
+              "type": "Var",
+              "name": "situacion"
+            },
+            "options": [
+              {
+                "type": "Literal",
+                "value": "ciudadano",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "nacional",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "residente",
+                "value_type": "String"
+              }
+            ]
+          }
+        },
+        "right": {
+          "type": "In",
+          "value": {
+            "type": "Var",
+            "name": "identificacion"
+          },
+          "options": [
+            {
+              "type": "Literal",
+              "value": "SSN",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "SSN_sin_permiso_laboral",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "ITIN",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "ATIN",
+              "value_type": "String"
+            }
+          ]
+        }
+      },
+      "right": {
+        "type": "UnaryOp",
+        "op": "NOT",
+        "operand": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "Var",
+              "name": "es_hijo_calificable"
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "<",
+              "left": {
+                "type": "Var",
+                "name": "edad"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 17,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "identificacion"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "SSN",
+              "value_type": "String"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    credito_por_hijos = data['es_hijo_calificable'] and data['edad'] < 17 and data['identificacion'] == 'SSN'\n    return (\n        data['es_dependiente']\n        and data['situacion'] in ('ciudadano', 'nacional', 'residente')\n        and data['identificacion'] in ('SSN', 'SSN_sin_permiso_laboral', 'ITIN', 'ATIN')\n        and not credito_por_hijos\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-B4-KYLE",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "ciudadano",
+        "identificacion": "SSN",
+        "es_hijo_calificable": false,
+        "edad": 19
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "F6744-B4-BLAKE",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "ciudadano",
+        "identificacion": "SSN",
+        "es_hijo_calificable": true,
+        "edad": 11
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "F6744-I2-BINDI",
+      "env": {
+        "es_dependiente": false,
+        "situacion": "no_residente",
+        "identificacion": "ninguna",
+        "es_hijo_calificable": false,
+        "edad": 30
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "F6744-I2-JACKSON",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "ciudadano",
+        "identificacion": "SSN",
+        "es_hijo_calificable": true,
+        "edad": 3
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V1-HIJO-CON-ITIN",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "residente",
+        "identificacion": "ITIN",
+        "es_hijo_calificable": true,
+        "edad": 16
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-HIJO-17",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "ciudadano",
+        "identificacion": "SSN",
+        "es_hijo_calificable": true,
+        "edad": 17
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-HIJO-16",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "ciudadano",
+        "identificacion": "SSN",
+        "es_hijo_calificable": true,
+        "edad": 16
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-SOBRINO-EN-MEXICO",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "no_residente",
+        "identificacion": "ITIN",
+        "es_hijo_calificable": false,
+        "edad": 10
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-MADRE",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "ciudadano",
+        "identificacion": "SSN",
+        "es_hijo_calificable": false,
+        "edad": 70
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-SSN-SIN-PERMISO",
+      "env": {
+        "es_dependiente": true,
+        "situacion": "residente",
+        "identificacion": "SSN_sin_permiso_laboral",
+        "es_hijo_calificable": true,
+        "edad": 12
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

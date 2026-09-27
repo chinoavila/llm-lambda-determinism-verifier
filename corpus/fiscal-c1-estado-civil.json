@@ -1,0 +1,373 @@
+{
+  "case_id": "FIS-C1-ESTADO-CIVIL",
+  "category": 1,
+  "domain": "fiscal",
+  "source": {
+    "kind": "adapted",
+    "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenarios 1, 2 y 5 y Advanced Scenario 1; IRS Pub. 501 (2025), Filing Status",
+    "license": "Dominio público (17 U.S.C. § 105)"
+  },
+  "description": "Determinar el estado civil más conveniente que puede usar el contribuyente en su declaración de 2025. Responder con uno de estos textos exactos: \"Casado conjunta\", \"Casado separado\", \"Viudo calificado\", \"Jefe de hogar\" o \"Soltero\". El estado civil al 31 de diciembre viene como \"soltero\", \"casado\", \"divorciado\" o \"viudo\". Si está casado y los dos cónyuges aceptan presentar juntos, corresponde Casado conjunta. Si está casado pero no presentan juntos, corresponde Jefe de hogar solo cuando el cónyuge no vivió en la casa durante los últimos 6 meses del año, el contribuyente pagó más de la mitad del costo de mantener el hogar y tiene un hijo o hijastro dependiente que vivió con él; si no, Casado separado. Si es viudo y el cónyuge murió en 2025, corresponde Casado conjunta. Si es viudo, el cónyuge murió en 2023 o en 2024, tiene un hijo o hijastro dependiente y pagó más de la mitad del costo del hogar, corresponde Viudo calificado. En cualquier otro caso, corresponde Jefe de hogar si pagó más de la mitad del costo del hogar y una persona calificante vivió con él más de la mitad del año, y Soltero si no. El año de muerte del cónyuge vale 0 cuando no es viudo.",
+  "gamma": {
+    "anio_muerte_conyuge": "Int",
+    "conyuge_vivio_ultimos_6_meses": "Bool",
+    "estado_civil": "String",
+    "paga_mas_mitad_hogar": "Bool",
+    "presentan_juntos": "Bool",
+    "tiene_hijo_dependiente": "Bool",
+    "tiene_persona_calificante": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "==",
+        "left": {
+          "type": "Var",
+          "name": "estado_civil"
+        },
+        "right": {
+          "type": "Literal",
+          "value": "casado",
+          "value_type": "String"
+        }
+      },
+      "then": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "Var",
+          "name": "presentan_juntos"
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Casado conjunta",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "UnaryOp",
+                "op": "NOT",
+                "operand": {
+                  "type": "Var",
+                  "name": "conyuge_vivio_ultimos_6_meses"
+                }
+              },
+              "right": {
+                "type": "Var",
+                "name": "paga_mas_mitad_hogar"
+              }
+            },
+            "right": {
+              "type": "Var",
+              "name": "tiene_hijo_dependiente"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": "Jefe de hogar",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "Literal",
+            "value": "Casado separado",
+            "value_type": "String"
+          }
+        }
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "estado_civil"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "viudo",
+              "value_type": "String"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "anio_muerte_conyuge"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 2025,
+              "value_type": "Int"
+            }
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Casado conjunta",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "BinaryOp",
+                "op": "AND",
+                "left": {
+                  "type": "BinaryOp",
+                  "op": "==",
+                  "left": {
+                    "type": "Var",
+                    "name": "estado_civil"
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": "viudo",
+                    "value_type": "String"
+                  }
+                },
+                "right": {
+                  "type": "In",
+                  "value": {
+                    "type": "Var",
+                    "name": "anio_muerte_conyuge"
+                  },
+                  "options": [
+                    {
+                      "type": "Literal",
+                      "value": 2023,
+                      "value_type": "Int"
+                    },
+                    {
+                      "type": "Literal",
+                      "value": 2024,
+                      "value_type": "Int"
+                    }
+                  ]
+                }
+              },
+              "right": {
+                "type": "Var",
+                "name": "tiene_hijo_dependiente"
+              }
+            },
+            "right": {
+              "type": "Var",
+              "name": "paga_mas_mitad_hogar"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": "Viudo calificado",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "Var",
+                "name": "paga_mas_mitad_hogar"
+              },
+              "right": {
+                "type": "Var",
+                "name": "tiene_persona_calificante"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": "Jefe de hogar",
+              "value_type": "String"
+            },
+            "else": {
+              "type": "Literal",
+              "value": "Soltero",
+              "value_type": "String"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    estado = data['estado_civil']\n    paga = data['paga_mas_mitad_hogar']\n    hijo = data['tiene_hijo_dependiente']\n    if estado == 'casado':\n        if data['presentan_juntos']:\n            return 'Casado conjunta'\n        if not data['conyuge_vivio_ultimos_6_meses'] and paga and hijo:\n            return 'Jefe de hogar'\n        return 'Casado separado'\n    if estado == 'viudo' and data['anio_muerte_conyuge'] == 2025:\n        return 'Casado conjunta'\n    if estado == 'viudo' and data['anio_muerte_conyuge'] in (2023, 2024) and hijo and paga:\n        return 'Viudo calificado'\n    if paga and data['tiene_persona_calificante']:\n        return 'Jefe de hogar'\n    return 'Soltero'\n",
+  "scenarios": [
+    {
+      "scenario_id": "F6744-B1-FRED",
+      "env": {
+        "estado_civil": "soltero",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": false,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": false,
+        "anio_muerte_conyuge": 0,
+        "tiene_persona_calificante": true
+      },
+      "expected": {
+        "type": "String",
+        "value": "Jefe de hogar"
+      }
+    },
+    {
+      "scenario_id": "F6744-B2-WALSH",
+      "env": {
+        "estado_civil": "casado",
+        "presentan_juntos": true,
+        "conyuge_vivio_ultimos_6_meses": true,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": false,
+        "anio_muerte_conyuge": 0,
+        "tiene_persona_calificante": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "Casado conjunta"
+      }
+    },
+    {
+      "scenario_id": "F6744-A1-JOY",
+      "env": {
+        "estado_civil": "casado",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": false,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": true,
+        "anio_muerte_conyuge": 0,
+        "tiene_persona_calificante": true
+      },
+      "expected": {
+        "type": "String",
+        "value": "Jefe de hogar"
+      }
+    },
+    {
+      "scenario_id": "F6744-B5-NEIL",
+      "env": {
+        "estado_civil": "soltero",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": false,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": false,
+        "anio_muerte_conyuge": 0,
+        "tiene_persona_calificante": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "Soltero"
+      }
+    },
+    {
+      "scenario_id": "V1-CONYUGE-EN-CASA",
+      "env": {
+        "estado_civil": "casado",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": true,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": true,
+        "anio_muerte_conyuge": 0,
+        "tiene_persona_calificante": true
+      },
+      "expected": {
+        "type": "String",
+        "value": "Casado separado"
+      }
+    },
+    {
+      "scenario_id": "V2-VIUDO-2024",
+      "env": {
+        "estado_civil": "viudo",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": false,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": true,
+        "anio_muerte_conyuge": 2024,
+        "tiene_persona_calificante": true
+      },
+      "expected": {
+        "type": "String",
+        "value": "Viudo calificado"
+      }
+    },
+    {
+      "scenario_id": "V3-VIUDO-2022",
+      "env": {
+        "estado_civil": "viudo",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": false,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": true,
+        "anio_muerte_conyuge": 2022,
+        "tiene_persona_calificante": true
+      },
+      "expected": {
+        "type": "String",
+        "value": "Jefe de hogar"
+      }
+    },
+    {
+      "scenario_id": "V4-VIUDO-2025",
+      "env": {
+        "estado_civil": "viudo",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": false,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": false,
+        "anio_muerte_conyuge": 2025,
+        "tiene_persona_calificante": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "Casado conjunta"
+      }
+    },
+    {
+      "scenario_id": "V5-DIVORCIADO-NO-PAGA",
+      "env": {
+        "estado_civil": "divorciado",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": false,
+        "paga_mas_mitad_hogar": false,
+        "tiene_hijo_dependiente": false,
+        "anio_muerte_conyuge": 0,
+        "tiene_persona_calificante": true
+      },
+      "expected": {
+        "type": "String",
+        "value": "Soltero"
+      }
+    },
+    {
+      "scenario_id": "V6-VIUDO-2023-SIN-HIJO",
+      "env": {
+        "estado_civil": "viudo",
+        "presentan_juntos": false,
+        "conyuge_vivio_ultimos_6_meses": false,
+        "paga_mas_mitad_hogar": true,
+        "tiene_hijo_dependiente": false,
+        "anio_muerte_conyuge": 2023,
+        "tiene_persona_calificante": false
+      },
+      "expected": {
+        "type": "String",
+        "value": "Soltero"
+      }
+    }
+  ]
+}
