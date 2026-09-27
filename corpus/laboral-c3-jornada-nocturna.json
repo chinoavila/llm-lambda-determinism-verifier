@@ -1,0 +1,128 @@
+{
+  "case_id": "LAB-C3-NOCTURNA",
+  "category": 3,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Determinar si una hora de trabajo es nocturna. La hora se informa como la hora de inicio, de 0 a 23: la hora que empieza a las 21 es nocturna, y la que empieza a las 6 ya no. Es nocturna toda hora que empiece desde las 21 inclusive hasta las 23, o desde las 0 hasta antes de las 6.",
+  "gamma": {
+    "hora_inicio": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "OR",
+      "left": {
+        "type": "BinaryOp",
+        "op": ">=",
+        "left": {
+          "type": "Var",
+          "name": "hora_inicio"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 21,
+          "value_type": "Int"
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "hora_inicio"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 6,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['hora_inicio'] >= 21 or data['hora_inicio'] < 6\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-21",
+      "env": {
+        "hora_inicio": 21
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-20",
+      "env": {
+        "hora_inicio": 20
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-5",
+      "env": {
+        "hora_inicio": 5
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-6",
+      "env": {
+        "hora_inicio": 6
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-MEDIANOCHE",
+      "env": {
+        "hora_inicio": 0
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-MEDIODIA",
+      "env": {
+        "hora_inicio": 12
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-23",
+      "env": {
+        "hora_inicio": 23
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V8-7",
+      "env": {
+        "hora_inicio": 7
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

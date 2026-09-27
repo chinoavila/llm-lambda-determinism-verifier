@@ -1,0 +1,306 @@
+{
+  "case_id": "LAB-C1-LICENCIA",
+  "category": 1,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Determinar si se aprueba una licencia especial pedida por un empleado. El tipo de licencia viene con uno de estos códigos, cada uno con su máximo de días: \"matrimonio\" 10, \"nacimiento\" 15, \"fallecimiento_familiar\" 3, \"mudanza\" 1 y \"examen\" 2. Cualquier otro tipo, como \"viaje\", no se aprueba. Se aprueba si el tipo es uno de esos, los días pedidos no superan su máximo y el empleado presentó la documentación. La licencia por \"examen\" solo se aprueba, además, si el empleado está inscripto en una carrera.",
+  "gamma": {
+    "dias_pedidos": "Int",
+    "documentacion": "Bool",
+    "inscripto_en_carrera": "Bool",
+    "tipo": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "In",
+            "value": {
+              "type": "Var",
+              "name": "tipo"
+            },
+            "options": [
+              {
+                "type": "Literal",
+                "value": "matrimonio",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "nacimiento",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "fallecimiento_familiar",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "mudanza",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "examen",
+                "value_type": "String"
+              }
+            ]
+          },
+          "right": {
+            "type": "Var",
+            "name": "documentacion"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "<=",
+          "left": {
+            "type": "Var",
+            "name": "dias_pedidos"
+          },
+          "right": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "tipo"
+              },
+              "right": {
+                "type": "Literal",
+                "value": "matrimonio",
+                "value_type": "String"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 10,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "BinaryOp",
+                "op": "==",
+                "left": {
+                  "type": "Var",
+                  "name": "tipo"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": "nacimiento",
+                  "value_type": "String"
+                }
+              },
+              "then": {
+                "type": "Literal",
+                "value": 15,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "IfThenElse",
+                "condition": {
+                  "type": "BinaryOp",
+                  "op": "==",
+                  "left": {
+                    "type": "Var",
+                    "name": "tipo"
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": "fallecimiento_familiar",
+                    "value_type": "String"
+                  }
+                },
+                "then": {
+                  "type": "Literal",
+                  "value": 3,
+                  "value_type": "Int"
+                },
+                "else": {
+                  "type": "IfThenElse",
+                  "condition": {
+                    "type": "BinaryOp",
+                    "op": "==",
+                    "left": {
+                      "type": "Var",
+                      "name": "tipo"
+                    },
+                    "right": {
+                      "type": "Literal",
+                      "value": "mudanza",
+                      "value_type": "String"
+                    }
+                  },
+                  "then": {
+                    "type": "Literal",
+                    "value": 1,
+                    "value_type": "Int"
+                  },
+                  "else": {
+                    "type": "Literal",
+                    "value": 2,
+                    "value_type": "Int"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "!=",
+          "left": {
+            "type": "Var",
+            "name": "tipo"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "examen",
+            "value_type": "String"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "inscripto_en_carrera"
+        }
+      }
+    }
+  },
+  "canonical_python": "MAXIMOS = {'matrimonio': 10, 'nacimiento': 15, 'fallecimiento_familiar': 3, 'mudanza': 1, 'examen': 2}\n\ndef evaluate_rule(data):\n    maximo = MAXIMOS.get(data['tipo'])\n    if maximo is None or not data['documentacion'] or data['dias_pedidos'] > maximo:\n        return False\n    return data['tipo'] != 'examen' or data['inscripto_en_carrera']\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-MATRIMONIO-10",
+      "env": {
+        "tipo": "matrimonio",
+        "dias_pedidos": 10,
+        "documentacion": true,
+        "inscripto_en_carrera": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-MATRIMONIO-11",
+      "env": {
+        "tipo": "matrimonio",
+        "dias_pedidos": 11,
+        "documentacion": true,
+        "inscripto_en_carrera": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-SIN-DOCUMENTACION",
+      "env": {
+        "tipo": "nacimiento",
+        "dias_pedidos": 5,
+        "documentacion": false,
+        "inscripto_en_carrera": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-VIAJE",
+      "env": {
+        "tipo": "viaje",
+        "dias_pedidos": 1,
+        "documentacion": true,
+        "inscripto_en_carrera": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-EXAMEN-INSCRIPTO",
+      "env": {
+        "tipo": "examen",
+        "dias_pedidos": 2,
+        "documentacion": true,
+        "inscripto_en_carrera": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-EXAMEN-NO-INSCRIPTO",
+      "env": {
+        "tipo": "examen",
+        "dias_pedidos": 1,
+        "documentacion": true,
+        "inscripto_en_carrera": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-MUDANZA-2",
+      "env": {
+        "tipo": "mudanza",
+        "dias_pedidos": 2,
+        "documentacion": true,
+        "inscripto_en_carrera": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-FALLECIMIENTO",
+      "env": {
+        "tipo": "fallecimiento_familiar",
+        "dias_pedidos": 3,
+        "documentacion": true,
+        "inscripto_en_carrera": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-NACIMIENTO-15",
+      "env": {
+        "tipo": "nacimiento",
+        "dias_pedidos": 15,
+        "documentacion": true,
+        "inscripto_en_carrera": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

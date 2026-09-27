@@ -1,0 +1,224 @@
+{
+  "case_id": "LAB-C1-PRUEBA",
+  "category": 1,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Determinar el resultado del período de prueba de un empleado nuevo. Si todavía no pasaron 90 días desde el ingreso, el resultado es \"En curso\". Si ya pasaron, es \"Efectivo\" cuando la evaluación del jefe es 6 o más (en una escala de 1 a 10) y el empleado tuvo 2 ausencias injustificadas o menos. Si no cumple eso, el resultado es \"Extender\" cuando la evaluación es 4 o 5 y no hubo ausencias injustificadas, y \"No continúa\" en cualquier otro caso.",
+  "gamma": {
+    "ausencias_injustificadas": "Int",
+    "dias_desde_ingreso": "Int",
+    "evaluacion": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "dias_desde_ingreso"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 90,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "En curso",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": ">=",
+            "left": {
+              "type": "Var",
+              "name": "evaluacion"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 6,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<=",
+            "left": {
+              "type": "Var",
+              "name": "ausencias_injustificadas"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 2,
+              "value_type": "Int"
+            }
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Efectivo",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "In",
+              "value": {
+                "type": "Var",
+                "name": "evaluacion"
+              },
+              "options": [
+                {
+                  "type": "Literal",
+                  "value": 4,
+                  "value_type": "Int"
+                },
+                {
+                  "type": "Literal",
+                  "value": 5,
+                  "value_type": "Int"
+                }
+              ]
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "ausencias_injustificadas"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 0,
+                "value_type": "Int"
+              }
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": "Extender",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "Literal",
+            "value": "No continúa",
+            "value_type": "String"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    evaluacion, ausencias = data['evaluacion'], data['ausencias_injustificadas']\n    if data['dias_desde_ingreso'] < 90:\n        return 'En curso'\n    if evaluacion >= 6 and ausencias <= 2:\n        return 'Efectivo'\n    if evaluacion in (4, 5) and ausencias == 0:\n        return 'Extender'\n    return 'No continúa'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-EN-CURSO",
+      "env": {
+        "dias_desde_ingreso": 89,
+        "evaluacion": 9,
+        "ausencias_injustificadas": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "En curso"
+      }
+    },
+    {
+      "scenario_id": "V2-EFECTIVO",
+      "env": {
+        "dias_desde_ingreso": 90,
+        "evaluacion": 6,
+        "ausencias_injustificadas": 2
+      },
+      "expected": {
+        "type": "String",
+        "value": "Efectivo"
+      }
+    },
+    {
+      "scenario_id": "V3-MUCHAS-AUSENCIAS",
+      "env": {
+        "dias_desde_ingreso": 120,
+        "evaluacion": 8,
+        "ausencias_injustificadas": 3
+      },
+      "expected": {
+        "type": "String",
+        "value": "No continúa"
+      }
+    },
+    {
+      "scenario_id": "V4-EXTENDER",
+      "env": {
+        "dias_desde_ingreso": 95,
+        "evaluacion": 5,
+        "ausencias_injustificadas": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Extender"
+      }
+    },
+    {
+      "scenario_id": "V5-CUATRO-CON-AUSENCIA",
+      "env": {
+        "dias_desde_ingreso": 95,
+        "evaluacion": 4,
+        "ausencias_injustificadas": 1
+      },
+      "expected": {
+        "type": "String",
+        "value": "No continúa"
+      }
+    },
+    {
+      "scenario_id": "V6-TRES",
+      "env": {
+        "dias_desde_ingreso": 95,
+        "evaluacion": 3,
+        "ausencias_injustificadas": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "No continúa"
+      }
+    },
+    {
+      "scenario_id": "V7-DIEZ",
+      "env": {
+        "dias_desde_ingreso": 200,
+        "evaluacion": 10,
+        "ausencias_injustificadas": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Efectivo"
+      }
+    },
+    {
+      "scenario_id": "V8-CUATRO",
+      "env": {
+        "dias_desde_ingreso": 91,
+        "evaluacion": 4,
+        "ausencias_injustificadas": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Extender"
+      }
+    }
+  ]
+}

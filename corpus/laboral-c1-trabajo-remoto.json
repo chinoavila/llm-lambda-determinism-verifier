@@ -1,0 +1,261 @@
+{
+  "case_id": "LAB-C1-REMOTO",
+  "category": 1,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Determinar si un empleado puede trabajar de forma remota. Puede, solo si se cumplen todas estas condiciones: su puesto no es presencial; superó el período de prueba de 3 meses (lleva 3 meses o más en la empresa); tiene conexión a internet de al menos 50 Mbps; su última evaluación no fue \"no_cumple\"; y pide como máximo 3 días remotos por semana, salvo que tenga un certificado médico que lo justifique, en cuyo caso puede pedir hasta 5.",
+  "gamma": {
+    "certificado_medico": "Bool",
+    "dias_remotos": "Int",
+    "evaluacion": "String",
+    "meses_en_empresa": "Int",
+    "puesto_presencial": "Bool",
+    "velocidad_mbps": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "UnaryOp",
+              "op": "NOT",
+              "operand": {
+                "type": "Var",
+                "name": "puesto_presencial"
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "meses_en_empresa"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 3,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": ">=",
+            "left": {
+              "type": "Var",
+              "name": "velocidad_mbps"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 50,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "!=",
+          "left": {
+            "type": "Var",
+            "name": "evaluacion"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "no_cumple",
+            "value_type": "String"
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "<=",
+        "left": {
+          "type": "Var",
+          "name": "dias_remotos"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "Var",
+            "name": "certificado_medico"
+          },
+          "then": {
+            "type": "Literal",
+            "value": 5,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "Literal",
+            "value": 3,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    maximo = 5 if data['certificado_medico'] else 3\n    return (\n        not data['puesto_presencial']\n        and data['meses_en_empresa'] >= 3\n        and data['velocidad_mbps'] >= 50\n        and data['evaluacion'] != 'no_cumple'\n        and data['dias_remotos'] <= maximo\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-PUEDE",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 12,
+        "velocidad_mbps": 100,
+        "evaluacion": "cumple",
+        "dias_remotos": 3,
+        "certificado_medico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-PRESENCIAL",
+      "env": {
+        "puesto_presencial": true,
+        "meses_en_empresa": 12,
+        "velocidad_mbps": 100,
+        "evaluacion": "cumple",
+        "dias_remotos": 1,
+        "certificado_medico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-DOS-MESES",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 2,
+        "velocidad_mbps": 100,
+        "evaluacion": "cumple",
+        "dias_remotos": 1,
+        "certificado_medico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-49-MBPS",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 12,
+        "velocidad_mbps": 49,
+        "evaluacion": "cumple",
+        "dias_remotos": 1,
+        "certificado_medico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-NO-CUMPLE",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 12,
+        "velocidad_mbps": 100,
+        "evaluacion": "no_cumple",
+        "dias_remotos": 1,
+        "certificado_medico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-CUATRO-DIAS",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 12,
+        "velocidad_mbps": 100,
+        "evaluacion": "supera",
+        "dias_remotos": 4,
+        "certificado_medico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-CUATRO-CON-CERTIFICADO",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 12,
+        "velocidad_mbps": 100,
+        "evaluacion": "parcial",
+        "dias_remotos": 4,
+        "certificado_medico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V8-LIMITES",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 3,
+        "velocidad_mbps": 50,
+        "evaluacion": "parcial",
+        "dias_remotos": 2,
+        "certificado_medico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-CINCO-CON-CERTIFICADO",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 30,
+        "velocidad_mbps": 300,
+        "evaluacion": "supera",
+        "dias_remotos": 5,
+        "certificado_medico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V10-UN-DIA",
+      "env": {
+        "puesto_presencial": false,
+        "meses_en_empresa": 6,
+        "velocidad_mbps": 75,
+        "evaluacion": "cumple",
+        "dias_remotos": 1,
+        "certificado_medico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

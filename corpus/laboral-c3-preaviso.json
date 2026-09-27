@@ -1,0 +1,125 @@
+{
+  "case_id": "LAB-C3-PREAVISO",
+  "category": 3,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Calcular los días de preaviso que el empleador debe dar al despedir a un empleado. Si el empleado todavía está en el período de prueba (menos de 3 meses de antigüedad), son 15 días. Si tiene 3 meses o más pero menos de 5 años, son 30 días. Con 5 años o más, son 60 días. La antigüedad se informa en meses completos.",
+  "gamma": {
+    "antiguedad_meses": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "antiguedad_meses"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 3,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": 15,
+        "value_type": "Int"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "antiguedad_meses"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 60,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": 30,
+          "value_type": "Int"
+        },
+        "else": {
+          "type": "Literal",
+          "value": 60,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    meses = data['antiguedad_meses']\n    if meses < 3:\n        return 15\n    return 30 if meses < 60 else 60\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-DOS-MESES",
+      "env": {
+        "antiguedad_meses": 2
+      },
+      "expected": {
+        "type": "Int",
+        "value": 15
+      }
+    },
+    {
+      "scenario_id": "V2-TRES-MESES",
+      "env": {
+        "antiguedad_meses": 3
+      },
+      "expected": {
+        "type": "Int",
+        "value": 30
+      }
+    },
+    {
+      "scenario_id": "V3-59-MESES",
+      "env": {
+        "antiguedad_meses": 59
+      },
+      "expected": {
+        "type": "Int",
+        "value": 30
+      }
+    },
+    {
+      "scenario_id": "V4-60-MESES",
+      "env": {
+        "antiguedad_meses": 60
+      },
+      "expected": {
+        "type": "Int",
+        "value": 60
+      }
+    },
+    {
+      "scenario_id": "V5-RECIEN-INGRESADO",
+      "env": {
+        "antiguedad_meses": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 15
+      }
+    },
+    {
+      "scenario_id": "V6-VEINTE-ANIOS",
+      "env": {
+        "antiguedad_meses": 240
+      },
+      "expected": {
+        "type": "Int",
+        "value": 60
+      }
+    }
+  ]
+}

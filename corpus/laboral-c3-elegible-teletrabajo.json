@@ -1,0 +1,137 @@
+{
+  "case_id": "LAB-C3-TELETRABAJO",
+  "category": 3,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Determinar si un área puede pasar a teletrabajo total. Puede si al menos el 70 % de sus puestos pueden hacerse de forma remota (se informa como entero de 0 a 100), salvo que el área atienda público o maneje documentación en papel: en esos casos no puede, aunque supere ese porcentaje.",
+  "gamma": {
+    "atiende_publico": "Bool",
+    "documentacion_papel": "Bool",
+    "porcentaje_remoto": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": ">=",
+        "left": {
+          "type": "Var",
+          "name": "porcentaje_remoto"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 70,
+          "value_type": "Int"
+        }
+      },
+      "right": {
+        "type": "UnaryOp",
+        "op": "NOT",
+        "operand": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "Var",
+            "name": "atiende_publico"
+          },
+          "right": {
+            "type": "Var",
+            "name": "documentacion_papel"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['porcentaje_remoto'] >= 70 and not (data['atiende_publico'] or data['documentacion_papel'])\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-70",
+      "env": {
+        "porcentaje_remoto": 70,
+        "atiende_publico": false,
+        "documentacion_papel": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-69",
+      "env": {
+        "porcentaje_remoto": 69,
+        "atiende_publico": false,
+        "documentacion_papel": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-PUBLICO",
+      "env": {
+        "porcentaje_remoto": 100,
+        "atiende_publico": true,
+        "documentacion_papel": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-PAPEL",
+      "env": {
+        "porcentaje_remoto": 90,
+        "atiende_publico": false,
+        "documentacion_papel": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-100",
+      "env": {
+        "porcentaje_remoto": 100,
+        "atiende_publico": false,
+        "documentacion_papel": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-BAJO-Y-PUBLICO",
+      "env": {
+        "porcentaje_remoto": 20,
+        "atiende_publico": true,
+        "documentacion_papel": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-85",
+      "env": {
+        "porcentaje_remoto": 85,
+        "atiende_publico": false,
+        "documentacion_papel": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "case_id": "LAB-C2-APORTES",
+  "category": 2,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Calcular el sueldo neto de un empleado, en pesos con centavos. Al sueldo bruto (con centavos) se le descuenta el 11 % de jubilación, el 3 % de obra social y el 3 % de PAMI, es decir, el 17 % en total. Además, si el empleado está afiliado al sindicato, se le descuenta un 2 % más del bruto. La obra social elegida por el empleado no cambia los porcentajes.",
+  "gamma": {
+    "afiliado_sindicato": "Bool",
+    "sueldo_bruto": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "-",
+      "left": {
+        "type": "Var",
+        "name": "sueldo_bruto"
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "sueldo_bruto"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "Var",
+            "name": "afiliado_sindicato"
+          },
+          "then": {
+            "type": "Literal",
+            "value": 0.19,
+            "value_type": "Decimal"
+          },
+          "else": {
+            "type": "Literal",
+            "value": 0.17,
+            "value_type": "Decimal"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    descuento = Decimal('0.19') if data['afiliado_sindicato'] else Decimal('0.17')\n    return data['sueldo_bruto'] - data['sueldo_bruto'] * descuento\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-NO-AFILIADO",
+      "env": {
+        "sueldo_bruto": 1000000.5,
+        "afiliado_sindicato": false
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "830000.415"
+      }
+    },
+    {
+      "scenario_id": "V2-AFILIADO",
+      "env": {
+        "sueldo_bruto": 1000000.5,
+        "afiliado_sindicato": true
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "810000.405"
+      }
+    },
+    {
+      "scenario_id": "V3-CENTAVOS",
+      "env": {
+        "sueldo_bruto": 123456.78,
+        "afiliado_sindicato": false
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "102469.1274"
+      }
+    },
+    {
+      "scenario_id": "V4-AFILIADO-CENTAVOS",
+      "env": {
+        "sueldo_bruto": 987654.32,
+        "afiliado_sindicato": true
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "799999.9992"
+      }
+    },
+    {
+      "scenario_id": "V5-BAJO",
+      "env": {
+        "sueldo_bruto": 300000.25,
+        "afiliado_sindicato": false
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "249000.2075"
+      }
+    },
+    {
+      "scenario_id": "V6-ALTO-AFILIADO",
+      "env": {
+        "sueldo_bruto": 4500000.75,
+        "afiliado_sindicato": true
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "3645000.6075"
+      }
+    }
+  ]
+}

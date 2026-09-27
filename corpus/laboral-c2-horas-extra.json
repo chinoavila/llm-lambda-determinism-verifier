@@ -1,0 +1,134 @@
+{
+  "case_id": "LAB-C2-HORAS-EXTRA",
+  "category": 2,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Calcular el pago de horas extra, en pesos con centavos. Es la cantidad de horas extra (entero) por el valor de la hora normal (con centavos) por un recargo: 1.5 si las horas se hicieron en un día \"habil\" y 2.0 si fue \"sabado_tarde\", \"domingo\" o \"feriado\". El sueldo básico del convenio ya está reflejado en el valor de la hora.",
+  "gamma": {
+    "horas": "Int",
+    "tipo_dia": "String",
+    "valor_hora": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "*",
+      "left": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "horas"
+        },
+        "right": {
+          "type": "Var",
+          "name": "valor_hora"
+        }
+      },
+      "right": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "==",
+          "left": {
+            "type": "Var",
+            "name": "tipo_dia"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "habil",
+            "value_type": "String"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": 1.5,
+          "value_type": "Decimal"
+        },
+        "else": {
+          "type": "Literal",
+          "value": 2.0,
+          "value_type": "Decimal"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    recargo = Decimal('1.5') if data['tipo_dia'] == 'habil' else Decimal('2.0')\n    return data['horas'] * data['valor_hora'] * recargo\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-HABIL",
+      "env": {
+        "horas": 4,
+        "valor_hora": 3500.5,
+        "tipo_dia": "habil"
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "21003"
+      }
+    },
+    {
+      "scenario_id": "V2-FERIADO",
+      "env": {
+        "horas": 4,
+        "valor_hora": 3500.5,
+        "tipo_dia": "feriado"
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "28004"
+      }
+    },
+    {
+      "scenario_id": "V3-DOMINGO",
+      "env": {
+        "horas": 8,
+        "valor_hora": 2800.75,
+        "tipo_dia": "domingo"
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "44812"
+      }
+    },
+    {
+      "scenario_id": "V4-SABADO",
+      "env": {
+        "horas": 3,
+        "valor_hora": 4100.25,
+        "tipo_dia": "sabado_tarde"
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "24601.5"
+      }
+    },
+    {
+      "scenario_id": "V5-SIN-HORAS",
+      "env": {
+        "horas": 0,
+        "valor_hora": 3500.5,
+        "tipo_dia": "habil"
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V6-UNA-HORA",
+      "env": {
+        "horas": 1,
+        "valor_hora": 999.99,
+        "tipo_dia": "habil"
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1499.985"
+      }
+    }
+  ]
+}

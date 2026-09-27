@@ -1,0 +1,194 @@
+{
+  "case_id": "LAB-C2-INDEMNIZACION",
+  "category": 2,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Calcular la indemnización por antigüedad, en pesos. Es la mejor remuneración mensual (con centavos) por la cantidad de años de servicio. Los años de servicio salen de los meses trabajados (entero): cada 12 meses es un año, y si sobran más de 3 meses, se cuenta un año más (con 15 meses son 1 año, con 16 son 2). Si trabajó menos de 3 meses, la indemnización es 0.0. El motivo del despido no cambia la cuenta.",
+  "gamma": {
+    "meses_trabajados": "Int",
+    "mejor_remuneracion": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "meses_trabajados"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 3,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": 0.0,
+        "value_type": "Decimal"
+      },
+      "else": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "mejor_remuneracion"
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "+",
+          "left": {
+            "type": "BinaryOp",
+            "op": "/",
+            "left": {
+              "type": "BinaryOp",
+              "op": "-",
+              "left": {
+                "type": "Var",
+                "name": "meses_trabajados"
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "%",
+                "left": {
+                  "type": "Var",
+                  "name": "meses_trabajados"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 12,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "right": {
+              "type": "Literal",
+              "value": 12,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": ">",
+              "left": {
+                "type": "BinaryOp",
+                "op": "%",
+                "left": {
+                  "type": "Var",
+                  "name": "meses_trabajados"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 12,
+                  "value_type": "Int"
+                }
+              },
+              "right": {
+                "type": "Literal",
+                "value": 3,
+                "value_type": "Int"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 1,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 0,
+              "value_type": "Int"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    meses = data['meses_trabajados']\n    if meses < 3:\n        return Decimal('0')\n    anios = meses // 12 + (1 if meses % 12 > 3 else 0)\n    return data['mejor_remuneracion'] * anios\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-DOS-MESES",
+      "env": {
+        "meses_trabajados": 2,
+        "mejor_remuneracion": 800000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V2-TRES-MESES",
+      "env": {
+        "meses_trabajados": 3,
+        "mejor_remuneracion": 800000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V3-CUATRO-MESES",
+      "env": {
+        "meses_trabajados": 4,
+        "mejor_remuneracion": 800000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "800000.5"
+      }
+    },
+    {
+      "scenario_id": "V4-15-MESES",
+      "env": {
+        "meses_trabajados": 15,
+        "mejor_remuneracion": 800000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "800000.5"
+      }
+    },
+    {
+      "scenario_id": "V5-16-MESES",
+      "env": {
+        "meses_trabajados": 16,
+        "mejor_remuneracion": 800000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1600001"
+      }
+    },
+    {
+      "scenario_id": "V6-DIEZ-ANIOS",
+      "env": {
+        "meses_trabajados": 120,
+        "mejor_remuneracion": 1500000.25
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "15000002.5"
+      }
+    },
+    {
+      "scenario_id": "V7-24-MESES",
+      "env": {
+        "meses_trabajados": 24,
+        "mejor_remuneracion": 950000.75
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1900001.5"
+      }
+    }
+  ]
+}

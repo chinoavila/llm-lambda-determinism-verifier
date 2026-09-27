@@ -1,0 +1,115 @@
+{
+  "case_id": "LAB-C2-AGUINALDO",
+  "category": 2,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Calcular el aguinaldo proporcional de un semestre, en pesos. Es la mitad de la mejor remuneración mensual del semestre (con centavos) multiplicada por los días trabajados en el semestre (entero) y dividida por 180. Si trabajó los 180 días, cobra la mitad completa. El resultado es exacto, sin redondear. La fecha de ingreso ya está reflejada en los días trabajados.",
+  "gamma": {
+    "dias_trabajados": "Int",
+    "mejor_remuneracion": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "/",
+      "left": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "BinaryOp",
+          "op": "/",
+          "left": {
+            "type": "Var",
+            "name": "mejor_remuneracion"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 2,
+            "value_type": "Int"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "dias_trabajados"
+        }
+      },
+      "right": {
+        "type": "Literal",
+        "value": 180,
+        "value_type": "Int"
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['mejor_remuneracion'] / 2 * data['dias_trabajados'] / 180\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SEMESTRE-COMPLETO",
+      "env": {
+        "mejor_remuneracion": 900000.5,
+        "dias_trabajados": 180
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "450000.25"
+      }
+    },
+    {
+      "scenario_id": "V2-MEDIO-SEMESTRE",
+      "env": {
+        "mejor_remuneracion": 900000.5,
+        "dias_trabajados": 90
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "225000.125"
+      }
+    },
+    {
+      "scenario_id": "V3-UN-DIA",
+      "env": {
+        "mejor_remuneracion": 720000.5,
+        "dias_trabajados": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "2000.001388888888888888888889"
+      }
+    },
+    {
+      "scenario_id": "V4-SIN-DIAS",
+      "env": {
+        "mejor_remuneracion": 720000.5,
+        "dias_trabajados": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V5-45-DIAS",
+      "env": {
+        "mejor_remuneracion": 1250000.75,
+        "dias_trabajados": 45
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "156250.09375"
+      }
+    },
+    {
+      "scenario_id": "V6-100-DIAS",
+      "env": {
+        "mejor_remuneracion": 654321.99,
+        "dias_trabajados": 100
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "181756.1083333333333333333333"
+      }
+    }
+  ]
+}

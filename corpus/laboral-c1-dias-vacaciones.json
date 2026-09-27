@@ -1,0 +1,206 @@
+{
+  "case_id": "LAB-C1-VACACIONES",
+  "category": 1,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Calcular los días de vacaciones anuales de un empleado. Si en el año trabajó menos de 6 meses, le corresponde 1 día por cada mes trabajado. Si trabajó 6 meses o más, depende de su antigüedad en años completos: con menos de 5 años le corresponden 14 días; desde 5 y hasta menos de 10 años, 21 días; desde 10 y hasta menos de 20 años, 28 días; y con 20 años o más, 35 días. Los meses trabajados en el año y la antigüedad se informan como enteros; el puesto del empleado no cambia la cantidad de días.",
+  "gamma": {
+    "antiguedad_anios": "Int",
+    "meses_trabajados": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "meses_trabajados"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 6,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Var",
+        "name": "meses_trabajados"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "antiguedad_anios"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 5,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": 14,
+          "value_type": "Int"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "antiguedad_anios"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 10,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 21,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "<",
+              "left": {
+                "type": "Var",
+                "name": "antiguedad_anios"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 20,
+                "value_type": "Int"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 28,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 35,
+              "value_type": "Int"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    if data['meses_trabajados'] < 6:\n        return data['meses_trabajados']\n    anios = data['antiguedad_anios']\n    if anios < 5:\n        return 14\n    if anios < 10:\n        return 21\n    if anios < 20:\n        return 28\n    return 35\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-NUEVO-COMPLETO",
+      "env": {
+        "antiguedad_anios": 0,
+        "meses_trabajados": 12
+      },
+      "expected": {
+        "type": "Int",
+        "value": 14
+      }
+    },
+    {
+      "scenario_id": "V2-CINCO-ANIOS",
+      "env": {
+        "antiguedad_anios": 5,
+        "meses_trabajados": 12
+      },
+      "expected": {
+        "type": "Int",
+        "value": 21
+      }
+    },
+    {
+      "scenario_id": "V3-NUEVE-ANIOS",
+      "env": {
+        "antiguedad_anios": 9,
+        "meses_trabajados": 12
+      },
+      "expected": {
+        "type": "Int",
+        "value": 21
+      }
+    },
+    {
+      "scenario_id": "V4-DIEZ-ANIOS",
+      "env": {
+        "antiguedad_anios": 10,
+        "meses_trabajados": 12
+      },
+      "expected": {
+        "type": "Int",
+        "value": 28
+      }
+    },
+    {
+      "scenario_id": "V5-VEINTE-ANIOS",
+      "env": {
+        "antiguedad_anios": 20,
+        "meses_trabajados": 12
+      },
+      "expected": {
+        "type": "Int",
+        "value": 35
+      }
+    },
+    {
+      "scenario_id": "V6-CINCO-MESES",
+      "env": {
+        "antiguedad_anios": 0,
+        "meses_trabajados": 5
+      },
+      "expected": {
+        "type": "Int",
+        "value": 5
+      }
+    },
+    {
+      "scenario_id": "V7-DOS-MESES-ANTIGUO",
+      "env": {
+        "antiguedad_anios": 12,
+        "meses_trabajados": 2
+      },
+      "expected": {
+        "type": "Int",
+        "value": 2
+      }
+    },
+    {
+      "scenario_id": "V8-SEIS-MESES",
+      "env": {
+        "antiguedad_anios": 0,
+        "meses_trabajados": 6
+      },
+      "expected": {
+        "type": "Int",
+        "value": 14
+      }
+    },
+    {
+      "scenario_id": "V9-DIECINUEVE-ANIOS",
+      "env": {
+        "antiguedad_anios": 19,
+        "meses_trabajados": 11
+      },
+      "expected": {
+        "type": "Int",
+        "value": 28
+      }
+    }
+  ]
+}

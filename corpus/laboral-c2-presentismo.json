@@ -1,0 +1,189 @@
+{
+  "case_id": "LAB-C2-PRESENTISMO",
+  "category": 2,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Calcular el adicional por presentismo del mes, en pesos con centavos. Si el empleado no tuvo faltas en el mes, cobra el 10 % de su sueldo básico (con centavos); con 1 falta justificada, cobra el 5 %; en cualquier otro caso (una falta injustificada o más de una falta), el adicional es 0.0. Las faltas se informan por separado: justificadas e injustificadas, como enteros.",
+  "gamma": {
+    "faltas_injustificadas": "Int",
+    "faltas_justificadas": "Int",
+    "sueldo_basico": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "==",
+          "left": {
+            "type": "Var",
+            "name": "faltas_justificadas"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0,
+            "value_type": "Int"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "==",
+          "left": {
+            "type": "Var",
+            "name": "faltas_injustificadas"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0,
+            "value_type": "Int"
+          }
+        }
+      },
+      "then": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "sueldo_basico"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 0.1,
+          "value_type": "Decimal"
+        }
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "faltas_justificadas"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 1,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "faltas_injustificadas"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 0,
+              "value_type": "Int"
+            }
+          }
+        },
+        "then": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "sueldo_basico"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0.05,
+            "value_type": "Decimal"
+          }
+        },
+        "else": {
+          "type": "Literal",
+          "value": 0.0,
+          "value_type": "Decimal"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    justificadas, injustificadas = data['faltas_justificadas'], data['faltas_injustificadas']\n    if injustificadas == 0 and justificadas == 0:\n        return data['sueldo_basico'] * Decimal('0.10')\n    if injustificadas == 0 and justificadas == 1:\n        return data['sueldo_basico'] * Decimal('0.05')\n    return Decimal('0')\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SIN-FALTAS",
+      "env": {
+        "sueldo_basico": 850000.5,
+        "faltas_justificadas": 0,
+        "faltas_injustificadas": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "85000.05"
+      }
+    },
+    {
+      "scenario_id": "V2-UNA-JUSTIFICADA",
+      "env": {
+        "sueldo_basico": 850000.5,
+        "faltas_justificadas": 1,
+        "faltas_injustificadas": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "42500.025"
+      }
+    },
+    {
+      "scenario_id": "V3-UNA-INJUSTIFICADA",
+      "env": {
+        "sueldo_basico": 850000.5,
+        "faltas_justificadas": 0,
+        "faltas_injustificadas": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V4-DOS-JUSTIFICADAS",
+      "env": {
+        "sueldo_basico": 850000.5,
+        "faltas_justificadas": 2,
+        "faltas_injustificadas": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V5-AMBAS",
+      "env": {
+        "sueldo_basico": 640000.25,
+        "faltas_justificadas": 1,
+        "faltas_injustificadas": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V6-CENTAVOS",
+      "env": {
+        "sueldo_basico": 999999.99,
+        "faltas_justificadas": 0,
+        "faltas_injustificadas": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "99999.999"
+      }
+    }
+  ]
+}

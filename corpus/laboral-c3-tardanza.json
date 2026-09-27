@@ -1,0 +1,110 @@
+{
+  "case_id": "LAB-C3-TARDANZA",
+  "category": 3,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Determinar si un fichaje de entrada cuenta como tardanza. Cuenta como tardanza si el empleado ingresó más de 10 minutos después de su horario: con 10 minutos de demora todavía no es tardanza. La excepción: si tiene un permiso de ingreso tardío aprobado para ese día, nunca es tardanza. La demora se informa en minutos (negativa si llegó antes).",
+  "gamma": {
+    "minutos_demora": "Int",
+    "permiso_aprobado": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "Var",
+          "name": "minutos_demora"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 10,
+          "value_type": "Int"
+        }
+      },
+      "right": {
+        "type": "UnaryOp",
+        "op": "NOT",
+        "operand": {
+          "type": "Var",
+          "name": "permiso_aprobado"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['minutos_demora'] > 10 and not data['permiso_aprobado']\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-10-MINUTOS",
+      "env": {
+        "minutos_demora": 10,
+        "permiso_aprobado": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V2-11-MINUTOS",
+      "env": {
+        "minutos_demora": 11,
+        "permiso_aprobado": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-CON-PERMISO",
+      "env": {
+        "minutos_demora": 60,
+        "permiso_aprobado": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-TEMPRANO",
+      "env": {
+        "minutos_demora": -5,
+        "permiso_aprobado": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-UNA-HORA",
+      "env": {
+        "minutos_demora": 60,
+        "permiso_aprobado": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-VEINTE",
+      "env": {
+        "minutos_demora": 20,
+        "permiso_aprobado": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

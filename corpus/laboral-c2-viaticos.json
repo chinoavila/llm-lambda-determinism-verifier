@@ -1,0 +1,136 @@
+{
+  "case_id": "LAB-C2-VIATICOS",
+  "category": 2,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Calcular los viáticos de un viaje de trabajo, en pesos con centavos. Se pagan 350.50 pesos por kilómetro recorrido (entero) más 25000 pesos por cada comida hecha fuera de la ciudad (entero). Si el viaje fue de menos de 50 kilómetros, no se pagan viáticos y el resultado es 0.0, aunque haya comidas. El vehículo usado no cambia la tarifa.",
+  "gamma": {
+    "comidas": "Int",
+    "kilometros": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "kilometros"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 50,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": 0.0,
+        "value_type": "Decimal"
+      },
+      "else": {
+        "type": "BinaryOp",
+        "op": "+",
+        "left": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "kilometros"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 350.5,
+            "value_type": "Decimal"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "comidas"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 25000,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    if data['kilometros'] < 50:\n        return Decimal('0')\n    return data['kilometros'] * Decimal('350.50') + data['comidas'] * 25000\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-49-KM",
+      "env": {
+        "kilometros": 49,
+        "comidas": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V2-50-KM",
+      "env": {
+        "kilometros": 50,
+        "comidas": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "17525"
+      }
+    },
+    {
+      "scenario_id": "V3-CON-COMIDAS",
+      "env": {
+        "kilometros": 300,
+        "comidas": 2
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "155150"
+      }
+    },
+    {
+      "scenario_id": "V4-LARGO",
+      "env": {
+        "kilometros": 1200,
+        "comidas": 5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "545600"
+      }
+    },
+    {
+      "scenario_id": "V5-CORTO-SIN-COMIDAS",
+      "env": {
+        "kilometros": 10,
+        "comidas": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V6-51-KM",
+      "env": {
+        "kilometros": 51,
+        "comidas": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "42875.5"
+      }
+    }
+  ]
+}

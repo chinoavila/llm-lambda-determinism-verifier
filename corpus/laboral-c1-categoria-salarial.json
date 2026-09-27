@@ -1,0 +1,244 @@
+{
+  "case_id": "LAB-C1-CATEGORIA",
+  "category": 1,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Asignar la categoría salarial de un empleado según su puesto y sus años de experiencia. Los puestos \"lider_tecnico\", \"gerente\" y \"jefe_de_area\" son de gestión: con 8 años de experiencia o más la categoría es \"G2\", y con menos, \"G1\". Los puestos \"desarrollador\", \"analista\", \"tester\" y \"administrador_sistemas\" son técnicos: con menos de 2 años la categoría es \"T1\"; desde 2 y hasta menos de 5, \"T2\"; y con 5 o más, \"T3\". Cualquier otro puesto, como \"recepcionista\" o \"cadete\", es categoría \"A1\", sin importar la experiencia.",
+  "gamma": {
+    "experiencia_anios": "Int",
+    "puesto": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "In",
+        "value": {
+          "type": "Var",
+          "name": "puesto"
+        },
+        "options": [
+          {
+            "type": "Literal",
+            "value": "lider_tecnico",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "gerente",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "jefe_de_area",
+            "value_type": "String"
+          }
+        ]
+      },
+      "then": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": ">=",
+          "left": {
+            "type": "Var",
+            "name": "experiencia_anios"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 8,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "G2",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "Literal",
+          "value": "G1",
+          "value_type": "String"
+        }
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "In",
+          "value": {
+            "type": "Var",
+            "name": "puesto"
+          },
+          "options": [
+            {
+              "type": "Literal",
+              "value": "desarrollador",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "analista",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "tester",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "administrador_sistemas",
+              "value_type": "String"
+            }
+          ]
+        },
+        "then": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "experiencia_anios"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 2,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": "T1",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "<",
+              "left": {
+                "type": "Var",
+                "name": "experiencia_anios"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 5,
+                "value_type": "Int"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": "T2",
+              "value_type": "String"
+            },
+            "else": {
+              "type": "Literal",
+              "value": "T3",
+              "value_type": "String"
+            }
+          }
+        },
+        "else": {
+          "type": "Literal",
+          "value": "A1",
+          "value_type": "String"
+        }
+      }
+    }
+  },
+  "canonical_python": "GESTION = ('lider_tecnico', 'gerente', 'jefe_de_area')\nTECNICOS = ('desarrollador', 'analista', 'tester', 'administrador_sistemas')\n\ndef evaluate_rule(data):\n    puesto, anios = data['puesto'], data['experiencia_anios']\n    if puesto in GESTION:\n        return 'G2' if anios >= 8 else 'G1'\n    if puesto in TECNICOS:\n        if anios < 2:\n            return 'T1'\n        return 'T2' if anios < 5 else 'T3'\n    return 'A1'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-GERENTE-8",
+      "env": {
+        "puesto": "gerente",
+        "experiencia_anios": 8
+      },
+      "expected": {
+        "type": "String",
+        "value": "G2"
+      }
+    },
+    {
+      "scenario_id": "V2-LIDER-7",
+      "env": {
+        "puesto": "lider_tecnico",
+        "experiencia_anios": 7
+      },
+      "expected": {
+        "type": "String",
+        "value": "G1"
+      }
+    },
+    {
+      "scenario_id": "V3-DEV-1",
+      "env": {
+        "puesto": "desarrollador",
+        "experiencia_anios": 1
+      },
+      "expected": {
+        "type": "String",
+        "value": "T1"
+      }
+    },
+    {
+      "scenario_id": "V4-TESTER-2",
+      "env": {
+        "puesto": "tester",
+        "experiencia_anios": 2
+      },
+      "expected": {
+        "type": "String",
+        "value": "T2"
+      }
+    },
+    {
+      "scenario_id": "V5-ANALISTA-5",
+      "env": {
+        "puesto": "analista",
+        "experiencia_anios": 5
+      },
+      "expected": {
+        "type": "String",
+        "value": "T3"
+      }
+    },
+    {
+      "scenario_id": "V6-CADETE-20",
+      "env": {
+        "puesto": "cadete",
+        "experiencia_anios": 20
+      },
+      "expected": {
+        "type": "String",
+        "value": "A1"
+      }
+    },
+    {
+      "scenario_id": "V7-SYSADMIN-4",
+      "env": {
+        "puesto": "administrador_sistemas",
+        "experiencia_anios": 4
+      },
+      "expected": {
+        "type": "String",
+        "value": "T2"
+      }
+    },
+    {
+      "scenario_id": "V8-JEFE-15",
+      "env": {
+        "puesto": "jefe_de_area",
+        "experiencia_anios": 15
+      },
+      "expected": {
+        "type": "String",
+        "value": "G2"
+      }
+    }
+  ]
+}

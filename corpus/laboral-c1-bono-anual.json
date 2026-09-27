@@ -1,0 +1,330 @@
+{
+  "case_id": "LAB-C1-BONO",
+  "category": 1,
+  "domain": "laboral",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/laboral.py",
+  "description": "Determinar si un empleado cobra el bono anual. Lo cobra solo si se cumplen todas estas condiciones: trabajó al menos 9 meses del año; su evaluación de desempeño fue \"supera\" o \"cumple\" (las otras posibles son \"parcial\" y \"no_cumple\"); tuvo 5 ausencias injustificadas o menos; no tiene sanciones disciplinarias en el año; su área cumplió al menos el 80 % del objetivo (se informa como entero de 0 a 150); y sigue en la empresa al momento del pago, salvo que se haya jubilado durante el año, en cuyo caso lo cobra igual.",
+  "gamma": {
+    "ausencias_injustificadas": "Int",
+    "cumplimiento_area": "Int",
+    "evaluacion": "String",
+    "jubilado_en_el_anio": "Bool",
+    "meses_trabajados": "Int",
+    "sanciones": "Bool",
+    "sigue_en_la_empresa": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "BinaryOp",
+                "op": ">=",
+                "left": {
+                  "type": "Var",
+                  "name": "meses_trabajados"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 9,
+                  "value_type": "Int"
+                }
+              },
+              "right": {
+                "type": "In",
+                "value": {
+                  "type": "Var",
+                  "name": "evaluacion"
+                },
+                "options": [
+                  {
+                    "type": "Literal",
+                    "value": "supera",
+                    "value_type": "String"
+                  },
+                  {
+                    "type": "Literal",
+                    "value": "cumple",
+                    "value_type": "String"
+                  }
+                ]
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "<=",
+              "left": {
+                "type": "Var",
+                "name": "ausencias_injustificadas"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 5,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "UnaryOp",
+            "op": "NOT",
+            "operand": {
+              "type": "Var",
+              "name": "sanciones"
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": ">=",
+          "left": {
+            "type": "Var",
+            "name": "cumplimiento_area"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 80,
+            "value_type": "Int"
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "Var",
+          "name": "sigue_en_la_empresa"
+        },
+        "right": {
+          "type": "Var",
+          "name": "jubilado_en_el_anio"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return (\n        data['meses_trabajados'] >= 9\n        and data['evaluacion'] in ('supera', 'cumple')\n        and data['ausencias_injustificadas'] <= 5\n        and not data['sanciones']\n        and data['cumplimiento_area'] >= 80\n        and (data['sigue_en_la_empresa'] or data['jubilado_en_el_anio'])\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-COBRA",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "cumple",
+        "ausencias_injustificadas": 0,
+        "sanciones": false,
+        "cumplimiento_area": 100,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-OCHO-MESES",
+      "env": {
+        "meses_trabajados": 8,
+        "evaluacion": "supera",
+        "ausencias_injustificadas": 0,
+        "sanciones": false,
+        "cumplimiento_area": 100,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-PARCIAL",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "parcial",
+        "ausencias_injustificadas": 0,
+        "sanciones": false,
+        "cumplimiento_area": 100,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-SEIS-AUSENCIAS",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "cumple",
+        "ausencias_injustificadas": 6,
+        "sanciones": false,
+        "cumplimiento_area": 100,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-SANCION",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "cumple",
+        "ausencias_injustificadas": 0,
+        "sanciones": true,
+        "cumplimiento_area": 100,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-AREA-79",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "cumple",
+        "ausencias_injustificadas": 0,
+        "sanciones": false,
+        "cumplimiento_area": 79,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-RENUNCIO",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "cumple",
+        "ausencias_injustificadas": 0,
+        "sanciones": false,
+        "cumplimiento_area": 100,
+        "sigue_en_la_empresa": false,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-JUBILADO",
+      "env": {
+        "meses_trabajados": 10,
+        "evaluacion": "supera",
+        "ausencias_injustificadas": 1,
+        "sanciones": false,
+        "cumplimiento_area": 90,
+        "sigue_en_la_empresa": false,
+        "jubilado_en_el_anio": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-LIMITES",
+      "env": {
+        "meses_trabajados": 9,
+        "evaluacion": "supera",
+        "ausencias_injustificadas": 5,
+        "sanciones": false,
+        "cumplimiento_area": 80,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V10-ESTRELLA",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "supera",
+        "ausencias_injustificadas": 0,
+        "sanciones": false,
+        "cumplimiento_area": 135,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V11-BUENO",
+      "env": {
+        "meses_trabajados": 11,
+        "evaluacion": "cumple",
+        "ausencias_injustificadas": 2,
+        "sanciones": false,
+        "cumplimiento_area": 95,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V12-NO-CUMPLE",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "no_cumple",
+        "ausencias_injustificadas": 0,
+        "sanciones": false,
+        "cumplimiento_area": 120,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V13-TRES-AUSENCIAS",
+      "env": {
+        "meses_trabajados": 12,
+        "evaluacion": "supera",
+        "ausencias_injustificadas": 3,
+        "sanciones": false,
+        "cumplimiento_area": 81,
+        "sigue_en_la_empresa": true,
+        "jubilado_en_el_anio": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}
