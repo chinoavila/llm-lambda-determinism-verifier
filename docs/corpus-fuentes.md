@@ -109,6 +109,30 @@ Los `scenario_id` que empiezan con `F6744-` son escenarios del examen (por ejemp
 | IRS-05 | `fiscal-c1-gasto-hsa.json` | 6 reales + 4 variantes | Lista cerrada de 15 tipos de gasto tomados de la Pub. 502; la ley define categorías, no una lista |
 | IRS-07 | `fiscal-c1-otros-dependientes.json` | 4 reales + 6 variantes | "Hijo calificable" llega como dato; no se calcula |
 
+**Fiscal, categoría 2** (`corpus/tools/fiscal_c2.py`). La tentación de tipos sale de la regla: montos `Decimal` contra cantidades `Int`, ramas que valen `0.0` y no `0` (en el Tratamiento, `0` da `BRANCH_MISMATCH`), y datos que el enunciado nombra pero no están en Γ.
+
+| Regla | Archivo | Escenarios | Simplificaciones y supuestos |
+|---|---|---|---|
+| IRS-09 | `fiscal-c2-deduccion-estandar.json` | 3 reales + 5 variantes | La edad y la ceguera llegan ya contadas como casillas (0 a 4). Montos de la Pub. 501, Tables 6 y 7 |
+| IRS-10 | `fiscal-c2-ingreso-ganado.json` | 2 reales + 4 variantes | Salarios y paga de combate con centavos (el engine necesita valores no enteros para deducir `Decimal`). Walters: salarios conjuntos 53500.25 y paga de combate 6000.50 |
+| IRS-11 | `fiscal-c2-viaje-reservista.json` | 1 real + 5 variantes | Solo millas a 0.70 más peajes y estacionamiento; comidas y alojamiento, fuera. Malik: peajes y estacionamiento sumados (92) |
+| IRS-13 | `fiscal-c2-ciudadania-dependiente.json` | 3 reales + 6 variantes | La excepción del hijo adoptado exige los 12 meses con el contribuyente |
+| IRS-15 | `fiscal-c2-credito-por-hijos.json` | 2 reales + 7 variantes | Antes del límite por impuesto. La reducción es de 50 dólares por cada 1000 **o fracción** (redondeo hacia arriba, como la línea 10 del Credit Limit Worksheet A). MAGI de los Summer supuesto (54000) |
+| IRS-16 | `fiscal-c2-ira-anticipado.json` | 2 reales + 5 variantes | Lista cerrada de 4 excepciones; la de primera vivienda (con tope de 10000) queda afuera. Edad y montos con decimales |
+
+**Fiscal, categoría 3** (`corpus/tools/fiscal_c3.py`). Todos los datos de la tentación están en Γ y bien tipados; la trampa es de lógica.
+
+| Regla | Archivo | Escenarios | Simplificaciones y supuestos |
+|---|---|---|---|
+| IRS-18 | `fiscal-c3-hijo-credito.json` | 5 reales + 6 variantes | Pruebas de edad, convivencia, SSN y sustento; parentesco y ciudadanía se suponen cumplidos |
+| IRS-19 | `fiscal-c3-obligacion-de-presentar.json` | 1 real + 8 variantes | Table 1 de la Pub. 501 para contribuyentes que no son dependientes |
+| IRS-21 | `fiscal-c3-perdidas-juego.json` | 1 real + 5 variantes | Ley vigente en 2025: hasta el 100 % de las ganancias |
+| IRS-23 | `fiscal-c3-millas-mudanza.json` | 1 real + 5 variantes | Se usa la ruta directa cuando las millas recorridas la superan. Rivers: peajes y estacionamiento sumados (305) |
+| IRS-25 | `fiscal-c3-cuidado-familiar.json` | 1 real + 9 variantes | Las cuatro exclusiones de la Pub. 503 |
+| IRS-27 | `fiscal-c3-considerado-no-casado.json` | 2 reales + 7 variantes | "Últimos 6 meses" como el último mes del cónyuge en la casa de 0 a 6. El hijo puede ser hijastro o de crianza |
+
+**IMC de Goossens et al.** (`SAL-C1-IMC`, CC BY 4.0). La descripción original deja sin categoría un IMC de exactamente 30 ("above 30" y "between 25 and 30"). Al adaptarla se cerró el hueco en el enunciado: 30 o más es obesidad.
+
 ## Qué más hace falta
 
 - **Otras fuentes de reuso libre:** la descripción de IMC de Goossens et al. (2023, CC BY 4.0) aporta una regla del dominio salud. Los demás dominios (`credito`, `seguros`, `laboral`) no tienen una fuente de reuso libre encontrada: se escriben reglas propias, inspiradas en los desafíos de la Decision Management Community sin copiarlos.

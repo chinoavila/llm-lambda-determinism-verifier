@@ -90,14 +90,15 @@ flowchart TD
    - **Regla propia** (`source.kind = "original"`): para los demás dominios. Inspirate en dominios reales **sin copiar texto**: las descripciones de Goossens et al. (licencia, vacaciones, beca), los desafíos de la Decision Management Community (préstamos, tarjetas, seguros) y los topes fiscales de Veeramani et al. Sus términos no autorizan el reuso. La excepción es la descripción de IMC de Goossens, publicada con CC BY 4.0: esa se adapta citándola.
 
    El enunciado siempre es nuestro, también en las adaptadas. Así se reduce el riesgo de que los modelos lo hayan visto al entrenarse (Zhang et al. lo declara como amenaza) y la tentación de la categoría queda en la redacción.
-2. **AST canónico primero.** Escribir la regla en el DSL antes que el texto fija su semántica exacta y permite controlar la complejidad, como hacen LTLBench y BLInD. Contá variables (de 1 a 5) y operadores (de 1 a 8), y anotá si usa `IF`, `Lam` o `IN`.
+2. **AST canónico primero.** Escribir la regla en el DSL antes que el texto fija su semántica exacta y permite controlar la complejidad, como hacen LTLBench y BLInD. Conviene armarlo con las funciones de [`corpus/tools/dsl.py`](../corpus/tools/dsl.py), en un script por tanda, en lugar de escribir el JSON a mano. Contá variables (de 1 a 5) y operadores (de 1 a 8), y anotá si usa `IF`, `Lam` o `IN`.
 3. **Enunciado.** Redactalo para alguien de negocio, sin nombres técnicos del DSL, usando la técnica de la categoría. Los nombres de las variables tienen que ser reconocibles en el texto: el LLM recibe Γ con esos nombres.
 4. **Python canónico.** La misma regla como `evaluate_rule(data)`. Para campos `Decimal`, operá con `decimal.Decimal` (`Decimal('0.30')`, no `0.30`): es lo que reciben los baselines, y mezclar `Decimal` con `float` falla en Python.
 5. **Escenarios en los bordes.**
    - Por cada comparación: un valor justo en el umbral y uno a cada lado.
    - Por cada `AND` u `OR`: combinaciones que hagan decidir a cada operando.
-   - Entre 6 y 10 escenarios. En las reglas booleanas, mitad `true` y mitad `false` (Tang).
-   - **Γ tiene que ser el mismo en todos los escenarios.** El engine deduce el tipo del valor, así que un campo `Decimal` necesita valores no enteros en **todos** los escenarios: `1500.5`, nunca `1500` ni `1500.0`.
+   - Entre 6 y 10 escenarios. En las reglas booleanas, mitad `true` y mitad `false` (Tang). Excepción: una cadena de más de 5 condiciones con `AND` necesita un escenario falso por condición, y el balance puede llevarla a 11-13 escenarios.
+   - **Γ tiene que ser el mismo en todos los escenarios.** El engine deduce el tipo del valor, así que un campo `Decimal` necesita valores no enteros en **todos** los escenarios: `1500.5`, nunca `1500` ni `1500.0`. Por lo mismo, un umbral `Decimal` redondo (38.0 grados, 10.0 g/dL) no se puede probar justo en el límite: se prueba un valor a cada lado (37.9 y 38.1).
+   - En el AST, una rama que vale cero en una regla `Decimal` es `0.0` (literal `Decimal`), no `0`: las ramas de un `IF` tienen que tener el mismo tipo. Es una tentación natural para la categoría 2.
    - No escribas `expected` a mano.
 6. **Verificar y calcular `expected`:**
 
