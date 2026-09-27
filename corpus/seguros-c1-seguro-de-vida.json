@@ -1,0 +1,344 @@
+{
+  "case_id": "SEG-C1-VIDA",
+  "category": 1,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Determinar si una persona puede contratar el seguro de vida sin examen médico. Puede, solo si se cumplen todas estas condiciones: tiene entre 18 y 65 años, ambos incluidos; su índice de masa corporal (con un decimal) está entre 18.5 y 32.0, ambos incluidos; no declara ninguna de estas enfermedades: \"cancer\", \"cardiopatia\", \"insuficiencia_renal\", \"hepatitis_cronica\", \"vih\" ni \"diabetes_insulinodependiente\" (sin enfermedades se informa \"ninguna\"); y la suma asegurada no supera 50000000 pesos, salvo que no fume, en cuyo caso el tope es 80000000.",
+  "gamma": {
+    "edad": "Int",
+    "enfermedad": "String",
+    "fuma": "Bool",
+    "imc": "Decimal",
+    "suma_asegurada": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "BinaryOp",
+                "op": ">=",
+                "left": {
+                  "type": "Var",
+                  "name": "edad"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 18,
+                  "value_type": "Int"
+                }
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "<=",
+                "left": {
+                  "type": "Var",
+                  "name": "edad"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 65,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "imc"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 18.5,
+                "value_type": "Decimal"
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<=",
+            "left": {
+              "type": "Var",
+              "name": "imc"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 32.0,
+              "value_type": "Decimal"
+            }
+          }
+        },
+        "right": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "In",
+            "value": {
+              "type": "Var",
+              "name": "enfermedad"
+            },
+            "options": [
+              {
+                "type": "Literal",
+                "value": "cancer",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "cardiopatia",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "insuficiencia_renal",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "hepatitis_cronica",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "vih",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "diabetes_insulinodependiente",
+                "value_type": "String"
+              }
+            ]
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "<=",
+        "left": {
+          "type": "Var",
+          "name": "suma_asegurada"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "Var",
+            "name": "fuma"
+          },
+          "then": {
+            "type": "Literal",
+            "value": 50000000,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "Literal",
+            "value": 80000000,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\nENFERMEDADES = ('cancer', 'cardiopatia', 'insuficiencia_renal', 'hepatitis_cronica', 'vih', 'diabetes_insulinodependiente')\n\ndef evaluate_rule(data):\n    tope = 50000000 if data['fuma'] else 80000000\n    return (\n        18 <= data['edad'] <= 65\n        and Decimal('18.5') <= data['imc'] <= Decimal('32.0')\n        and data['enfermedad'] not in ENFERMEDADES\n        and data['suma_asegurada'] <= tope\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-APTO",
+      "env": {
+        "edad": 40,
+        "imc": 24.5,
+        "enfermedad": "ninguna",
+        "fuma": false,
+        "suma_asegurada": 60000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-MENOR",
+      "env": {
+        "edad": 17,
+        "imc": 22.5,
+        "enfermedad": "ninguna",
+        "fuma": false,
+        "suma_asegurada": 1000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-66",
+      "env": {
+        "edad": 66,
+        "imc": 22.5,
+        "enfermedad": "ninguna",
+        "fuma": false,
+        "suma_asegurada": 1000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-IMC-BAJO",
+      "env": {
+        "edad": 30,
+        "imc": 18.4,
+        "enfermedad": "ninguna",
+        "fuma": false,
+        "suma_asegurada": 1000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-IMC-ALTO",
+      "env": {
+        "edad": 30,
+        "imc": 32.1,
+        "enfermedad": "ninguna",
+        "fuma": false,
+        "suma_asegurada": 1000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-CARDIOPATIA",
+      "env": {
+        "edad": 50,
+        "imc": 26.5,
+        "enfermedad": "cardiopatia",
+        "fuma": false,
+        "suma_asegurada": 1000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-FUMADOR-SUMA-ALTA",
+      "env": {
+        "edad": 35,
+        "imc": 23.5,
+        "enfermedad": "ninguna",
+        "fuma": true,
+        "suma_asegurada": 60000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-FUMADOR-TOPE",
+      "env": {
+        "edad": 35,
+        "imc": 23.5,
+        "enfermedad": "ninguna",
+        "fuma": true,
+        "suma_asegurada": 50000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-ASMA-NO-EXCLUYE",
+      "env": {
+        "edad": 28,
+        "imc": 19.5,
+        "enfermedad": "asma",
+        "fuma": false,
+        "suma_asegurada": 20000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V10-LIMITES",
+      "env": {
+        "edad": 65,
+        "imc": 31.9,
+        "enfermedad": "ninguna",
+        "fuma": false,
+        "suma_asegurada": 80000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V11-18-ANIOS",
+      "env": {
+        "edad": 18,
+        "imc": 18.6,
+        "enfermedad": "ninguna",
+        "fuma": true,
+        "suma_asegurada": 5000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V12-SUMA-80-MILLONES-MAS-UNO",
+      "env": {
+        "edad": 45,
+        "imc": 27.5,
+        "enfermedad": "ninguna",
+        "fuma": false,
+        "suma_asegurada": 80000001
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V13-ADULTO-SANO",
+      "env": {
+        "edad": 50,
+        "imc": 29.5,
+        "enfermedad": "ninguna",
+        "fuma": false,
+        "suma_asegurada": 40000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

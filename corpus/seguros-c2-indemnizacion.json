@@ -1,0 +1,126 @@
+{
+  "case_id": "SEG-C2-INDEMNIZACION",
+  "category": 2,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Calcular la indemnización de un siniestro, en pesos con centavos. Es el daño tasado (con centavos) menos el deducible de la póliza (en pesos enteros). Si el deducible es igual o mayor que el daño, la indemnización es 0.0. El número de póliza y la fecha del siniestro no intervienen en la cuenta.",
+  "gamma": {
+    "danio": "Decimal",
+    "deducible": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "BinaryOp",
+          "op": "-",
+          "left": {
+            "type": "Var",
+            "name": "danio"
+          },
+          "right": {
+            "type": "Var",
+            "name": "deducible"
+          }
+        },
+        "right": {
+          "type": "Literal",
+          "value": 0,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "BinaryOp",
+        "op": "-",
+        "left": {
+          "type": "Var",
+          "name": "danio"
+        },
+        "right": {
+          "type": "Var",
+          "name": "deducible"
+        }
+      },
+      "else": {
+        "type": "Literal",
+        "value": 0.0,
+        "value_type": "Decimal"
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    neto = data['danio'] - data['deducible']\n    return neto if neto > 0 else Decimal('0')\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-NORMAL",
+      "env": {
+        "danio": 450000.5,
+        "deducible": 150000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "300000.5"
+      }
+    },
+    {
+      "scenario_id": "V2-DEDUCIBLE-MAYOR",
+      "env": {
+        "danio": 120000.5,
+        "deducible": 150000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V3-CASI-IGUAL",
+      "env": {
+        "danio": 150000.01,
+        "deducible": 150000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0.01"
+      }
+    },
+    {
+      "scenario_id": "V4-SIN-DEDUCIBLE",
+      "env": {
+        "danio": 80000.75,
+        "deducible": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "80000.75"
+      }
+    },
+    {
+      "scenario_id": "V5-GRANDE",
+      "env": {
+        "danio": 9500000.25,
+        "deducible": 500000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "9000000.25"
+      }
+    },
+    {
+      "scenario_id": "V6-MENOS-DE-UN-PESO",
+      "env": {
+        "danio": 149999.99,
+        "deducible": 150000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    }
+  ]
+}

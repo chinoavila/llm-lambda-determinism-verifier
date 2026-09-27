@@ -1,0 +1,110 @@
+{
+  "case_id": "SEG-C3-PLAZO",
+  "category": 3,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Determinar si un siniestro se denunció en plazo. El plazo es de 72 horas desde el siniestro: una denuncia a las 72 horas todavía está en plazo. Si el asegurado estuvo internado por el mismo siniestro, el plazo se extiende a 240 horas.",
+  "gamma": {
+    "horas": "Int",
+    "internado": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "<=",
+      "left": {
+        "type": "Var",
+        "name": "horas"
+      },
+      "right": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "Var",
+          "name": "internado"
+        },
+        "then": {
+          "type": "Literal",
+          "value": 240,
+          "value_type": "Int"
+        },
+        "else": {
+          "type": "Literal",
+          "value": 72,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['horas'] <= (240 if data['internado'] else 72)\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-72",
+      "env": {
+        "horas": 72,
+        "internado": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-73",
+      "env": {
+        "horas": 73,
+        "internado": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-INTERNADO-240",
+      "env": {
+        "horas": 240,
+        "internado": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-INTERNADO-241",
+      "env": {
+        "horas": 241,
+        "internado": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-INTERNADO-100",
+      "env": {
+        "horas": 100,
+        "internado": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-500",
+      "env": {
+        "horas": 500,
+        "internado": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

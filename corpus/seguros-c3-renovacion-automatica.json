@@ -1,0 +1,116 @@
+{
+  "case_id": "SEG-C3-RENOVACION",
+  "category": 3,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Determinar si una póliza se renueva automáticamente. Se renueva si en el año no hubo siniestros graves y, además, el asegurado pagó todas las cuotas a término o tiene el débito automático activo. Un siniestro grave impide la renovación automática aunque pague a término.",
+  "gamma": {
+    "debito_automatico": "Bool",
+    "pago_a_termino": "Bool",
+    "siniestro_grave": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "UnaryOp",
+        "op": "NOT",
+        "operand": {
+          "type": "Var",
+          "name": "siniestro_grave"
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "Var",
+          "name": "pago_a_termino"
+        },
+        "right": {
+          "type": "Var",
+          "name": "debito_automatico"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return not data['siniestro_grave'] and (data['pago_a_termino'] or data['debito_automatico'])\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-A-TERMINO",
+      "env": {
+        "siniestro_grave": false,
+        "pago_a_termino": true,
+        "debito_automatico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-DEBITO",
+      "env": {
+        "siniestro_grave": false,
+        "pago_a_termino": false,
+        "debito_automatico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-NINGUNO",
+      "env": {
+        "siniestro_grave": false,
+        "pago_a_termino": false,
+        "debito_automatico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-GRAVE",
+      "env": {
+        "siniestro_grave": true,
+        "pago_a_termino": true,
+        "debito_automatico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-GRAVE-CON-DEBITO",
+      "env": {
+        "siniestro_grave": true,
+        "pago_a_termino": false,
+        "debito_automatico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-AMBOS",
+      "env": {
+        "siniestro_grave": false,
+        "pago_a_termino": true,
+        "debito_automatico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

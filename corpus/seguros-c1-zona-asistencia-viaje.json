@@ -1,0 +1,249 @@
+{
+  "case_id": "SEG-C1-ZONA-VIAJE",
+  "category": 1,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Asignar la zona de un seguro de asistencia al viajero según el país de destino. Los destinos \"Brasil\", \"Chile\", \"Uruguay\", \"Paraguay\" y \"Bolivia\" son zona \"Limítrofe\". \"Estados Unidos\" y \"Canadá\" son zona \"Norteamérica\". \"España\", \"Italia\", \"Francia\", \"Alemania\", \"Portugal\" y \"Reino Unido\" son zona \"Europa\". Cualquier otro país es zona \"Resto del mundo\". La excepción: si el viaje dura más de 90 días, la zona es \"Larga estadía\", sin importar el destino.",
+  "gamma": {
+    "destino": "String",
+    "dias_viaje": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "Var",
+          "name": "dias_viaje"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 90,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "Larga estadía",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "In",
+          "value": {
+            "type": "Var",
+            "name": "destino"
+          },
+          "options": [
+            {
+              "type": "Literal",
+              "value": "Brasil",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "Chile",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "Uruguay",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "Paraguay",
+              "value_type": "String"
+            },
+            {
+              "type": "Literal",
+              "value": "Bolivia",
+              "value_type": "String"
+            }
+          ]
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Limítrofe",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "In",
+            "value": {
+              "type": "Var",
+              "name": "destino"
+            },
+            "options": [
+              {
+                "type": "Literal",
+                "value": "Estados Unidos",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "Canadá",
+                "value_type": "String"
+              }
+            ]
+          },
+          "then": {
+            "type": "Literal",
+            "value": "Norteamérica",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "In",
+              "value": {
+                "type": "Var",
+                "name": "destino"
+              },
+              "options": [
+                {
+                  "type": "Literal",
+                  "value": "España",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "Italia",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "Francia",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "Alemania",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "Portugal",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "Reino Unido",
+                  "value_type": "String"
+                }
+              ]
+            },
+            "then": {
+              "type": "Literal",
+              "value": "Europa",
+              "value_type": "String"
+            },
+            "else": {
+              "type": "Literal",
+              "value": "Resto del mundo",
+              "value_type": "String"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "LIMITROFES = ('Brasil', 'Chile', 'Uruguay', 'Paraguay', 'Bolivia')\nEUROPA = ('España', 'Italia', 'Francia', 'Alemania', 'Portugal', 'Reino Unido')\n\ndef evaluate_rule(data):\n    destino = data['destino']\n    if data['dias_viaje'] > 90:\n        return 'Larga estadía'\n    if destino in LIMITROFES:\n        return 'Limítrofe'\n    if destino in ('Estados Unidos', 'Canadá'):\n        return 'Norteamérica'\n    if destino in EUROPA:\n        return 'Europa'\n    return 'Resto del mundo'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-URUGUAY",
+      "env": {
+        "destino": "Uruguay",
+        "dias_viaje": 7
+      },
+      "expected": {
+        "type": "String",
+        "value": "Limítrofe"
+      }
+    },
+    {
+      "scenario_id": "V2-CANADA",
+      "env": {
+        "destino": "Canadá",
+        "dias_viaje": 15
+      },
+      "expected": {
+        "type": "String",
+        "value": "Norteamérica"
+      }
+    },
+    {
+      "scenario_id": "V3-PORTUGAL",
+      "env": {
+        "destino": "Portugal",
+        "dias_viaje": 20
+      },
+      "expected": {
+        "type": "String",
+        "value": "Europa"
+      }
+    },
+    {
+      "scenario_id": "V4-JAPON",
+      "env": {
+        "destino": "Japón",
+        "dias_viaje": 14
+      },
+      "expected": {
+        "type": "String",
+        "value": "Resto del mundo"
+      }
+    },
+    {
+      "scenario_id": "V5-90-DIAS",
+      "env": {
+        "destino": "Italia",
+        "dias_viaje": 90
+      },
+      "expected": {
+        "type": "String",
+        "value": "Europa"
+      }
+    },
+    {
+      "scenario_id": "V6-91-DIAS",
+      "env": {
+        "destino": "Italia",
+        "dias_viaje": 91
+      },
+      "expected": {
+        "type": "String",
+        "value": "Larga estadía"
+      }
+    },
+    {
+      "scenario_id": "V7-MEXICO",
+      "env": {
+        "destino": "México",
+        "dias_viaje": 10
+      },
+      "expected": {
+        "type": "String",
+        "value": "Resto del mundo"
+      }
+    },
+    {
+      "scenario_id": "V8-BOLIVIA-LARGO",
+      "env": {
+        "destino": "Bolivia",
+        "dias_viaje": 120
+      },
+      "expected": {
+        "type": "String",
+        "value": "Larga estadía"
+      }
+    }
+  ]
+}

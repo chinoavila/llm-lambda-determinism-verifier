@@ -1,0 +1,135 @@
+{
+  "case_id": "SEG-C2-BONUS",
+  "category": 2,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Calcular la prima a pagar con la bonificación por años sin siniestros, en pesos con centavos. Cada año completo sin siniestros bonifica el 5 % de la prima base (con centavos), con un máximo de 30 % (6 años o más dan 30 %). La prima a pagar es la prima base menos la bonificación. Los años se informan como entero; la categoría del vehículo no cambia el porcentaje.",
+  "gamma": {
+    "anios_sin_siniestros": "Int",
+    "prima_base": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "-",
+      "left": {
+        "type": "Var",
+        "name": "prima_base"
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "prima_base"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": ">",
+            "left": {
+              "type": "Var",
+              "name": "anios_sin_siniestros"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 6,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 0.3,
+            "value_type": "Decimal"
+          },
+          "else": {
+            "type": "BinaryOp",
+            "op": "*",
+            "left": {
+              "type": "Var",
+              "name": "anios_sin_siniestros"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 0.05,
+              "value_type": "Decimal"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    porcentaje = min(data['anios_sin_siniestros'], 6) * Decimal('0.05')\n    return data['prima_base'] - data['prima_base'] * porcentaje\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SIN-BONUS",
+      "env": {
+        "prima_base": 45000.5,
+        "anios_sin_siniestros": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "45000.5"
+      }
+    },
+    {
+      "scenario_id": "V2-UN-ANIO",
+      "env": {
+        "prima_base": 45000.5,
+        "anios_sin_siniestros": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "42750.475"
+      }
+    },
+    {
+      "scenario_id": "V3-SEIS-ANIOS",
+      "env": {
+        "prima_base": 45000.5,
+        "anios_sin_siniestros": 6
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "31500.35"
+      }
+    },
+    {
+      "scenario_id": "V4-DIEZ-ANIOS",
+      "env": {
+        "prima_base": 45000.5,
+        "anios_sin_siniestros": 10
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "31500.35"
+      }
+    },
+    {
+      "scenario_id": "V5-TRES-ANIOS",
+      "env": {
+        "prima_base": 80000.25,
+        "anios_sin_siniestros": 3
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "68000.2125"
+      }
+    },
+    {
+      "scenario_id": "V6-SIETE-ANIOS",
+      "env": {
+        "prima_base": 12000.75,
+        "anios_sin_siniestros": 7
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "8400.525"
+      }
+    }
+  ]
+}

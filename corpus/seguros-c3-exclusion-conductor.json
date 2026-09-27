@@ -1,0 +1,114 @@
+{
+  "case_id": "SEG-C3-EXCLUSION",
+  "category": 3,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Determinar si un choque queda cubierto por la póliza. Queda cubierto, salvo que el conductor manejara con alcohol en sangre por encima de 0.5 g/L o sin licencia vigente. Con exactamente 0.5 g/L no se aplica la exclusión. El nivel de alcohol se informa con dos decimales.",
+  "gamma": {
+    "alcohol": "Decimal",
+    "licencia_vigente": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "UnaryOp",
+      "op": "NOT",
+      "operand": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": ">",
+          "left": {
+            "type": "Var",
+            "name": "alcohol"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0.5,
+            "value_type": "Decimal"
+          }
+        },
+        "right": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "Var",
+            "name": "licencia_vigente"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    return not (data['alcohol'] > Decimal('0.5') or not data['licencia_vigente'])\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SOBRIO",
+      "env": {
+        "alcohol": 0.01,
+        "licencia_vigente": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-EXACTO-0-5",
+      "env": {
+        "alcohol": 0.5,
+        "licencia_vigente": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-0-51",
+      "env": {
+        "alcohol": 0.51,
+        "licencia_vigente": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-SIN-LICENCIA",
+      "env": {
+        "alcohol": 0.01,
+        "licencia_vigente": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-TODO-MAL",
+      "env": {
+        "alcohol": 1.25,
+        "licencia_vigente": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-0-49",
+      "env": {
+        "alcohol": 0.49,
+        "licencia_vigente": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "case_id": "SEG-C3-FRANQUICIA",
+  "category": 3,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Calcular cuánto paga la aseguradora por un daño con franquicia simple, en pesos enteros. Si el daño supera la franquicia, la aseguradora paga el daño completo; si el daño es igual o menor que la franquicia, no paga nada (0). A diferencia de un deducible, la franquicia no se descuenta del pago.",
+  "gamma": {
+    "danio": "Int",
+    "franquicia": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "Var",
+          "name": "danio"
+        },
+        "right": {
+          "type": "Var",
+          "name": "franquicia"
+        }
+      },
+      "then": {
+        "type": "Var",
+        "name": "danio"
+      },
+      "else": {
+        "type": "Literal",
+        "value": 0,
+        "value_type": "Int"
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['danio'] if data['danio'] > data['franquicia'] else 0\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SUPERA",
+      "env": {
+        "danio": 300000,
+        "franquicia": 100000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 300000
+      }
+    },
+    {
+      "scenario_id": "V2-IGUAL",
+      "env": {
+        "danio": 100000,
+        "franquicia": 100000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 0
+      }
+    },
+    {
+      "scenario_id": "V3-UN-PESO-MAS",
+      "env": {
+        "danio": 100001,
+        "franquicia": 100000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 100001
+      }
+    },
+    {
+      "scenario_id": "V4-MENOR",
+      "env": {
+        "danio": 50000,
+        "franquicia": 100000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 0
+      }
+    },
+    {
+      "scenario_id": "V5-SIN-FRANQUICIA",
+      "env": {
+        "danio": 7000,
+        "franquicia": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 7000
+      }
+    },
+    {
+      "scenario_id": "V6-GRANDE",
+      "env": {
+        "danio": 5000000,
+        "franquicia": 250000
+      },
+      "expected": {
+        "type": "Int",
+        "value": 5000000
+      }
+    }
+  ]
+}

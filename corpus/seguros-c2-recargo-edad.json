@@ -1,0 +1,140 @@
+{
+  "case_id": "SEG-C2-RECARGO",
+  "category": 2,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Calcular la prima mensual de un seguro de auto con el recargo por la franja de edad del conductor, en pesos con centavos. La franja viene como texto: \"joven\", \"adulto\" o \"mayor\". La prima base (con centavos) se multiplica por 1.35 para joven, por 1.00 para adulto y por 1.15 para mayor. El puntaje de manejo del conductor no se usa en este cálculo.",
+  "gamma": {
+    "franja": "String",
+    "prima_base": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "*",
+      "left": {
+        "type": "Var",
+        "name": "prima_base"
+      },
+      "right": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "==",
+          "left": {
+            "type": "Var",
+            "name": "franja"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "joven",
+            "value_type": "String"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": 1.35,
+          "value_type": "Decimal"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "franja"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "mayor",
+              "value_type": "String"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 1.15,
+            "value_type": "Decimal"
+          },
+          "else": {
+            "type": "Literal",
+            "value": 1.0,
+            "value_type": "Decimal"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\nFACTOR = {'joven': Decimal('1.35'), 'mayor': Decimal('1.15')}\n\ndef evaluate_rule(data):\n    return data['prima_base'] * FACTOR.get(data['franja'], Decimal('1.00'))\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-JOVEN",
+      "env": {
+        "franja": "joven",
+        "prima_base": 40000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "54000.675"
+      }
+    },
+    {
+      "scenario_id": "V2-ADULTO",
+      "env": {
+        "franja": "adulto",
+        "prima_base": 40000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "40000.5"
+      }
+    },
+    {
+      "scenario_id": "V3-MAYOR",
+      "env": {
+        "franja": "mayor",
+        "prima_base": 40000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "46000.575"
+      }
+    },
+    {
+      "scenario_id": "V4-JOVEN-CENTAVOS",
+      "env": {
+        "franja": "joven",
+        "prima_base": 12345.67
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "16666.6545"
+      }
+    },
+    {
+      "scenario_id": "V5-MAYOR-CENTAVOS",
+      "env": {
+        "franja": "mayor",
+        "prima_base": 99999.99
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "114999.9885"
+      }
+    },
+    {
+      "scenario_id": "V6-ADULTO-CHICA",
+      "env": {
+        "franja": "adulto",
+        "prima_base": 0.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0.5"
+      }
+    }
+  ]
+}

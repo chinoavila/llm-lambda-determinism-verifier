@@ -1,0 +1,106 @@
+{
+  "case_id": "SEG-C2-PRORRATEO",
+  "category": 2,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Calcular cuánto se le devuelve a un asegurado que cancela una póliza anual antes de tiempo, en pesos. Se devuelve la parte de la prima anual (con centavos) que corresponde a los días que faltaban: prima anual por días restantes / 365. El resultado es exacto, sin redondear. El motivo de la cancelación no cambia la cuenta.",
+  "gamma": {
+    "dias_restantes": "Int",
+    "prima_anual": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "/",
+      "left": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "prima_anual"
+        },
+        "right": {
+          "type": "Var",
+          "name": "dias_restantes"
+        }
+      },
+      "right": {
+        "type": "Literal",
+        "value": 365,
+        "value_type": "Int"
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['prima_anual'] * data['dias_restantes'] / 365\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-MEDIO-ANIO",
+      "env": {
+        "prima_anual": 365000.5,
+        "dias_restantes": 182
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "182000.2493150684931506849315"
+      }
+    },
+    {
+      "scenario_id": "V2-TODO-EL-ANIO",
+      "env": {
+        "prima_anual": 120000.5,
+        "dias_restantes": 365
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "120000.5"
+      }
+    },
+    {
+      "scenario_id": "V3-SIN-DIAS",
+      "env": {
+        "prima_anual": 120000.5,
+        "dias_restantes": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V4-UN-DIA",
+      "env": {
+        "prima_anual": 73000.5,
+        "dias_restantes": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "200.0013698630136986301369863"
+      }
+    },
+    {
+      "scenario_id": "V5-TREINTA",
+      "env": {
+        "prima_anual": 250000.75,
+        "dias_restantes": 30
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "20548.00684931506849315068493"
+      }
+    },
+    {
+      "scenario_id": "V6-EXACTO",
+      "env": {
+        "prima_anual": 36500.5,
+        "dias_restantes": 100
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "10000.13698630136986301369863"
+      }
+    }
+  ]
+}

@@ -1,0 +1,268 @@
+{
+  "case_id": "SEG-C1-DEDUCIBLE",
+  "category": 1,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Indicar el deducible, en pesos, de un siniestro según el tipo de póliza y la cantidad de siniestros previos del año. Para la póliza \"todo_riesgo\", el deducible es 150000 si es el primer siniestro del año (0 previos), 300000 si hubo 1 previo y 500000 si hubo 2 o más. Para \"terceros_completo\", es 80000 sin siniestros previos y 160000 con 1 o más. Para \"terceros\", siempre es 0. Si el conductor tenía menos de 25 años, al deducible que corresponda se le suman 50000.",
+  "gamma": {
+    "edad_conductor": "Int",
+    "poliza": "String",
+    "siniestros_previos": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "+",
+      "left": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "==",
+          "left": {
+            "type": "Var",
+            "name": "poliza"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "todo_riesgo",
+            "value_type": "String"
+          }
+        },
+        "then": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "siniestros_previos"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 0,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 150000,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "siniestros_previos"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 1,
+                "value_type": "Int"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 300000,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 500000,
+              "value_type": "Int"
+            }
+          }
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "poliza"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "terceros_completo",
+              "value_type": "String"
+            }
+          },
+          "then": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "siniestros_previos"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 0,
+                "value_type": "Int"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 80000,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 160000,
+              "value_type": "Int"
+            }
+          },
+          "else": {
+            "type": "Literal",
+            "value": 0,
+            "value_type": "Int"
+          }
+        }
+      },
+      "right": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "edad_conductor"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 25,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": 50000,
+          "value_type": "Int"
+        },
+        "else": {
+          "type": "Literal",
+          "value": 0,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    previos, poliza = data['siniestros_previos'], data['poliza']\n    if poliza == 'todo_riesgo':\n        deducible = 150000 if previos == 0 else 300000 if previos == 1 else 500000\n    elif poliza == 'terceros_completo':\n        deducible = 80000 if previos == 0 else 160000\n    else:\n        deducible = 0\n    if data['edad_conductor'] < 25:\n        deducible += 50000\n    return deducible\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-TODO-RIESGO-PRIMERO",
+      "env": {
+        "poliza": "todo_riesgo",
+        "siniestros_previos": 0,
+        "edad_conductor": 40
+      },
+      "expected": {
+        "type": "Int",
+        "value": 150000
+      }
+    },
+    {
+      "scenario_id": "V2-TODO-RIESGO-SEGUNDO",
+      "env": {
+        "poliza": "todo_riesgo",
+        "siniestros_previos": 1,
+        "edad_conductor": 40
+      },
+      "expected": {
+        "type": "Int",
+        "value": 300000
+      }
+    },
+    {
+      "scenario_id": "V3-TODO-RIESGO-TERCERO",
+      "env": {
+        "poliza": "todo_riesgo",
+        "siniestros_previos": 2,
+        "edad_conductor": 40
+      },
+      "expected": {
+        "type": "Int",
+        "value": 500000
+      }
+    },
+    {
+      "scenario_id": "V4-COMPLETO",
+      "env": {
+        "poliza": "terceros_completo",
+        "siniestros_previos": 0,
+        "edad_conductor": 40
+      },
+      "expected": {
+        "type": "Int",
+        "value": 80000
+      }
+    },
+    {
+      "scenario_id": "V5-COMPLETO-CON-PREVIOS",
+      "env": {
+        "poliza": "terceros_completo",
+        "siniestros_previos": 3,
+        "edad_conductor": 40
+      },
+      "expected": {
+        "type": "Int",
+        "value": 160000
+      }
+    },
+    {
+      "scenario_id": "V6-TERCEROS",
+      "env": {
+        "poliza": "terceros",
+        "siniestros_previos": 2,
+        "edad_conductor": 40
+      },
+      "expected": {
+        "type": "Int",
+        "value": 0
+      }
+    },
+    {
+      "scenario_id": "V7-JOVEN",
+      "env": {
+        "poliza": "todo_riesgo",
+        "siniestros_previos": 0,
+        "edad_conductor": 24
+      },
+      "expected": {
+        "type": "Int",
+        "value": 200000
+      }
+    },
+    {
+      "scenario_id": "V8-JOVEN-TERCEROS",
+      "env": {
+        "poliza": "terceros",
+        "siniestros_previos": 0,
+        "edad_conductor": 19
+      },
+      "expected": {
+        "type": "Int",
+        "value": 50000
+      }
+    },
+    {
+      "scenario_id": "V9-25-ANIOS",
+      "env": {
+        "poliza": "terceros_completo",
+        "siniestros_previos": 1,
+        "edad_conductor": 25
+      },
+      "expected": {
+        "type": "Int",
+        "value": 160000
+      }
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "case_id": "SEG-C2-PRIMA-VIDA",
+  "category": 2,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Calcular la prima mensual de un seguro de vida, en pesos con centavos. Es la suma asegurada (en pesos enteros) por una tasa según la edad: 0.0008 para menores de 40 años, 0.0015 desde 40 hasta 59 años y 0.003 desde 60 años. A eso se le suma un recargo fijo de 2500 pesos si la persona fuma. La profesión se evalúa en otra etapa y no cambia la prima.",
+  "gamma": {
+    "edad": "Int",
+    "fuma": "Bool",
+    "suma_asegurada": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "+",
+      "left": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "suma_asegurada"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "edad"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 40,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 0.0008,
+            "value_type": "Decimal"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "<",
+              "left": {
+                "type": "Var",
+                "name": "edad"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 60,
+                "value_type": "Int"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 0.0015,
+              "value_type": "Decimal"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 0.003,
+              "value_type": "Decimal"
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "Var",
+          "name": "fuma"
+        },
+        "then": {
+          "type": "Literal",
+          "value": 2500,
+          "value_type": "Int"
+        },
+        "else": {
+          "type": "Literal",
+          "value": 0,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    edad = data['edad']\n    tasa = Decimal('0.0008') if edad < 40 else Decimal('0.0015') if edad < 60 else Decimal('0.003')\n    recargo = 2500 if data['fuma'] else 0\n    return data['suma_asegurada'] * tasa + recargo\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-JOVEN",
+      "env": {
+        "edad": 30,
+        "fuma": false,
+        "suma_asegurada": 10000000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "8000"
+      }
+    },
+    {
+      "scenario_id": "V2-40-ANIOS",
+      "env": {
+        "edad": 40,
+        "fuma": false,
+        "suma_asegurada": 10000000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "15000"
+      }
+    },
+    {
+      "scenario_id": "V3-59-FUMA",
+      "env": {
+        "edad": 59,
+        "fuma": true,
+        "suma_asegurada": 10000000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "17500"
+      }
+    },
+    {
+      "scenario_id": "V4-60-ANIOS",
+      "env": {
+        "edad": 60,
+        "fuma": false,
+        "suma_asegurada": 10000000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "30000"
+      }
+    },
+    {
+      "scenario_id": "V5-39-FUMA",
+      "env": {
+        "edad": 39,
+        "fuma": true,
+        "suma_asegurada": 5000000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "6500"
+      }
+    },
+    {
+      "scenario_id": "V6-SUMA-IMPAR",
+      "env": {
+        "edad": 45,
+        "fuma": false,
+        "suma_asegurada": 3333333
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "4999.9995"
+      }
+    }
+  ]
+}

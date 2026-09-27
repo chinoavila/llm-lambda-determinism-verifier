@@ -1,0 +1,135 @@
+{
+  "case_id": "SEG-C2-REINTEGRO-VIAJE",
+  "category": 2,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Calcular el reintegro de gastos médicos de un seguro de viaje, en dólares con centavos. Se reintegra el 80 % del gasto médico (con centavos), sin superar el tope de la póliza (en dólares enteros). Si el 80 % supera el tope, se reintegra el tope, expresado con centavos (por ejemplo, 30000.00). La moneda del país visitado ya fue convertida a dólares.",
+  "gamma": {
+    "gasto": "Decimal",
+    "tope": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "gasto"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0.8,
+            "value_type": "Decimal"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "tope"
+        }
+      },
+      "then": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "tope"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 1.0,
+          "value_type": "Decimal"
+        }
+      },
+      "else": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "gasto"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 0.8,
+          "value_type": "Decimal"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    return min(data['gasto'] * Decimal('0.8'), data['tope'] * Decimal('1.00'))\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-DEBAJO",
+      "env": {
+        "gasto": 1500.5,
+        "tope": 30000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1200.4"
+      }
+    },
+    {
+      "scenario_id": "V2-TOPE",
+      "env": {
+        "gasto": 40000.5,
+        "tope": 30000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "30000"
+      }
+    },
+    {
+      "scenario_id": "V3-JUSTO-EN-EL-TOPE",
+      "env": {
+        "gasto": 37500.5,
+        "tope": 30000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "30000"
+      }
+    },
+    {
+      "scenario_id": "V4-CHICO",
+      "env": {
+        "gasto": 99.99,
+        "tope": 10000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "79.992"
+      }
+    },
+    {
+      "scenario_id": "V5-TOPE-CHICO",
+      "env": {
+        "gasto": 15000.25,
+        "tope": 10000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "10000"
+      }
+    },
+    {
+      "scenario_id": "V6-JUSTO-DEBAJO",
+      "env": {
+        "gasto": 12499.99,
+        "tope": 10000
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "9999.992"
+      }
+    }
+  ]
+}

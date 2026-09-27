@@ -1,0 +1,232 @@
+{
+  "case_id": "SEG-C1-HOGAR",
+  "category": 1,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Determinar si un siniestro de hogar está cubierto. Lo está si se cumplen todas estas condiciones: el evento es uno de los cubiertos, informados con estos códigos: \"incendio\", \"robo\", \"rayo\", \"explosion\", \"granizo\", \"danio_por_agua\" o \"rotura_de_cristales\"; la póliza estaba vigente el día del siniestro; la vivienda no estaba deshabitada hace más de 60 días seguidos; y, si el evento es \"robo\", la puerta tenía cerradura de seguridad. Cualquier otro evento, como \"inundacion\" o \"terremoto\", no está cubierto.",
+  "gamma": {
+    "cerradura_seguridad": "Bool",
+    "dias_deshabitada": "Int",
+    "evento": "String",
+    "poliza_vigente": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "In",
+            "value": {
+              "type": "Var",
+              "name": "evento"
+            },
+            "options": [
+              {
+                "type": "Literal",
+                "value": "incendio",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "robo",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "rayo",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "explosion",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "granizo",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "danio_por_agua",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "rotura_de_cristales",
+                "value_type": "String"
+              }
+            ]
+          },
+          "right": {
+            "type": "Var",
+            "name": "poliza_vigente"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "<=",
+          "left": {
+            "type": "Var",
+            "name": "dias_deshabitada"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 60,
+            "value_type": "Int"
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "!=",
+          "left": {
+            "type": "Var",
+            "name": "evento"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "robo",
+            "value_type": "String"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "cerradura_seguridad"
+        }
+      }
+    }
+  },
+  "canonical_python": "CUBIERTOS = ('incendio', 'robo', 'rayo', 'explosion', 'granizo', 'danio_por_agua', 'rotura_de_cristales')\n\ndef evaluate_rule(data):\n    return (\n        data['evento'] in CUBIERTOS\n        and data['poliza_vigente']\n        and data['dias_deshabitada'] <= 60\n        and (data['evento'] != 'robo' or data['cerradura_seguridad'])\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-INCENDIO",
+      "env": {
+        "evento": "incendio",
+        "poliza_vigente": true,
+        "dias_deshabitada": 0,
+        "cerradura_seguridad": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-TERREMOTO",
+      "env": {
+        "evento": "terremoto",
+        "poliza_vigente": true,
+        "dias_deshabitada": 0,
+        "cerradura_seguridad": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-POLIZA-VENCIDA",
+      "env": {
+        "evento": "granizo",
+        "poliza_vigente": false,
+        "dias_deshabitada": 0,
+        "cerradura_seguridad": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-DESHABITADA-61",
+      "env": {
+        "evento": "danio_por_agua",
+        "poliza_vigente": true,
+        "dias_deshabitada": 61,
+        "cerradura_seguridad": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-DESHABITADA-60",
+      "env": {
+        "evento": "danio_por_agua",
+        "poliza_vigente": true,
+        "dias_deshabitada": 60,
+        "cerradura_seguridad": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-ROBO-SIN-CERRADURA",
+      "env": {
+        "evento": "robo",
+        "poliza_vigente": true,
+        "dias_deshabitada": 0,
+        "cerradura_seguridad": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-ROBO-CON-CERRADURA",
+      "env": {
+        "evento": "robo",
+        "poliza_vigente": true,
+        "dias_deshabitada": 10,
+        "cerradura_seguridad": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V8-CRISTALES",
+      "env": {
+        "evento": "rotura_de_cristales",
+        "poliza_vigente": true,
+        "dias_deshabitada": 3,
+        "cerradura_seguridad": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-INUNDACION",
+      "env": {
+        "evento": "inundacion",
+        "poliza_vigente": true,
+        "dias_deshabitada": 0,
+        "cerradura_seguridad": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

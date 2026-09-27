@@ -1,0 +1,296 @@
+{
+  "case_id": "SEG-C1-RECLAMO",
+  "category": 1,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Determinar si se aprueba el pago de un reclamo. Se aprueba solo si se cumplen todas estas condiciones: la denuncia se hizo dentro de las 72 horas del siniestro; la póliza tiene las cuotas al día; el monto reclamado no supera la suma asegurada; hay denuncia policial cuando el siniestro es \"robo\" o \"hurto\" (para los demás tipos no hace falta); y el asegurado no tiene otro reclamo abierto, salvo que la póliza sea \"premium\", que admite reclamos simultáneos. El tipo de póliza puede ser \"basica\", \"intermedia\" o \"premium\".",
+  "gamma": {
+    "cuotas_al_dia": "Bool",
+    "denuncia_policial": "Bool",
+    "horas_hasta_denuncia": "Int",
+    "monto_reclamado": "Int",
+    "otro_reclamo_abierto": "Bool",
+    "poliza": "String",
+    "suma_asegurada": "Int",
+    "tipo_siniestro": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "<=",
+              "left": {
+                "type": "Var",
+                "name": "horas_hasta_denuncia"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 72,
+                "value_type": "Int"
+              }
+            },
+            "right": {
+              "type": "Var",
+              "name": "cuotas_al_dia"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<=",
+            "left": {
+              "type": "Var",
+              "name": "monto_reclamado"
+            },
+            "right": {
+              "type": "Var",
+              "name": "suma_asegurada"
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "UnaryOp",
+            "op": "NOT",
+            "operand": {
+              "type": "In",
+              "value": {
+                "type": "Var",
+                "name": "tipo_siniestro"
+              },
+              "options": [
+                {
+                  "type": "Literal",
+                  "value": "robo",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "hurto",
+                  "value_type": "String"
+                }
+              ]
+            }
+          },
+          "right": {
+            "type": "Var",
+            "name": "denuncia_policial"
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "Var",
+            "name": "otro_reclamo_abierto"
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "==",
+          "left": {
+            "type": "Var",
+            "name": "poliza"
+          },
+          "right": {
+            "type": "Literal",
+            "value": "premium",
+            "value_type": "String"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return (\n        data['horas_hasta_denuncia'] <= 72\n        and data['cuotas_al_dia']\n        and data['monto_reclamado'] <= data['suma_asegurada']\n        and (data['tipo_siniestro'] not in ('robo', 'hurto') or data['denuncia_policial'])\n        and (not data['otro_reclamo_abierto'] or data['poliza'] == 'premium')\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-APROBADO",
+      "env": {
+        "horas_hasta_denuncia": 72,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 500000,
+        "suma_asegurada": 500000,
+        "tipo_siniestro": "choque",
+        "denuncia_policial": false,
+        "otro_reclamo_abierto": false,
+        "poliza": "basica"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-73-HORAS",
+      "env": {
+        "horas_hasta_denuncia": 73,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 100000,
+        "suma_asegurada": 500000,
+        "tipo_siniestro": "choque",
+        "denuncia_policial": false,
+        "otro_reclamo_abierto": false,
+        "poliza": "basica"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-CUOTAS-ATRASADAS",
+      "env": {
+        "horas_hasta_denuncia": 10,
+        "cuotas_al_dia": false,
+        "monto_reclamado": 100000,
+        "suma_asegurada": 500000,
+        "tipo_siniestro": "choque",
+        "denuncia_policial": false,
+        "otro_reclamo_abierto": false,
+        "poliza": "basica"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-MONTO-EXCEDE",
+      "env": {
+        "horas_hasta_denuncia": 10,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 500001,
+        "suma_asegurada": 500000,
+        "tipo_siniestro": "choque",
+        "denuncia_policial": false,
+        "otro_reclamo_abierto": false,
+        "poliza": "basica"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-HURTO-SIN-DENUNCIA",
+      "env": {
+        "horas_hasta_denuncia": 10,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 100000,
+        "suma_asegurada": 500000,
+        "tipo_siniestro": "hurto",
+        "denuncia_policial": false,
+        "otro_reclamo_abierto": false,
+        "poliza": "basica"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-ROBO-CON-DENUNCIA",
+      "env": {
+        "horas_hasta_denuncia": 10,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 100000,
+        "suma_asegurada": 500000,
+        "tipo_siniestro": "robo",
+        "denuncia_policial": true,
+        "otro_reclamo_abierto": false,
+        "poliza": "basica"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V7-OTRO-ABIERTO",
+      "env": {
+        "horas_hasta_denuncia": 10,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 100000,
+        "suma_asegurada": 500000,
+        "tipo_siniestro": "granizo",
+        "denuncia_policial": false,
+        "otro_reclamo_abierto": true,
+        "poliza": "intermedia"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-OTRO-ABIERTO-PREMIUM",
+      "env": {
+        "horas_hasta_denuncia": 10,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 100000,
+        "suma_asegurada": 500000,
+        "tipo_siniestro": "granizo",
+        "denuncia_policial": false,
+        "otro_reclamo_abierto": true,
+        "poliza": "premium"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-CHOQUE-RAPIDO",
+      "env": {
+        "horas_hasta_denuncia": 1,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 250000,
+        "suma_asegurada": 900000,
+        "tipo_siniestro": "choque",
+        "denuncia_policial": true,
+        "otro_reclamo_abierto": false,
+        "poliza": "intermedia"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V10-GRANIZO-BASICA",
+      "env": {
+        "horas_hasta_denuncia": 48,
+        "cuotas_al_dia": true,
+        "monto_reclamado": 80000,
+        "suma_asegurada": 300000,
+        "tipo_siniestro": "granizo",
+        "denuncia_policial": false,
+        "otro_reclamo_abierto": false,
+        "poliza": "basica"
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

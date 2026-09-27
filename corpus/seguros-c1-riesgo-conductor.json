@@ -1,0 +1,253 @@
+{
+  "case_id": "SEG-C1-RIESGO-AUTO",
+  "category": 1,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Clasificar el riesgo de un conductor para cotizar un seguro de auto, revisando las condiciones en este orden y quedándose con la primera que se cumpla. El riesgo es \"Alto\" si el conductor tiene menos de 21 años, si tuvo 3 o más siniestros en los últimos 3 años o si tiene licencia hace menos de 1 año. Si no, es \"Medio\" si tiene más de 75 años, si tuvo 1 o 2 siniestros o si el auto tiene más de 15 años de antigüedad. Si no, es \"Bajo\".",
+  "gamma": {
+    "anios_licencia": "Int",
+    "antiguedad_auto": "Int",
+    "edad": "Int",
+    "siniestros": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "edad"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 21,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": ">=",
+            "left": {
+              "type": "Var",
+              "name": "siniestros"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 3,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "anios_licencia"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 1,
+            "value_type": "Int"
+          }
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "Alto",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "BinaryOp",
+            "op": "OR",
+            "left": {
+              "type": "BinaryOp",
+              "op": ">",
+              "left": {
+                "type": "Var",
+                "name": "edad"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 75,
+                "value_type": "Int"
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "siniestros"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 1,
+                "value_type": "Int"
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": ">",
+            "left": {
+              "type": "Var",
+              "name": "antiguedad_auto"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 15,
+              "value_type": "Int"
+            }
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "Medio",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "Literal",
+          "value": "Bajo",
+          "value_type": "String"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    if data['edad'] < 21 or data['siniestros'] >= 3 or data['anios_licencia'] < 1:\n        return 'Alto'\n    if data['edad'] > 75 or data['siniestros'] >= 1 or data['antiguedad_auto'] > 15:\n        return 'Medio'\n    return 'Bajo'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-JOVEN",
+      "env": {
+        "edad": 20,
+        "siniestros": 0,
+        "anios_licencia": 3,
+        "antiguedad_auto": 2
+      },
+      "expected": {
+        "type": "String",
+        "value": "Alto"
+      }
+    },
+    {
+      "scenario_id": "V2-TRES-SINIESTROS",
+      "env": {
+        "edad": 40,
+        "siniestros": 3,
+        "anios_licencia": 20,
+        "antiguedad_auto": 2
+      },
+      "expected": {
+        "type": "String",
+        "value": "Alto"
+      }
+    },
+    {
+      "scenario_id": "V3-LICENCIA-NUEVA",
+      "env": {
+        "edad": 35,
+        "siniestros": 0,
+        "anios_licencia": 0,
+        "antiguedad_auto": 2
+      },
+      "expected": {
+        "type": "String",
+        "value": "Alto"
+      }
+    },
+    {
+      "scenario_id": "V4-MAYOR-76",
+      "env": {
+        "edad": 76,
+        "siniestros": 0,
+        "anios_licencia": 50,
+        "antiguedad_auto": 5
+      },
+      "expected": {
+        "type": "String",
+        "value": "Medio"
+      }
+    },
+    {
+      "scenario_id": "V5-UN-SINIESTRO",
+      "env": {
+        "edad": 40,
+        "siniestros": 1,
+        "anios_licencia": 20,
+        "antiguedad_auto": 5
+      },
+      "expected": {
+        "type": "String",
+        "value": "Medio"
+      }
+    },
+    {
+      "scenario_id": "V6-AUTO-VIEJO",
+      "env": {
+        "edad": 40,
+        "siniestros": 0,
+        "anios_licencia": 20,
+        "antiguedad_auto": 16
+      },
+      "expected": {
+        "type": "String",
+        "value": "Medio"
+      }
+    },
+    {
+      "scenario_id": "V7-BAJO",
+      "env": {
+        "edad": 40,
+        "siniestros": 0,
+        "anios_licencia": 20,
+        "antiguedad_auto": 15
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo"
+      }
+    },
+    {
+      "scenario_id": "V8-LIMITES-BAJO",
+      "env": {
+        "edad": 21,
+        "siniestros": 0,
+        "anios_licencia": 1,
+        "antiguedad_auto": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo"
+      }
+    },
+    {
+      "scenario_id": "V9-75-ANIOS",
+      "env": {
+        "edad": 75,
+        "siniestros": 0,
+        "anios_licencia": 55,
+        "antiguedad_auto": 10
+      },
+      "expected": {
+        "type": "String",
+        "value": "Bajo"
+      }
+    }
+  ]
+}

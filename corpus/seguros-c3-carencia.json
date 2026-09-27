@@ -1,0 +1,158 @@
+{
+  "case_id": "SEG-C3-CARENCIA",
+  "category": 3,
+  "domain": "seguros",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/seguros.py",
+  "description": "Determinar si una prestación médica está cubierta según el período de carencia. Está cubierta si pasaron al menos 30 días desde el alta en la póliza. Para las internaciones programadas, la carencia es de 180 días. Las urgencias están cubiertas desde el primer día, sin carencia. El tipo de prestación viene como \"consulta\", \"internacion_programada\" o \"urgencia\".",
+  "gamma": {
+    "dias_desde_alta": "Int",
+    "prestacion": "String"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "OR",
+      "left": {
+        "type": "BinaryOp",
+        "op": "==",
+        "left": {
+          "type": "Var",
+          "name": "prestacion"
+        },
+        "right": {
+          "type": "Literal",
+          "value": "urgencia",
+          "value_type": "String"
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": ">=",
+        "left": {
+          "type": "Var",
+          "name": "dias_desde_alta"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "prestacion"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "internacion_programada",
+              "value_type": "String"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 180,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "Literal",
+            "value": 30,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    if data['prestacion'] == 'urgencia':\n        return True\n    minimo = 180 if data['prestacion'] == 'internacion_programada' else 30\n    return data['dias_desde_alta'] >= minimo\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-CONSULTA-30",
+      "env": {
+        "prestacion": "consulta",
+        "dias_desde_alta": 30
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-CONSULTA-29",
+      "env": {
+        "prestacion": "consulta",
+        "dias_desde_alta": 29
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-URGENCIA-DIA-0",
+      "env": {
+        "prestacion": "urgencia",
+        "dias_desde_alta": 0
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-INTERNACION-179",
+      "env": {
+        "prestacion": "internacion_programada",
+        "dias_desde_alta": 179
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-INTERNACION-180",
+      "env": {
+        "prestacion": "internacion_programada",
+        "dias_desde_alta": 180
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-INTERNACION-60",
+      "env": {
+        "prestacion": "internacion_programada",
+        "dias_desde_alta": 60
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-CONSULTA-LARGA",
+      "env": {
+        "prestacion": "consulta",
+        "dias_desde_alta": 400
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V8-CONSULTA-DIA-1",
+      "env": {
+        "prestacion": "consulta",
+        "dias_desde_alta": 1
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}
