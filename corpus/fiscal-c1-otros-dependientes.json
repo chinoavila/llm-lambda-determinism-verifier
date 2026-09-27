@@ -7,6 +7,7 @@
     "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenario 4 e International Scenario 2; IRS Instructions for Schedule 8812 (2025)",
     "license": "Dominio público (17 U.S.C. § 105)"
   },
+  "generated_by": "corpus/tools/fiscal_c1.py",
   "description": "Determinar si una persona le da al contribuyente derecho al crédito por otros dependientes en 2025. Da derecho solo si se cumplen todas estas condiciones: el contribuyente la declara como dependiente; su situación en los Estados Unidos es \"ciudadano\", \"nacional\" o \"residente\" (la otra situación posible es \"no_residente\"); tiene un número de identificación de tipo \"SSN\", \"SSN_sin_permiso_laboral\", \"ITIN\" o \"ATIN\" (el otro valor posible es \"ninguna\"); y no le da derecho al crédito por hijos. Una persona le da derecho al crédito por hijos, y entonces no al de otros dependientes, cuando es hijo calificable, tiene menos de 17 años y su identificación es \"SSN\".",
   "gamma": {
     "edad": "Int",

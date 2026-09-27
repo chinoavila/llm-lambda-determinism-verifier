@@ -7,6 +7,7 @@
     "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenarios 2, 5 y 6 y Advanced Scenario 6; IRS Pub. 596 (2025), Rules 1-15",
     "license": "Dominio público (17 U.S.C. § 105)"
   },
+  "generated_by": "corpus/tools/fiscal_c1.py",
   "description": "Determinar si el contribuyente puede pedir en su declaración de 2025 el crédito por ingreso del trabajo sin hijo calificable. Lo puede pedir solo si se cumplen todas estas condiciones: tiene un número de seguro social válido; nadie más puede declararlo como dependiente; vivió en los Estados Unidos al menos 183 días del año; su ingreso de inversión no supera los 11950 dólares; tuvo algún ingreso del trabajo (mayor que cero); y tanto su ingreso del trabajo como su ingreso bruto ajustado (AGI) son menores que 19104 dólares, o menores que 26214 dólares si presenta la declaración en forma conjunta con su cónyuge. Además, tiene que tener al menos 25 años y menos de 65; si presenta en forma conjunta, alcanza con que cumpla esa edad cualquiera de los dos cónyuges. La edad del cónyuge vale 0 cuando no presenta en forma conjunta.",
   "gamma": {
     "agi": "Int",

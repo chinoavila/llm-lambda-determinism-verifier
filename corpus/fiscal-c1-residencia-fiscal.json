@@ -7,6 +7,7 @@
     "reference": "IRS Form 6744 (Rev. 10-2025), Foreign Student Test, Residency Status preguntas 1-5; IRS Pub. 519 (2025), chapter 1",
     "license": "Dominio público (17 U.S.C. § 105)"
   },
+  "generated_by": "corpus/tools/fiscal_c1.py",
   "description": "Determinar la residencia fiscal en 2025 de un extranjero que está en los Estados Unidos: responder \"Residente\" o \"No residente\". Primero, la persona está exenta en 2025, y entonces es No residente, si es estudiante con visa F, J, M o Q y estuvo exenta como estudiante en menos de 5 años calendario anteriores, o si es docente o aprendiz con visa J o Q y estuvo exenta (como docente, aprendiz o estudiante) en menos de 2 de los 6 años calendario anteriores. Si no está exenta, es Residente cuando pasa la prueba de presencia sustancial: estuvo al menos 31 días en el país en 2025 y, además, los días de 2025, más un tercio de los días de 2024, más un sexto de los días de 2023, suman 183 o más. Los días de cada año ya vienen descontados de los días en que la persona estaba exenta. Si no pasa la prueba, es No residente.",
   "gamma": {
     "anios_exento_estudiante": "Int",

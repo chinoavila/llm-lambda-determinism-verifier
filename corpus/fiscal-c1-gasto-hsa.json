@@ -7,6 +7,7 @@
     "reference": "IRS Form 6744 (Rev. 10-2025), Advanced Scenario 3; IRS Pub. 969 (2025) y Pub. 502 (2025)",
     "license": "Dominio público (17 U.S.C. § 105)"
   },
+  "generated_by": "corpus/tools/fiscal_c1.py",
   "description": "Determinar si un gasto se puede pagar con la cuenta de ahorro para la salud (HSA) como gasto médico calificado. El gasto califica solo si no fue reembolsado por un seguro, se hizo después de abrir la cuenta y su tipo es uno de estos: \"consulta_medica\", \"medicamento_recetado\", \"medicamento_venta_libre\", \"producto_menstrual\", \"fisioterapia\", \"tratamiento_dental\", \"limpieza_dental\", \"corona_dental\", \"anteojos\", \"lentes_de_contacto\", \"audifonos\", \"ambulancia\", \"analisis_laboratorio\", \"psiquiatria\" o \"internacion\". Los demás tipos, como \"gimnasio\", \"blanqueamiento_dental\", \"cirugia_estetica\", \"suplemento_nutricional\" o \"gastos_funerarios\", no califican.",
   "gamma": {
     "posterior_a_apertura": "Bool",

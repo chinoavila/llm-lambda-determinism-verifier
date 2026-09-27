@@ -7,6 +7,7 @@
     "reference": "IRS Form 6744 (Rev. 10-2025), Basic Scenarios 1, 2 y 5 y Advanced Scenario 1; IRS Pub. 501 (2025), Filing Status",
     "license": "Dominio público (17 U.S.C. § 105)"
   },
+  "generated_by": "corpus/tools/fiscal_c1.py",
   "description": "Determinar el estado civil más conveniente que puede usar el contribuyente en su declaración de 2025. Responder con uno de estos textos exactos: \"Casado conjunta\", \"Casado separado\", \"Viudo calificado\", \"Jefe de hogar\" o \"Soltero\". El estado civil al 31 de diciembre viene como \"soltero\", \"casado\", \"divorciado\" o \"viudo\". Si está casado y los dos cónyuges aceptan presentar juntos, corresponde Casado conjunta. Si está casado pero no presentan juntos, corresponde Jefe de hogar solo cuando el cónyuge no vivió en la casa durante los últimos 6 meses del año, el contribuyente pagó más de la mitad del costo de mantener el hogar y tiene un hijo o hijastro dependiente que vivió con él; si no, Casado separado. Si es viudo y el cónyuge murió en 2025, corresponde Casado conjunta. Si es viudo, el cónyuge murió en 2023 o en 2024, tiene un hijo o hijastro dependiente y pagó más de la mitad del costo del hogar, corresponde Viudo calificado. En cualquier otro caso, corresponde Jefe de hogar si pagó más de la mitad del costo del hogar y una persona calificante vivió con él más de la mitad del año, y Soltero si no. El año de muerte del cónyuge vale 0 cuando no es viudo.",
   "gamma": {
     "anio_muerte_conyuge": "Int",
