@@ -45,7 +45,6 @@ from pipeline.orchestrator import (
     run_case,
     run_treatment,
 )
-from pipeline.server import serve
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CASES = REPO_ROOT / "contracts" / "fixtures"
@@ -177,6 +176,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "check-case":
         return check_cases(args.cases, write=args.write)
     if args.command == "serve":
+        from pipeline.server import serve  # acá: server importa jobs, que importa este módulo
+
         return serve(args.host, args.port)
 
     if args.repetitions < 1:
