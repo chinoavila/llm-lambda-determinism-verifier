@@ -4,7 +4,7 @@ El orquestador (Python) ejecuta el engine (Haskell) como **subproceso**, según 
 
 ## Decisión
 
-Un solo [`Dockerfile`](../Dockerfile) con tres etapas (`engine-build`, `pipeline`, `sandbox`). Cada servicio del compose elige la suya con `target`.
+Un solo [`Dockerfile`](../Dockerfile) con tres etapas (`engine-build`, `pipeline`, `sandbox`). Cada servicio del compose elige la suya con `target`. La UI agregó dos más: `ui-build` (Node, compila y testea la SPA) y `ui` (la imagen del pipeline con la SPA compilada); ver [`ui.md`](ui.md).
 
 ```mermaid
 flowchart LR

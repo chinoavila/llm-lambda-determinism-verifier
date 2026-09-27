@@ -6,13 +6,14 @@ La idea: un LLM es probabilístico y alucina. Si en lugar de pedirle código lib
 
 ## Qué construye este repositorio
 
-Tres componentes, y nada más:
+Tres componentes, más una UI que se agregó después del MVP:
 
 | # | Componente | Lenguaje | Responsabilidad |
 |---|---|---|---|
 | 1 | **Motor de validación STLC** | Haskell | Deserializa el JSON al ADT del DSL, comprueba tipos y alcance de variables, y evalúa únicamente lo que pasó la verificación. |
 | 2 | **Orquestador del pipeline** | Python | Pide la generación al LLM, la rutea al grupo correspondiente, invoca la validación, dispara la ejecución y registra el resultado de cada caso. |
 | 3 | **Los dos baselines** | Python | Variantes de control sin validación formal, para poder contrastar el comportamiento del motor. |
+| 4 | **UI** | TypeScript (React) + Python | Ejecuta desde el navegador las acciones del pipeline: corpus, corridas y registros ([`docs/ui.md`](docs/ui.md)). |
 
 ### Arquitectura
 
@@ -57,7 +58,7 @@ Los constructores del ADT son la frontera: lo que no se puede escribir en el DSL
 
 ## Alcance
 
-Este repositorio es **solo para construir el pipeline**: un MVP de laboratorio, pensado para armarse en aproximadamente una semana entre 3 desarrolladores en paralelo (ver [`specs/roadmap.md`](specs/roadmap.md)). No ejecuta experimentos, no recolecta datos, no calcula métricas, no produce análisis ni informes. Esas actividades son posteriores y viven fuera de acá.
+Este repositorio es **solo para construir el pipeline**: un MVP de laboratorio, pensado para armarse en aproximadamente una semana entre 3 desarrolladores en paralelo (ver [`specs/roadmap.md`](specs/roadmap.md)). No ejecuta experimentos, no recolecta datos, no calcula métricas, no produce análisis ni informes. Esas actividades son posteriores y viven fuera de acá. La UI permite lanzar corridas y mirar sus registros, pero tampoco calcula métricas.
 
 Está terminado cuando alguien puede clonar el repositorio, configurar credenciales de un LLM en `.env` y correr `docker compose up --build` para obtener el pipeline corriendo sobre los tres grupos — sin escribir código adicional.
 
@@ -79,6 +80,7 @@ Está terminado cuando alguien puede clonar el repositorio, configurar credencia
 ├── engine/                # C-1: motor de validación STLC (Haskell)
 ├── pipeline/              # C-2 orquestador + C-3 baselines (Python)
 ├── corpus/                # reglas del experimento, una por archivo (docs/corpus.md)
+├── ui/                    # C-4: SPA React + Vite + Tailwind (docs/ui.md)
 ├── prototype/             # mockup de referencia, NO normativo (ver aviso en el archivo)
 ├── Dockerfile             # imagen única, una etapa por componente (ver docs/docker.md)
 └── docker-compose.yml     # entorno de laboratorio
@@ -95,7 +97,7 @@ Copy-Item .env.example .env
 docker compose up --build
 ```
 
-`docker compose up --build` levanta cuatro servicios:
+`docker compose up --build` levanta cinco servicios:
 
 | Servicio | Qué hace | Termina solo |
 |---|---|---|
@@ -103,6 +105,7 @@ docker compose up --build
 | `pipeline` | `mypy` + `pytest` del orquestador y los baselines | sí |
 | `sandbox` | ejecuta el código de los baselines, sin red ([`docs/sandbox.md`](docs/sandbox.md)) | no: cortar con Ctrl+C o `docker compose down` |
 | `run` | corre los tres grupos sobre [`contracts/fixtures/`](contracts/fixtures/) con el LLM real y escribe `out/<run_id>.jsonl` | sí |
+| `ui` | la UI en http://localhost:8000, solo accesible desde esta máquina ([`docs/ui.md`](docs/ui.md)) | no: cortar con Ctrl+C o `docker compose down` |
 
 `run` llama al LLM y **consume cuota** (15 casos × 3 grupos = 45 llamadas). Si `.env` no tiene credenciales, avisa y termina sin error, así `up` sigue sirviendo para correr los gates.
 
@@ -120,7 +123,10 @@ docker compose run --rm run python -m pipeline run --help
 docker compose run --rm pipeline python -m pipeline check-case /workspace/corpus --write
 docker compose run --rm run python -m pipeline run /workspace/corpus --repetitions 3
 
-# Apagar el sandbox
+# Solo la UI (y el sandbox que necesita): http://localhost:8000
+docker compose up --build ui
+
+# Apagar el sandbox y la UI
 docker compose down
 ```
 
