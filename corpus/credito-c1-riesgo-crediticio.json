@@ -1,0 +1,230 @@
+{
+  "case_id": "CRE-C1-RIESGO",
+  "category": 1,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Clasificar el riesgo crediticio de un cliente con una letra, revisando las condiciones en este orden y quedándose con la primera que se cumpla. Es \"E\" si tiene más de 2 deudas en mora. Si no, es \"D\" si su puntaje es menor que 500 o si tiene 2 deudas en mora. Si no, es \"C\" si su puntaje es menor que 650. Si no, es \"B\" si su puntaje es menor que 750 o si tiene 1 deuda en mora. En cualquier otro caso es \"A\".",
+  "gamma": {
+    "deudas_en_mora": "Int",
+    "puntaje": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "Var",
+          "name": "deudas_en_mora"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 2,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": "E",
+        "value_type": "String"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "puntaje"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 500,
+              "value_type": "Int"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "deudas_en_mora"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 2,
+              "value_type": "Int"
+            }
+          }
+        },
+        "then": {
+          "type": "Literal",
+          "value": "D",
+          "value_type": "String"
+        },
+        "else": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "<",
+            "left": {
+              "type": "Var",
+              "name": "puntaje"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 650,
+              "value_type": "Int"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": "C",
+            "value_type": "String"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "OR",
+              "left": {
+                "type": "BinaryOp",
+                "op": "<",
+                "left": {
+                  "type": "Var",
+                  "name": "puntaje"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 750,
+                  "value_type": "Int"
+                }
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "==",
+                "left": {
+                  "type": "Var",
+                  "name": "deudas_en_mora"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 1,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": "B",
+              "value_type": "String"
+            },
+            "else": {
+              "type": "Literal",
+              "value": "A",
+              "value_type": "String"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    puntaje, mora = data['puntaje'], data['deudas_en_mora']\n    if mora > 2:\n        return 'E'\n    if puntaje < 500 or mora == 2:\n        return 'D'\n    if puntaje < 650:\n        return 'C'\n    if puntaje < 750 or mora == 1:\n        return 'B'\n    return 'A'\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-TRES-MORAS",
+      "env": {
+        "puntaje": 800,
+        "deudas_en_mora": 3
+      },
+      "expected": {
+        "type": "String",
+        "value": "E"
+      }
+    },
+    {
+      "scenario_id": "V2-DOS-MORAS",
+      "env": {
+        "puntaje": 800,
+        "deudas_en_mora": 2
+      },
+      "expected": {
+        "type": "String",
+        "value": "D"
+      }
+    },
+    {
+      "scenario_id": "V3-PUNTAJE-499",
+      "env": {
+        "puntaje": 499,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "D"
+      }
+    },
+    {
+      "scenario_id": "V4-PUNTAJE-500",
+      "env": {
+        "puntaje": 500,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "C"
+      }
+    },
+    {
+      "scenario_id": "V5-PUNTAJE-650",
+      "env": {
+        "puntaje": 650,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "B"
+      }
+    },
+    {
+      "scenario_id": "V6-UNA-MORA-ALTO",
+      "env": {
+        "puntaje": 780,
+        "deudas_en_mora": 1
+      },
+      "expected": {
+        "type": "String",
+        "value": "B"
+      }
+    },
+    {
+      "scenario_id": "V7-PUNTAJE-750",
+      "env": {
+        "puntaje": 750,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "A"
+      }
+    },
+    {
+      "scenario_id": "V8-PUNTAJE-749",
+      "env": {
+        "puntaje": 749,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "String",
+        "value": "B"
+      }
+    }
+  ]
+}

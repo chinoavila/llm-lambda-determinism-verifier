@@ -1,0 +1,132 @@
+{
+  "case_id": "CRE-C3-MORA",
+  "category": 3,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Determinar si un cliente está en mora. Está en mora si tiene una cuota impaga con más de 30 días de atraso. Con exactamente 30 días todavía no está en mora. La excepción: si tiene un plan de pagos vigente, no está en mora aunque tenga más de 30 días de atraso.",
+  "gamma": {
+    "dias_atraso": "Int",
+    "plan_de_pagos": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "Var",
+          "name": "dias_atraso"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 30,
+          "value_type": "Int"
+        }
+      },
+      "right": {
+        "type": "UnaryOp",
+        "op": "NOT",
+        "operand": {
+          "type": "Var",
+          "name": "plan_de_pagos"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['dias_atraso'] > 30 and not data['plan_de_pagos']\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-30-DIAS",
+      "env": {
+        "dias_atraso": 30,
+        "plan_de_pagos": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V2-31-DIAS",
+      "env": {
+        "dias_atraso": 31,
+        "plan_de_pagos": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-PLAN-VIGENTE",
+      "env": {
+        "dias_atraso": 90,
+        "plan_de_pagos": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-AL-DIA",
+      "env": {
+        "dias_atraso": 0,
+        "plan_de_pagos": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-90-DIAS",
+      "env": {
+        "dias_atraso": 90,
+        "plan_de_pagos": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-PLAN-Y-AL-DIA",
+      "env": {
+        "dias_atraso": 5,
+        "plan_de_pagos": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-45-DIAS",
+      "env": {
+        "dias_atraso": 45,
+        "plan_de_pagos": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V8-120-DIAS",
+      "env": {
+        "dias_atraso": 120,
+        "plan_de_pagos": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

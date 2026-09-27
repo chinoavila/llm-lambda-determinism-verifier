@@ -1,0 +1,362 @@
+{
+  "case_id": "CRE-C1-PRESTAMO",
+  "category": 1,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Aprobar o rechazar una solicitud de préstamo personal. Se aprueba solo si se cumplen todas estas condiciones: el solicitante tiene entre 18 y 75 años, ambos incluidos; su ingreso mensual es de al menos 350000 pesos; trabaja en su empleo actual hace 12 meses o más; su puntaje crediticio es de 650 o más; no tiene deudas en mora; y la cuota mensual del préstamo no supera el 35 % de su ingreso mensual. Si el solicitante es cliente del banco con sueldo acreditado, alcanzan 6 meses de antigüedad laboral en lugar de 12; las demás condiciones no cambian.",
+  "gamma": {
+    "antiguedad_meses": "Int",
+    "cuota": "Int",
+    "edad": "Int",
+    "en_mora": "Bool",
+    "ingreso": "Int",
+    "puntaje": "Int",
+    "sueldo_acreditado": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "BinaryOp",
+              "op": "AND",
+              "left": {
+                "type": "BinaryOp",
+                "op": "AND",
+                "left": {
+                  "type": "BinaryOp",
+                  "op": ">=",
+                  "left": {
+                    "type": "Var",
+                    "name": "edad"
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 18,
+                    "value_type": "Int"
+                  }
+                },
+                "right": {
+                  "type": "BinaryOp",
+                  "op": "<=",
+                  "left": {
+                    "type": "Var",
+                    "name": "edad"
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 75,
+                    "value_type": "Int"
+                  }
+                }
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": ">=",
+                "left": {
+                  "type": "Var",
+                  "name": "ingreso"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 350000,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "antiguedad_meses"
+              },
+              "right": {
+                "type": "IfThenElse",
+                "condition": {
+                  "type": "Var",
+                  "name": "sueldo_acreditado"
+                },
+                "then": {
+                  "type": "Literal",
+                  "value": 6,
+                  "value_type": "Int"
+                },
+                "else": {
+                  "type": "Literal",
+                  "value": 12,
+                  "value_type": "Int"
+                }
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": ">=",
+            "left": {
+              "type": "Var",
+              "name": "puntaje"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 650,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "Var",
+            "name": "en_mora"
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "<=",
+        "left": {
+          "type": "Var",
+          "name": "cuota"
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "ingreso"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0.35,
+            "value_type": "Decimal"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    minimo = 6 if data['sueldo_acreditado'] else 12\n    return (\n        18 <= data['edad'] <= 75\n        and data['ingreso'] >= 350000\n        and data['antiguedad_meses'] >= minimo\n        and data['puntaje'] >= 650\n        and not data['en_mora']\n        and data['cuota'] <= data['ingreso'] * Decimal('0.35')\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-APROBADO",
+      "env": {
+        "edad": 35,
+        "ingreso": 500000,
+        "antiguedad_meses": 24,
+        "sueldo_acreditado": false,
+        "puntaje": 700,
+        "en_mora": false,
+        "cuota": 175000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-EDAD-17",
+      "env": {
+        "edad": 17,
+        "ingreso": 500000,
+        "antiguedad_meses": 24,
+        "sueldo_acreditado": false,
+        "puntaje": 700,
+        "en_mora": false,
+        "cuota": 100000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-EDAD-76",
+      "env": {
+        "edad": 76,
+        "ingreso": 500000,
+        "antiguedad_meses": 24,
+        "sueldo_acreditado": false,
+        "puntaje": 700,
+        "en_mora": false,
+        "cuota": 100000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-INGRESO-BAJO",
+      "env": {
+        "edad": 35,
+        "ingreso": 349999,
+        "antiguedad_meses": 24,
+        "sueldo_acreditado": false,
+        "puntaje": 700,
+        "en_mora": false,
+        "cuota": 100000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-ANTIGUEDAD-11",
+      "env": {
+        "edad": 35,
+        "ingreso": 500000,
+        "antiguedad_meses": 11,
+        "sueldo_acreditado": false,
+        "puntaje": 700,
+        "en_mora": false,
+        "cuota": 100000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-ACREDITADO-6-MESES",
+      "env": {
+        "edad": 35,
+        "ingreso": 500000,
+        "antiguedad_meses": 6,
+        "sueldo_acreditado": true,
+        "puntaje": 700,
+        "en_mora": false,
+        "cuota": 100000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V7-PUNTAJE-649",
+      "env": {
+        "edad": 35,
+        "ingreso": 500000,
+        "antiguedad_meses": 24,
+        "sueldo_acreditado": false,
+        "puntaje": 649,
+        "en_mora": false,
+        "cuota": 100000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-EN-MORA",
+      "env": {
+        "edad": 35,
+        "ingreso": 500000,
+        "antiguedad_meses": 24,
+        "sueldo_acreditado": false,
+        "puntaje": 700,
+        "en_mora": true,
+        "cuota": 100000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V9-CUOTA-ALTA",
+      "env": {
+        "edad": 35,
+        "ingreso": 500000,
+        "antiguedad_meses": 24,
+        "sueldo_acreditado": false,
+        "puntaje": 700,
+        "en_mora": false,
+        "cuota": 175001
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V10-LIMITES",
+      "env": {
+        "edad": 75,
+        "ingreso": 350000,
+        "antiguedad_meses": 12,
+        "sueldo_acreditado": false,
+        "puntaje": 650,
+        "en_mora": false,
+        "cuota": 122500
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V11-JOVEN-ACREDITADO",
+      "env": {
+        "edad": 18,
+        "ingreso": 420000,
+        "antiguedad_meses": 8,
+        "sueldo_acreditado": true,
+        "puntaje": 690,
+        "en_mora": false,
+        "cuota": 90000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V12-VETERANO",
+      "env": {
+        "edad": 58,
+        "ingreso": 900000,
+        "antiguedad_meses": 120,
+        "sueldo_acreditado": true,
+        "puntaje": 810,
+        "en_mora": false,
+        "cuota": 200000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V13-INGRESO-ALTO",
+      "env": {
+        "edad": 45,
+        "ingreso": 1200000,
+        "antiguedad_meses": 36,
+        "sueldo_acreditado": false,
+        "puntaje": 760,
+        "en_mora": false,
+        "cuota": 300000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

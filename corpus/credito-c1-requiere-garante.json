@@ -1,0 +1,275 @@
+{
+  "case_id": "CRE-C1-GARANTE",
+  "category": 1,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Determinar si un préstamo requiere garante. Lo requiere si se cumple al menos una de estas condiciones: el solicitante tiene menos de 25 años; su puntaje es menor que 680; el monto pedido supera 6 veces su ingreso mensual; trabaja como \"informal\" o \"temporario\" (el tipo de empleo también puede ser \"dependencia\", \"monotributista\" o \"autonomo\"); o tuvo algún rechazo de crédito en los últimos 12 meses. La excepción: quien ofrece una garantía prendaria (un auto a nombre del solicitante) nunca necesita garante.",
+  "gamma": {
+    "edad": "Int",
+    "empleo": "String",
+    "garantia_prendaria": "Bool",
+    "ingreso": "Int",
+    "monto": "Int",
+    "puntaje": "Int",
+    "rechazos_12_meses": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "UnaryOp",
+        "op": "NOT",
+        "operand": {
+          "type": "Var",
+          "name": "garantia_prendaria"
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "BinaryOp",
+            "op": "OR",
+            "left": {
+              "type": "BinaryOp",
+              "op": "OR",
+              "left": {
+                "type": "BinaryOp",
+                "op": "<",
+                "left": {
+                  "type": "Var",
+                  "name": "edad"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 25,
+                  "value_type": "Int"
+                }
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "<",
+                "left": {
+                  "type": "Var",
+                  "name": "puntaje"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 680,
+                  "value_type": "Int"
+                }
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">",
+              "left": {
+                "type": "Var",
+                "name": "monto"
+              },
+              "right": {
+                "type": "BinaryOp",
+                "op": "*",
+                "left": {
+                  "type": "Var",
+                  "name": "ingreso"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": 6,
+                  "value_type": "Int"
+                }
+              }
+            }
+          },
+          "right": {
+            "type": "In",
+            "value": {
+              "type": "Var",
+              "name": "empleo"
+            },
+            "options": [
+              {
+                "type": "Literal",
+                "value": "informal",
+                "value_type": "String"
+              },
+              {
+                "type": "Literal",
+                "value": "temporario",
+                "value_type": "String"
+              }
+            ]
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": ">",
+          "left": {
+            "type": "Var",
+            "name": "rechazos_12_meses"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    if data['garantia_prendaria']:\n        return False\n    return (\n        data['edad'] < 25\n        or data['puntaje'] < 680\n        or data['monto'] > data['ingreso'] * 6\n        or data['empleo'] in ('informal', 'temporario')\n        or data['rechazos_12_meses'] > 0\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SIN-RIESGO",
+      "env": {
+        "edad": 40,
+        "puntaje": 720,
+        "monto": 3000000,
+        "ingreso": 600000,
+        "empleo": "dependencia",
+        "rechazos_12_meses": 0,
+        "garantia_prendaria": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V2-EDAD-24",
+      "env": {
+        "edad": 24,
+        "puntaje": 720,
+        "monto": 3000000,
+        "ingreso": 600000,
+        "empleo": "dependencia",
+        "rechazos_12_meses": 0,
+        "garantia_prendaria": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-PUNTAJE-679",
+      "env": {
+        "edad": 40,
+        "puntaje": 679,
+        "monto": 3000000,
+        "ingreso": 600000,
+        "empleo": "dependencia",
+        "rechazos_12_meses": 0,
+        "garantia_prendaria": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-MONTO-6-VECES",
+      "env": {
+        "edad": 40,
+        "puntaje": 720,
+        "monto": 3600000,
+        "ingreso": 600000,
+        "empleo": "autonomo",
+        "rechazos_12_meses": 0,
+        "garantia_prendaria": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-MONTO-MAS-DE-6",
+      "env": {
+        "edad": 40,
+        "puntaje": 720,
+        "monto": 3600001,
+        "ingreso": 600000,
+        "empleo": "dependencia",
+        "rechazos_12_meses": 0,
+        "garantia_prendaria": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-TEMPORARIO",
+      "env": {
+        "edad": 40,
+        "puntaje": 720,
+        "monto": 1000000,
+        "ingreso": 600000,
+        "empleo": "temporario",
+        "rechazos_12_meses": 0,
+        "garantia_prendaria": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V7-RECHAZO",
+      "env": {
+        "edad": 40,
+        "puntaje": 720,
+        "monto": 1000000,
+        "ingreso": 600000,
+        "empleo": "dependencia",
+        "rechazos_12_meses": 1,
+        "garantia_prendaria": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V8-PRENDARIA",
+      "env": {
+        "edad": 22,
+        "puntaje": 600,
+        "monto": 9000000,
+        "ingreso": 600000,
+        "empleo": "informal",
+        "rechazos_12_meses": 2,
+        "garantia_prendaria": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V9-MONOTRIBUTO-OK",
+      "env": {
+        "edad": 25,
+        "puntaje": 680,
+        "monto": 2000000,
+        "ingreso": 500000,
+        "empleo": "monotributista",
+        "rechazos_12_meses": 0,
+        "garantia_prendaria": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

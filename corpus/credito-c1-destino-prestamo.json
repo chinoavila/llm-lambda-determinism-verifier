@@ -1,0 +1,238 @@
+{
+  "case_id": "CRE-C1-DESTINO",
+  "category": 1,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Determinar si el destino y el monto de un préstamo están permitidos. Los destinos admitidos son \"auto\", \"moto\", \"electrodomesticos\", \"refaccion\", \"estudios\" y \"libre\"; cualquier otro destino, como \"viaje\" o \"apuestas\", no se admite. Además, cada destino tiene un monto máximo: 30000000 pesos para auto; 8000000 para moto y para refaccion; 3000000 para electrodomesticos y para estudios; y 2000000 para libre. El préstamo está permitido si el destino se admite y el monto no supera su máximo.",
+  "gamma": {
+    "destino": "String",
+    "monto": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "In",
+        "value": {
+          "type": "Var",
+          "name": "destino"
+        },
+        "options": [
+          {
+            "type": "Literal",
+            "value": "auto",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "moto",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "electrodomesticos",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "refaccion",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "estudios",
+            "value_type": "String"
+          },
+          {
+            "type": "Literal",
+            "value": "libre",
+            "value_type": "String"
+          }
+        ]
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "<=",
+        "left": {
+          "type": "Var",
+          "name": "monto"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "destino"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "auto",
+              "value_type": "String"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 30000000,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "In",
+              "value": {
+                "type": "Var",
+                "name": "destino"
+              },
+              "options": [
+                {
+                  "type": "Literal",
+                  "value": "moto",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "refaccion",
+                  "value_type": "String"
+                }
+              ]
+            },
+            "then": {
+              "type": "Literal",
+              "value": 8000000,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "In",
+                "value": {
+                  "type": "Var",
+                  "name": "destino"
+                },
+                "options": [
+                  {
+                    "type": "Literal",
+                    "value": "electrodomesticos",
+                    "value_type": "String"
+                  },
+                  {
+                    "type": "Literal",
+                    "value": "estudios",
+                    "value_type": "String"
+                  }
+                ]
+              },
+              "then": {
+                "type": "Literal",
+                "value": 3000000,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "Literal",
+                "value": 2000000,
+                "value_type": "Int"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "MAXIMOS = {'auto': 30000000, 'moto': 8000000, 'refaccion': 8000000,\n           'electrodomesticos': 3000000, 'estudios': 3000000, 'libre': 2000000}\n\ndef evaluate_rule(data):\n    maximo = MAXIMOS.get(data['destino'])\n    return maximo is not None and data['monto'] <= maximo\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-AUTO-TOPE",
+      "env": {
+        "destino": "auto",
+        "monto": 30000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-AUTO-EXCEDE",
+      "env": {
+        "destino": "auto",
+        "monto": 30000001
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-MOTO",
+      "env": {
+        "destino": "moto",
+        "monto": 5000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-REFACCION-EXCEDE",
+      "env": {
+        "destino": "refaccion",
+        "monto": 9000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-ESTUDIOS-TOPE",
+      "env": {
+        "destino": "estudios",
+        "monto": 3000000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-LIBRE-EXCEDE",
+      "env": {
+        "destino": "libre",
+        "monto": 2500000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-VIAJE",
+      "env": {
+        "destino": "viaje",
+        "monto": 100000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-ELECTRO",
+      "env": {
+        "destino": "electrodomesticos",
+        "monto": 1500000
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

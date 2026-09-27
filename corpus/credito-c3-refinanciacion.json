@@ -1,0 +1,110 @@
+{
+  "case_id": "CRE-C3-REFINANCIACION",
+  "category": 3,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Determinar si un cliente puede refinanciar su deuda. Puede, salvo en dos casos: si ya refinanció en los últimos 12 meses (es decir, si su última refinanciación fue hace menos de 12 meses), o si tiene una causa judicial abierta con el banco. Un cliente que nunca refinanció se informa con 999 meses desde la última refinanciación.",
+  "gamma": {
+    "causa_judicial": "Bool",
+    "meses_desde_refinanciacion": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "UnaryOp",
+      "op": "NOT",
+      "operand": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "BinaryOp",
+          "op": "<",
+          "left": {
+            "type": "Var",
+            "name": "meses_desde_refinanciacion"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 12,
+            "value_type": "Int"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "causa_judicial"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return not (data['meses_desde_refinanciacion'] < 12 or data['causa_judicial'])\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-NUNCA",
+      "env": {
+        "meses_desde_refinanciacion": 999,
+        "causa_judicial": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-HACE-11",
+      "env": {
+        "meses_desde_refinanciacion": 11,
+        "causa_judicial": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-HACE-12",
+      "env": {
+        "meses_desde_refinanciacion": 12,
+        "causa_judicial": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-JUDICIAL",
+      "env": {
+        "meses_desde_refinanciacion": 999,
+        "causa_judicial": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-JUDICIAL-Y-RECIENTE",
+      "env": {
+        "meses_desde_refinanciacion": 3,
+        "causa_judicial": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-HACE-DOS-ANIOS",
+      "env": {
+        "meses_desde_refinanciacion": 24,
+        "causa_judicial": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

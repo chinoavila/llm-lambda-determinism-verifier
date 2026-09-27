@@ -1,0 +1,127 @@
+{
+  "case_id": "CRE-C2-PUNITORIO",
+  "category": 2,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Calcular el interés punitorio de una cuota vencida, en pesos con centavos. Es el saldo impago (con centavos) por una tasa diaria de 0.0005 por la cantidad de días de atraso (entero). Si los días de atraso son 0 o menos, el punitorio es 0.0. La categoría de riesgo del cliente no modifica la tasa.",
+  "gamma": {
+    "dias_atraso": "Int",
+    "saldo": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "Var",
+          "name": "dias_atraso"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 0,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "saldo"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0.0005,
+            "value_type": "Decimal"
+          }
+        },
+        "right": {
+          "type": "Var",
+          "name": "dias_atraso"
+        }
+      },
+      "else": {
+        "type": "Literal",
+        "value": 0.0,
+        "value_type": "Decimal"
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    if data['dias_atraso'] <= 0:\n        return Decimal('0')\n    return data['saldo'] * Decimal('0.0005') * data['dias_atraso']\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-DIEZ-DIAS",
+      "env": {
+        "saldo": 100000.5,
+        "dias_atraso": 10
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "500.0025"
+      }
+    },
+    {
+      "scenario_id": "V2-SIN-ATRASO",
+      "env": {
+        "saldo": 100000.5,
+        "dias_atraso": 0
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V3-ADELANTADO",
+      "env": {
+        "saldo": 50000.25,
+        "dias_atraso": -3
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "0"
+      }
+    },
+    {
+      "scenario_id": "V4-UN-DIA",
+      "env": {
+        "saldo": 20000.5,
+        "dias_atraso": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "10.00025"
+      }
+    },
+    {
+      "scenario_id": "V5-TREINTA-DIAS",
+      "env": {
+        "saldo": 250000.75,
+        "dias_atraso": 30
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "3750.01125"
+      }
+    },
+    {
+      "scenario_id": "V6-CENTAVOS",
+      "env": {
+        "saldo": 999.99,
+        "dias_atraso": 7
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "3.499965"
+      }
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "case_id": "CRE-C3-CONDONACION",
+  "category": 3,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Determinar si se le condonan los intereses del mes a un cliente con tarjeta. Se le condonan si paga el total del resumen hasta el día 10 del mes, inclusive. Si paga el día 11 o después, o si paga menos que el total, no hay condonación. El día de pago va de 1 a 31.",
+  "gamma": {
+    "dia_de_pago": "Int",
+    "pago_total": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "Var",
+        "name": "pago_total"
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "<=",
+        "left": {
+          "type": "Var",
+          "name": "dia_de_pago"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 10,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['pago_total'] and data['dia_de_pago'] <= 10\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-DIA-10",
+      "env": {
+        "dia_de_pago": 10,
+        "pago_total": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-DIA-11",
+      "env": {
+        "dia_de_pago": 11,
+        "pago_total": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-PAGO-PARCIAL",
+      "env": {
+        "dia_de_pago": 5,
+        "pago_total": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-DIA-1",
+      "env": {
+        "dia_de_pago": 1,
+        "pago_total": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V5-TARDE-Y-PARCIAL",
+      "env": {
+        "dia_de_pago": 25,
+        "pago_total": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-DIA-9",
+      "env": {
+        "dia_de_pago": 9,
+        "pago_total": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

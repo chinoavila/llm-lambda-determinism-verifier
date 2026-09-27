@@ -1,0 +1,324 @@
+{
+  "case_id": "CRE-C1-HIPOTECA",
+  "category": 1,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Aprobar o rechazar un crédito hipotecario. Se aprueba solo si se cumplen todas estas condiciones: el monto pedido no supera el 80 % del valor de la vivienda; la suma de la cuota nueva y las cuotas de otras deudas no supera el 40 % del ingreso mensual del hogar; el solicitante tiene empleo en relación de dependencia o es \"monotributista\" o \"autonomo\" con al menos 24 meses de actividad; y la vivienda es la primera vivienda del solicitante o el plazo es de 20 años o menos. El tipo de empleo viene como \"dependencia\", \"monotributista\", \"autonomo\" o \"informal\".",
+  "gamma": {
+    "cuota_nueva": "Int",
+    "cuotas_otras": "Int",
+    "empleo": "String",
+    "ingreso_hogar": "Int",
+    "meses_actividad": "Int",
+    "monto": "Int",
+    "plazo_anios": "Int",
+    "primera_vivienda": "Bool",
+    "valor_vivienda": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "BinaryOp",
+          "op": "AND",
+          "left": {
+            "type": "BinaryOp",
+            "op": "<=",
+            "left": {
+              "type": "Var",
+              "name": "monto"
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "*",
+              "left": {
+                "type": "Var",
+                "name": "valor_vivienda"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 0.8,
+                "value_type": "Decimal"
+              }
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "<=",
+            "left": {
+              "type": "BinaryOp",
+              "op": "+",
+              "left": {
+                "type": "Var",
+                "name": "cuota_nueva"
+              },
+              "right": {
+                "type": "Var",
+                "name": "cuotas_otras"
+              }
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": "*",
+              "left": {
+                "type": "Var",
+                "name": "ingreso_hogar"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 0.4,
+                "value_type": "Decimal"
+              }
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "OR",
+          "left": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "empleo"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "dependencia",
+              "value_type": "String"
+            }
+          },
+          "right": {
+            "type": "BinaryOp",
+            "op": "AND",
+            "left": {
+              "type": "In",
+              "value": {
+                "type": "Var",
+                "name": "empleo"
+              },
+              "options": [
+                {
+                  "type": "Literal",
+                  "value": "monotributista",
+                  "value_type": "String"
+                },
+                {
+                  "type": "Literal",
+                  "value": "autonomo",
+                  "value_type": "String"
+                }
+              ]
+            },
+            "right": {
+              "type": "BinaryOp",
+              "op": ">=",
+              "left": {
+                "type": "Var",
+                "name": "meses_actividad"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 24,
+                "value_type": "Int"
+              }
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "Var",
+          "name": "primera_vivienda"
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "<=",
+          "left": {
+            "type": "Var",
+            "name": "plazo_anios"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 20,
+            "value_type": "Int"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    empleo_ok = data['empleo'] == 'dependencia' or (\n        data['empleo'] in ('monotributista', 'autonomo') and data['meses_actividad'] >= 24\n    )\n    return (\n        data['monto'] <= data['valor_vivienda'] * Decimal('0.8')\n        and data['cuota_nueva'] + data['cuotas_otras'] <= data['ingreso_hogar'] * Decimal('0.4')\n        and empleo_ok\n        and (data['primera_vivienda'] or data['plazo_anios'] <= 20)\n    )\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-APROBADA",
+      "env": {
+        "monto": 80000000,
+        "valor_vivienda": 100000000,
+        "cuota_nueva": 600000,
+        "cuotas_otras": 200000,
+        "ingreso_hogar": 2000000,
+        "empleo": "dependencia",
+        "meses_actividad": 0,
+        "primera_vivienda": true,
+        "plazo_anios": 30
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-LTV-ALTO",
+      "env": {
+        "monto": 80000001,
+        "valor_vivienda": 100000000,
+        "cuota_nueva": 600000,
+        "cuotas_otras": 0,
+        "ingreso_hogar": 2000000,
+        "empleo": "dependencia",
+        "meses_actividad": 0,
+        "primera_vivienda": true,
+        "plazo_anios": 20
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-DEUDA-ALTA",
+      "env": {
+        "monto": 50000000,
+        "valor_vivienda": 100000000,
+        "cuota_nueva": 600000,
+        "cuotas_otras": 200001,
+        "ingreso_hogar": 2000000,
+        "empleo": "dependencia",
+        "meses_actividad": 0,
+        "primera_vivienda": true,
+        "plazo_anios": 20
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-AUTONOMO-24",
+      "env": {
+        "monto": 50000000,
+        "valor_vivienda": 100000000,
+        "cuota_nueva": 500000,
+        "cuotas_otras": 0,
+        "ingreso_hogar": 2000000,
+        "empleo": "autonomo",
+        "meses_actividad": 24,
+        "primera_vivienda": false,
+        "plazo_anios": 15
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V5-MONOTRIBUTO-23",
+      "env": {
+        "monto": 50000000,
+        "valor_vivienda": 100000000,
+        "cuota_nueva": 500000,
+        "cuotas_otras": 0,
+        "ingreso_hogar": 2000000,
+        "empleo": "monotributista",
+        "meses_actividad": 23,
+        "primera_vivienda": true,
+        "plazo_anios": 15
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-INFORMAL",
+      "env": {
+        "monto": 50000000,
+        "valor_vivienda": 100000000,
+        "cuota_nueva": 500000,
+        "cuotas_otras": 0,
+        "ingreso_hogar": 2000000,
+        "empleo": "informal",
+        "meses_actividad": 60,
+        "primera_vivienda": true,
+        "plazo_anios": 15
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V7-SEGUNDA-VIVIENDA-25-ANIOS",
+      "env": {
+        "monto": 50000000,
+        "valor_vivienda": 100000000,
+        "cuota_nueva": 500000,
+        "cuotas_otras": 0,
+        "ingreso_hogar": 2000000,
+        "empleo": "dependencia",
+        "meses_actividad": 0,
+        "primera_vivienda": false,
+        "plazo_anios": 25
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V8-SEGUNDA-VIVIENDA-20-ANIOS",
+      "env": {
+        "monto": 50000000,
+        "valor_vivienda": 100000000,
+        "cuota_nueva": 500000,
+        "cuotas_otras": 0,
+        "ingreso_hogar": 2000000,
+        "empleo": "dependencia",
+        "meses_actividad": 0,
+        "primera_vivienda": false,
+        "plazo_anios": 20
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V9-MONOTRIBUTO-36",
+      "env": {
+        "monto": 30000000,
+        "valor_vivienda": 60000000,
+        "cuota_nueva": 300000,
+        "cuotas_otras": 100000,
+        "ingreso_hogar": 1200000,
+        "empleo": "monotributista",
+        "meses_actividad": 36,
+        "primera_vivienda": true,
+        "plazo_anios": 25
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

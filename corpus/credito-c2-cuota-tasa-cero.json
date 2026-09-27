@@ -1,0 +1,112 @@
+{
+  "case_id": "CRE-C2-CUOTA",
+  "category": 2,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Calcular la cuota mensual de una compra en cuotas sin interés, en pesos con centavos. Se suma al monto de la compra (con centavos) una comisión fija de otorgamiento (en pesos enteros) y el total se divide por la cantidad de cuotas. El resultado es exacto, sin redondear. La tasa de interés es cero, así que no interviene en la cuenta.",
+  "gamma": {
+    "comision": "Int",
+    "cuotas": "Int",
+    "monto": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "/",
+      "left": {
+        "type": "BinaryOp",
+        "op": "+",
+        "left": {
+          "type": "Var",
+          "name": "monto"
+        },
+        "right": {
+          "type": "Var",
+          "name": "comision"
+        }
+      },
+      "right": {
+        "type": "Var",
+        "name": "cuotas"
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return (data['monto'] + data['comision']) / data['cuotas']\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-TRES-CUOTAS",
+      "env": {
+        "monto": 299999.5,
+        "comision": 500,
+        "cuotas": 3
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "100166.5"
+      }
+    },
+    {
+      "scenario_id": "V2-DOCE-CUOTAS",
+      "env": {
+        "monto": 1200000.75,
+        "comision": 0,
+        "cuotas": 12
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "100000.0625"
+      }
+    },
+    {
+      "scenario_id": "V3-UNA-CUOTA",
+      "env": {
+        "monto": 15000.5,
+        "comision": 250,
+        "cuotas": 1
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "15250.5"
+      }
+    },
+    {
+      "scenario_id": "V4-SEIS-CUOTAS",
+      "env": {
+        "monto": 60000.25,
+        "comision": 1000,
+        "cuotas": 6
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "10166.70833333333333333333333"
+      }
+    },
+    {
+      "scenario_id": "V5-DIVISION-EXACTA",
+      "env": {
+        "monto": 99999.5,
+        "comision": 0,
+        "cuotas": 2
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "49999.75"
+      }
+    },
+    {
+      "scenario_id": "V6-DIECIOCHO",
+      "env": {
+        "monto": 500000.5,
+        "comision": 1500,
+        "cuotas": 18
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "27861.13888888888888888888889"
+      }
+    }
+  ]
+}

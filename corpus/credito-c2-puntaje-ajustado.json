@@ -1,0 +1,179 @@
+{
+  "case_id": "CRE-C2-PUNTAJE",
+  "category": 2,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Calcular el puntaje crediticio ajustado de un cliente, como entero. Se parte del puntaje del buró, se suman 20 puntos si tiene una hipoteca al día, se suman 10 puntos por cada año como cliente del banco (hasta 5 años: más de 5 años suman lo mismo que 5) y se restan 50 puntos por cada deuda en mora. El nivel de riesgo del cliente se calcula después, a partir de este puntaje, y no interviene acá.",
+  "gamma": {
+    "anios_cliente": "Int",
+    "deudas_en_mora": "Int",
+    "hipoteca_al_dia": "Bool",
+    "puntaje_buro": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "-",
+      "left": {
+        "type": "BinaryOp",
+        "op": "+",
+        "left": {
+          "type": "BinaryOp",
+          "op": "+",
+          "left": {
+            "type": "Var",
+            "name": "puntaje_buro"
+          },
+          "right": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "Var",
+              "name": "hipoteca_al_dia"
+            },
+            "then": {
+              "type": "Literal",
+              "value": 20,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 0,
+              "value_type": "Int"
+            }
+          }
+        },
+        "right": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": ">",
+              "left": {
+                "type": "Var",
+                "name": "anios_cliente"
+              },
+              "right": {
+                "type": "Literal",
+                "value": 5,
+                "value_type": "Int"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 5,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Var",
+              "name": "anios_cliente"
+            }
+          },
+          "right": {
+            "type": "Literal",
+            "value": 10,
+            "value_type": "Int"
+          }
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "deudas_en_mora"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 50,
+          "value_type": "Int"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    puntaje = data['puntaje_buro']\n    if data['hipoteca_al_dia']:\n        puntaje += 20\n    puntaje += min(data['anios_cliente'], 5) * 10\n    return puntaje - data['deudas_en_mora'] * 50\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-BASE",
+      "env": {
+        "puntaje_buro": 650,
+        "hipoteca_al_dia": false,
+        "anios_cliente": 0,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 650
+      }
+    },
+    {
+      "scenario_id": "V2-HIPOTECA",
+      "env": {
+        "puntaje_buro": 650,
+        "hipoteca_al_dia": true,
+        "anios_cliente": 0,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 670
+      }
+    },
+    {
+      "scenario_id": "V3-CINCO-ANIOS",
+      "env": {
+        "puntaje_buro": 650,
+        "hipoteca_al_dia": false,
+        "anios_cliente": 5,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 700
+      }
+    },
+    {
+      "scenario_id": "V4-DIEZ-ANIOS",
+      "env": {
+        "puntaje_buro": 650,
+        "hipoteca_al_dia": false,
+        "anios_cliente": 10,
+        "deudas_en_mora": 0
+      },
+      "expected": {
+        "type": "Int",
+        "value": 700
+      }
+    },
+    {
+      "scenario_id": "V5-MORAS",
+      "env": {
+        "puntaje_buro": 700,
+        "hipoteca_al_dia": true,
+        "anios_cliente": 3,
+        "deudas_en_mora": 2
+      },
+      "expected": {
+        "type": "Int",
+        "value": 650
+      }
+    },
+    {
+      "scenario_id": "V6-TODO",
+      "env": {
+        "puntaje_buro": 580,
+        "hipoteca_al_dia": true,
+        "anios_cliente": 7,
+        "deudas_en_mora": 1
+      },
+      "expected": {
+        "type": "Int",
+        "value": 600
+      }
+    }
+  ]
+}

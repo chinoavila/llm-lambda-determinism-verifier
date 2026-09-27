@@ -1,0 +1,212 @@
+{
+  "case_id": "CRE-C2-LIMITE",
+  "category": 2,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Calcular el límite de compra de una tarjeta, en pesos con centavos. Es el ingreso mensual (con centavos) por un multiplicador según la categoría del cliente: 4 para \"premium\", 2 para \"estandar\" y 1 para \"inicial\". El límite nunca supera 5000000.00 pesos: si la cuenta da más, el límite es 5000000.00. El puntaje crediticio ya está reflejado en la categoría.",
+  "gamma": {
+    "categoria": "String",
+    "ingreso": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": ">",
+        "left": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "ingreso"
+          },
+          "right": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "categoria"
+              },
+              "right": {
+                "type": "Literal",
+                "value": "premium",
+                "value_type": "String"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 4,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "IfThenElse",
+              "condition": {
+                "type": "BinaryOp",
+                "op": "==",
+                "left": {
+                  "type": "Var",
+                  "name": "categoria"
+                },
+                "right": {
+                  "type": "Literal",
+                  "value": "estandar",
+                  "value_type": "String"
+                }
+              },
+              "then": {
+                "type": "Literal",
+                "value": 2,
+                "value_type": "Int"
+              },
+              "else": {
+                "type": "Literal",
+                "value": 1,
+                "value_type": "Int"
+              }
+            }
+          }
+        },
+        "right": {
+          "type": "Literal",
+          "value": 5000000,
+          "value_type": "Int"
+        }
+      },
+      "then": {
+        "type": "Literal",
+        "value": 5000000.0,
+        "value_type": "Decimal"
+      },
+      "else": {
+        "type": "BinaryOp",
+        "op": "*",
+        "left": {
+          "type": "Var",
+          "name": "ingreso"
+        },
+        "right": {
+          "type": "IfThenElse",
+          "condition": {
+            "type": "BinaryOp",
+            "op": "==",
+            "left": {
+              "type": "Var",
+              "name": "categoria"
+            },
+            "right": {
+              "type": "Literal",
+              "value": "premium",
+              "value_type": "String"
+            }
+          },
+          "then": {
+            "type": "Literal",
+            "value": 4,
+            "value_type": "Int"
+          },
+          "else": {
+            "type": "IfThenElse",
+            "condition": {
+              "type": "BinaryOp",
+              "op": "==",
+              "left": {
+                "type": "Var",
+                "name": "categoria"
+              },
+              "right": {
+                "type": "Literal",
+                "value": "estandar",
+                "value_type": "String"
+              }
+            },
+            "then": {
+              "type": "Literal",
+              "value": 2,
+              "value_type": "Int"
+            },
+            "else": {
+              "type": "Literal",
+              "value": 1,
+              "value_type": "Int"
+            }
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\nMULTIPLICADOR = {'premium': 4, 'estandar': 2}\n\ndef evaluate_rule(data):\n    limite = data['ingreso'] * MULTIPLICADOR.get(data['categoria'], 1)\n    return min(limite, Decimal('5000000.00'))\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-PREMIUM",
+      "env": {
+        "categoria": "premium",
+        "ingreso": 800000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "3200002"
+      }
+    },
+    {
+      "scenario_id": "V2-PREMIUM-TOPE",
+      "env": {
+        "categoria": "premium",
+        "ingreso": 1250000.25
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "5000000"
+      }
+    },
+    {
+      "scenario_id": "V3-ESTANDAR",
+      "env": {
+        "categoria": "estandar",
+        "ingreso": 650000.75
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1300001.5"
+      }
+    },
+    {
+      "scenario_id": "V4-INICIAL",
+      "env": {
+        "categoria": "inicial",
+        "ingreso": 400000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "400000.5"
+      }
+    },
+    {
+      "scenario_id": "V5-ESTANDAR-TOPE",
+      "env": {
+        "categoria": "estandar",
+        "ingreso": 2600000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "5000000"
+      }
+    },
+    {
+      "scenario_id": "V6-JUSTO-DEBAJO",
+      "env": {
+        "categoria": "premium",
+        "ingreso": 1249999.75
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "4999999"
+      }
+    }
+  ]
+}

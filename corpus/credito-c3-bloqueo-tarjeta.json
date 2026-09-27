@@ -1,0 +1,125 @@
+{
+  "case_id": "CRE-C3-BLOQUEO",
+  "category": 3,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Determinar si se bloquea una tarjeta por seguridad. Se bloquea si hubo 3 o más intentos fallidos de PIN en el día, o si se intenta una compra en un país distinto del habitual y el cliente no avisó que viajaba. Una compra en otro país con aviso de viaje no provoca bloqueo.",
+  "gamma": {
+    "aviso_de_viaje": "Bool",
+    "compra_en_otro_pais": "Bool",
+    "intentos_fallidos": "Int"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "OR",
+      "left": {
+        "type": "BinaryOp",
+        "op": ">=",
+        "left": {
+          "type": "Var",
+          "name": "intentos_fallidos"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 3,
+          "value_type": "Int"
+        }
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "AND",
+        "left": {
+          "type": "Var",
+          "name": "compra_en_otro_pais"
+        },
+        "right": {
+          "type": "UnaryOp",
+          "op": "NOT",
+          "operand": {
+            "type": "Var",
+            "name": "aviso_de_viaje"
+          }
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['intentos_fallidos'] >= 3 or (data['compra_en_otro_pais'] and not data['aviso_de_viaje'])\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-TRES-INTENTOS",
+      "env": {
+        "intentos_fallidos": 3,
+        "compra_en_otro_pais": false,
+        "aviso_de_viaje": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-DOS-INTENTOS",
+      "env": {
+        "intentos_fallidos": 2,
+        "compra_en_otro_pais": false,
+        "aviso_de_viaje": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V3-EXTERIOR-SIN-AVISO",
+      "env": {
+        "intentos_fallidos": 0,
+        "compra_en_otro_pais": true,
+        "aviso_de_viaje": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V4-EXTERIOR-CON-AVISO",
+      "env": {
+        "intentos_fallidos": 0,
+        "compra_en_otro_pais": true,
+        "aviso_de_viaje": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-AVISO-Y-INTENTOS",
+      "env": {
+        "intentos_fallidos": 4,
+        "compra_en_otro_pais": true,
+        "aviso_de_viaje": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V6-NORMAL",
+      "env": {
+        "intentos_fallidos": 1,
+        "compra_en_otro_pais": false,
+        "aviso_de_viaje": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "case_id": "CRE-C3-BONIFICACION",
+  "category": 3,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Determinar si un préstamo recibe bonificación de tasa. La recibe el cliente que tiene el sueldo acreditado en el banco y, además, cumple al menos una de estas dos: contrató el seguro de vida del banco o adhirió el pago de las cuotas al débito automático. Sin sueldo acreditado no hay bonificación, aunque tenga el seguro y el débito.",
+  "gamma": {
+    "debito_automatico": "Bool",
+    "seguro_de_vida": "Bool",
+    "sueldo_acreditado": "Bool"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "BinaryOp",
+      "op": "AND",
+      "left": {
+        "type": "Var",
+        "name": "sueldo_acreditado"
+      },
+      "right": {
+        "type": "BinaryOp",
+        "op": "OR",
+        "left": {
+          "type": "Var",
+          "name": "seguro_de_vida"
+        },
+        "right": {
+          "type": "Var",
+          "name": "debito_automatico"
+        }
+      }
+    }
+  },
+  "canonical_python": "def evaluate_rule(data):\n    return data['sueldo_acreditado'] and (data['seguro_de_vida'] or data['debito_automatico'])\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SUELDO-Y-SEGURO",
+      "env": {
+        "sueldo_acreditado": true,
+        "seguro_de_vida": true,
+        "debito_automatico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V2-SUELDO-Y-DEBITO",
+      "env": {
+        "sueldo_acreditado": true,
+        "seguro_de_vida": false,
+        "debito_automatico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "scenario_id": "V3-SOLO-SUELDO",
+      "env": {
+        "sueldo_acreditado": true,
+        "seguro_de_vida": false,
+        "debito_automatico": false
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V4-SIN-SUELDO-CON-TODO",
+      "env": {
+        "sueldo_acreditado": false,
+        "seguro_de_vida": true,
+        "debito_automatico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V5-SIN-SUELDO-CON-DEBITO",
+      "env": {
+        "sueldo_acreditado": false,
+        "seguro_de_vida": false,
+        "debito_automatico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "scenario_id": "V6-TODO",
+      "env": {
+        "sueldo_acreditado": true,
+        "seguro_de_vida": true,
+        "debito_automatico": true
+      },
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    }
+  ]
+}

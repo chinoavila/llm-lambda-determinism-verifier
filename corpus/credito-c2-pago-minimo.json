@@ -1,0 +1,141 @@
+{
+  "case_id": "CRE-C2-PAGO-MINIMO",
+  "category": 2,
+  "domain": "credito",
+  "source": {
+    "kind": "original"
+  },
+  "generated_by": "corpus/tools/credito.py",
+  "description": "Calcular el pago mínimo del resumen de una tarjeta, en pesos con centavos. Es el 5 % del saldo, pero nunca menos de 500.00 pesos. La excepción: si el saldo total es menor que 500.00, el pago mínimo es el saldo completo. El resultado siempre tiene centavos; no se redondea.",
+  "gamma": {
+    "saldo": "Decimal"
+  },
+  "canonical_ast": {
+    "expr": {
+      "type": "IfThenElse",
+      "condition": {
+        "type": "BinaryOp",
+        "op": "<",
+        "left": {
+          "type": "Var",
+          "name": "saldo"
+        },
+        "right": {
+          "type": "Literal",
+          "value": 500.0,
+          "value_type": "Decimal"
+        }
+      },
+      "then": {
+        "type": "Var",
+        "name": "saldo"
+      },
+      "else": {
+        "type": "IfThenElse",
+        "condition": {
+          "type": "BinaryOp",
+          "op": ">",
+          "left": {
+            "type": "BinaryOp",
+            "op": "*",
+            "left": {
+              "type": "Var",
+              "name": "saldo"
+            },
+            "right": {
+              "type": "Literal",
+              "value": 0.05,
+              "value_type": "Decimal"
+            }
+          },
+          "right": {
+            "type": "Literal",
+            "value": 500,
+            "value_type": "Int"
+          }
+        },
+        "then": {
+          "type": "BinaryOp",
+          "op": "*",
+          "left": {
+            "type": "Var",
+            "name": "saldo"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0.05,
+            "value_type": "Decimal"
+          }
+        },
+        "else": {
+          "type": "Literal",
+          "value": 500.0,
+          "value_type": "Decimal"
+        }
+      }
+    }
+  },
+  "canonical_python": "from decimal import Decimal\n\ndef evaluate_rule(data):\n    saldo = data['saldo']\n    if saldo < Decimal('500.00'):\n        return saldo\n    return max(saldo * Decimal('0.05'), Decimal('500.00'))\n",
+  "scenarios": [
+    {
+      "scenario_id": "V1-SALDO-CHICO",
+      "env": {
+        "saldo": 320.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "320.5"
+      }
+    },
+    {
+      "scenario_id": "V2-MINIMO-FIJO",
+      "env": {
+        "saldo": 6000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "500"
+      }
+    },
+    {
+      "scenario_id": "V3-CINCO-POR-CIENTO",
+      "env": {
+        "saldo": 25000.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "1250.025"
+      }
+    },
+    {
+      "scenario_id": "V4-JUSTO-10000",
+      "env": {
+        "saldo": 10000.2
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "500.01"
+      }
+    },
+    {
+      "scenario_id": "V5-JUSTO-DEBAJO",
+      "env": {
+        "saldo": 9999.9
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "500"
+      }
+    },
+    {
+      "scenario_id": "V6-SALDO-500",
+      "env": {
+        "saldo": 500.5
+      },
+      "expected": {
+        "type": "Decimal",
+        "value": "500"
+      }
+    }
+  ]
+}
