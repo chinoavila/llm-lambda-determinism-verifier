@@ -24,3 +24,7 @@ out/
 
 # Referencias sin trackeo
 prototype/referencias
+
+# UI: dependencias y build solo dentro de Docker
+ui/node_modules/
+ui/dist/

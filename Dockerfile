@@ -2,6 +2,7 @@
 #   target engine-build -> servicio engine   (C-1, Haskell: build y tests)
 #   target pipeline     -> servicio pipeline (C-2/C-3, Python + binario del engine)
 #   target sandbox      -> servicio sandbox  (C-3, ejecución aislada de los baselines)
+#   target ui           -> servicio ui       (C-4, SPA + API; ui-build compila y testea la SPA)
 
 # --- C-1: engine (Haskell STLC) -------------------------------------------
 FROM haskell:9.6-slim AS engine-build
@@ -56,3 +57,21 @@ COPY pipeline/pipeline/baselines/sandbox_worker.py /opt/sandbox/worker.py
 
 ENV SANDBOX_IO=/io SANDBOX_WORK=/work PYTHONDONTWRITEBYTECODE=1
 CMD ["python", "-I", "/opt/sandbox/worker.py"]
+
+# --- C-4: UI (React + Vite + Tailwind, ver docs/ui.md) ----------------------
+FROM node:22-alpine AS ui-build
+
+WORKDIR /workspace/ui
+
+COPY ui/package.json ui/package-lock.json ./
+RUN npm ci --no-fund --no-audit
+
+# Como el engine: la SPA solo sale de esta etapa si pasa tsc y vitest.
+COPY ui/ ./
+RUN npm run check && npm run build
+
+# La API corre en la imagen del pipeline (misma CLI, mismo engine, misma cola
+# del sandbox) y sirve la SPA compilada.
+FROM pipeline AS ui
+COPY --from=ui-build /workspace/ui/dist /workspace/ui/dist
+CMD ["python", "-m", "pipeline", "serve", "--host", "0.0.0.0", "--port", "8000"]

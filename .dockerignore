@@ -1,0 +1,6 @@
+# Nada de esto hace falta en las imágenes (ver docs/docker.md).
+.env
+out
+prototype/referencias
+ui/node_modules
+ui/dist

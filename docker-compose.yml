@@ -44,6 +44,17 @@ services:
     <<: *pipeline
     command: ["python", "-m", "pipeline", "run"]
 
+  # UI y su API (ver docs/ui.md): http://localhost:8000. Publica el puerto solo
+  # en localhost: el contenedor tiene las credenciales del LLM.
+  ui:
+    <<: *pipeline
+    build:
+      context: .
+      target: ui
+    command: ["python", "-m", "pipeline", "serve", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+
   # Ejecución del código de los baselines (ver docs/sandbox.md). Sin red, sin
   # .env y sin volúmenes del repo: solo la cola compartida con pipeline.
   sandbox:
