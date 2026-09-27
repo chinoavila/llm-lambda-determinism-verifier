@@ -1,5 +1,6 @@
-"""Comandos: `python -m pipeline run` (punta a punta, specs/orquestador.md) y
-`python -m pipeline check-case` (verificación del corpus, docs/corpus.md).
+"""Comandos: `python -m pipeline run` (punta a punta, specs/orquestador.md),
+`python -m pipeline check-case` (verificación del corpus, docs/corpus.md) y
+`python -m pipeline serve` (UI y su API, specs/ui.md).
 
 `run` lee los casos, verifica todos antes de la primera llamada al LLM (formato y Γ común),
 arma el balanceador y corre cada caso con los tres grupos. Los registros de cada caso se
@@ -44,6 +45,7 @@ from pipeline.orchestrator import (
     run_case,
     run_treatment,
 )
+from pipeline.server import serve
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CASES = REPO_ROOT / "contracts" / "fixtures"
@@ -164,10 +166,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--write", action="store_true",
         help="completa los expected que faltan con lo que calcula el engine (nunca pisa uno existente)",
     )  # fmt: skip
+    p_serve = sub.add_parser("serve", help="sirve la UI y su API (docs/ui.md)")
+    p_serve.add_argument(
+        "--host", default="127.0.0.1",
+        help="interfaz donde escuchar; en Docker, 0.0.0.0 y compose publica solo en localhost",
+    )  # fmt: skip
+    p_serve.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
 
     if args.command == "check-case":
         return check_cases(args.cases, write=args.write)
+    if args.command == "serve":
+        return serve(args.host, args.port)
 
     if args.repetitions < 1:
         parser.error("--repetitions debe ser >= 1")
