@@ -25,6 +25,8 @@ Los tres componentes están implementados y verificados en Docker.
   - Baseline 1;
   - Baseline 2 con `ast` y `mypy --strict`.
 
+**Después del MVP:** el equipo extendió el alcance con una UI (C-4, [`ui.md`](./ui.md)). Etapa 1 de 3 hecha: servidor, estado del pipeline y navegación.
+
 **El MVP cumple el criterio de cierre del roadmap:** `docker compose up --build` corre los gates y los tres grupos de punta a punta sobre las fixtures con el LLM real. Primera corrida el 2026-09-26 (Groq): 45 registros conformes al contrato, sin errores del LLM, repartidos entre los tres modelos del pool.
 
 ## 2. Contra el contenido exigido por la guía

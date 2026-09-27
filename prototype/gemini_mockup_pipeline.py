@@ -8,7 +8,7 @@ generativa dentro de ese documento), no producto del proceso SDD de este reposit
 Este archivo NO representa la arquitectura objetivo de C-1/C-2/C-3 (ver specs/mission.md
 §1-§2 y specs/tech-stack.md). Se conserva solo como referencia histórica del diseño
 inicial. Contradice reglas vigentes del proyecto:
-- Ejecuta código con `exec()` sin sandbox (prohibido en specs/tech-stack.md §4).
+- Ejecuta código con `exec()` sin sandbox (prohibido en specs/tech-stack.md §5).
 - Simula el motor Haskell en Python en vez de invocarlo (C-1 debe ser Haskell real).
 - Calcula pass@1 y agrega métricas (prohibido: eso pertenece a la etapa de
   investigación posterior, no a este repositorio).

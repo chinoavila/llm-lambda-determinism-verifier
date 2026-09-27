@@ -2,7 +2,7 @@
 
 > Especificación normativa para agentes. Alcance definido en [`mission.md`](./mission.md).
 >
-> Solo se listan tecnologías necesarias para construir C-1, C-2 y C-3. Cualquier dependencia que no sirva a esos tres componentes queda fuera.
+> Solo se listan tecnologías necesarias para construir C-1, C-2, C-3 y C-4. Cualquier dependencia que no sirva a esos componentes queda fuera.
 
 ## 1. C-1 — Motor de validación STLC (Haskell)
 
@@ -42,18 +42,33 @@
 
 **Sandbox obligatorio para ambos:** la ejecución corre en el contenedor `sandbox` (`network_mode: none`, sin `.env`, sin volúmenes del repo, solo lectura), en un proceso hijo nuevo por caso, como usuario sin privilegios, sin entorno y con timeout y límites de recursos. `pipeline` se comunica con él solo por una cola de archivos en el volumen `sandbox-io`. El análisis estático de Baseline 2 no ejecuta código y corre en `pipeline`. Detalle en `docs/sandbox.md`.
 
-## 4. Prohibiciones
+## 4. C-4 — UI (TypeScript + Python)
+
+| Aspecto | Decisión |
+|---|---|
+| SPA | React + Vite + TypeScript estricto + Tailwind CSS v4, en `ui/` |
+| Tipografías | `@fontsource` (empaquetadas, sin depender de internet) |
+| Tests de la SPA | `vitest`; `tsc -p .` como chequeo de tipos |
+| API | `pipeline/pipeline/server.py` con `http.server` de la stdlib, servida por `python -m pipeline serve` junto con la SPA compilada |
+| Tests de la API | `pytest` (`tests/test_server.py`), `mypy --strict` |
+| Toolchain | Node 22 solo dentro de Docker (etapa `ui-build`); nunca en el host |
+
+Detalle en [`ui.md`](./ui.md).
+
+## 5. Prohibiciones
 
 - **Prohibido** `eval` o `exec` sobre salida de un LLM. La ejecución va siempre por el sandbox.
 - **Prohibido** que C-1 dependa de la red durante la validación.
 - **Prohibido** hardcodear claves de API: solo variables de entorno, `.env` fuera de Git.
 - **Prohibido** reparar, reintentar o normalizar silenciosamente la salida del LLM antes de registrarla.
 - **Prohibido** agregar código de agregación, cálculo de métricas, estadística o graficación — incluidas dependencias como `pandas` o `matplotlib`.
-- **Prohibido** agregar dependencias que no sirvan directamente a C-1, C-2 o C-3.
+- **Prohibido** agregar dependencias que no sirvan directamente a C-1, C-2, C-3 o C-4. En particular, la API de la UI no agrega frameworks web al `pyproject.toml`.
+- **Prohibido** instalar o correr Node o npm en el host, o dejar `ui/node_modules` fuera de un contenedor.
+- **Prohibido** publicar el puerto de la UI en una interfaz distinta de `127.0.0.1`, o devolver credenciales del LLM desde su API.
 - **Prohibido** que un agente de IA lea, busque, modifique o ejecute algo fuera de la raíz del repositorio (carpetas hermanas o superiores incluidas). Si falta contexto que no está en el repo, por ejemplo material de la cátedra, se le pide al desarrollador que lo pegue o lo agregue al repo; no se lo busca afuera. Única excepción: el directorio temporal propio de la sesión del agente.
 - **Prohibido** hardcodear rutas absolutas de una máquina o usuario específico (por ejemplo `C:\Users\...` o `/home/...`) en código, configuración o Dockerfiles. Toda ruta debe ser relativa al repositorio o resolverse en tiempo de ejecución (variables de entorno, `argv`, working directory).
 
-## 5. Entorno de laboratorio (Docker Compose)
+## 6. Entorno de laboratorio (Docker Compose)
 
 Un solo `Dockerfile`, en la raíz, con una etapa por componente; cada servicio elige la suya con `target`.
 
@@ -63,6 +78,7 @@ Un solo `Dockerfile`, en la raíz, con una etapa por componente; cada servicio e
 | `pipeline` | `pipeline` | `python:3.12-slim` | Instala C-2/C-3 y corre gates: `docker compose run --rm pipeline sh -c "mypy . && pytest"` |
 | `sandbox` | `sandbox` | `python:3.12-slim` | Ejecuta el código de los baselines, sin red (`docs/sandbox.md`) |
 | `run` | `pipeline` | `python:3.12-slim` | Corrida de punta a punta sobre las fixtures con el LLM real: `python -m pipeline run` (`specs/orquestador.md`). Consume cuota; sin credenciales, avisa y sale con 0 |
+| `ui` | `ui` (imagen `pipeline` + SPA de `ui-build`, `node:22-alpine`) | `python:3.12-slim` | UI y su API: `python -m pipeline serve`, en `127.0.0.1:8000` (`specs/ui.md`). No termina sola |
 
 - La etapa `engine-build` compila y corre `cabal test`; solo si pasa, deja el binario en `/usr/local/bin/engine`.
 - La etapa `pipeline` copia ese binario (`COPY --from=engine-build`) y el orquestador lo lanza como subproceso según el contrato CLI de `contracts/README.md` §2. En ejecución el pipeline no depende del contenedor `engine`: no se usa `depends_on`.

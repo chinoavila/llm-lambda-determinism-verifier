@@ -4,26 +4,29 @@
 
 ## 1. Alcance (regla dirimente)
 
-Este repositorio existe para **construir el pipeline**. Su alcance se agota en tres componentes:
+Este repositorio existe para **construir el pipeline**. Su alcance se agota en tres componentes, más la UI que se agregó después del MVP:
 
 | # | Componente | Lenguaje | Carpeta |
 |---|---|---|---|
 | **C-1** | Motor de validación STLC (parser JSON→ADT, typechecker, scope checker, evaluador) | Haskell | [`engine/`](../engine/) |
 | **C-2** | Orquestador del pipeline (invocación al LLM, ruteo por grupo, registro de resultados) | Python | [`pipeline/`](../pipeline/) |
 | **C-3** | Baseline 1 (sin validación) y Baseline 2 (`ast` + mypy) | Python | [`pipeline/pipeline/baselines/`](../pipeline/pipeline/baselines/) |
+| **C-4** | UI: ejecutar desde el navegador las acciones del pipeline (corpus, corridas, registros) | TypeScript (React) + Python (API) | [`ui/`](../ui/), [`pipeline/pipeline/server.py`](../pipeline/pipeline/server.py) |
 
-**Nada más.** Si una tarea no produce código, esquema o test de C-1, C-2 o C-3, no pertenece a este repositorio.
+**Nada más.** Si una tarea no produce código, esquema o test de C-1, C-2, C-3 o C-4, no pertenece a este repositorio.
+
+C-4 es una extensión posterior al MVP, decidida por el equipo el 2026-09-26: la UI ejecuta las acciones que ya existen en la CLI, sin agregar lógica de dominio. Reglas en [`ui.md`](./ui.md).
 
 ## 2. Fuera de alcance
 
 Rechazar toda tarea que implique:
 
-- Ejecutar corridas experimentales o producir datos.
-- Recolectar, agregar, analizar o graficar resultados.
-- Calcular métricas de cualquier tipo.
+- Ejecutar corridas experimentales o producir datos por iniciativa propia. La UI (C-4) permite que el desarrollador lance una corrida; un agente no la lanza sin que se lo pidan.
+- Recolectar, agregar, analizar o graficar resultados. Mostrar registros en la UI, filtrarlos o ponerlos junto a su `expected` no es análisis; contarlos o resumirlos, sí.
+- Calcular métricas de cualquier tipo, también en la UI.
 - Construir o poblar un corpus de datos por iniciativa propia. Excepción acordada con el equipo (2026-09-26): las reglas del experimento se versionan en [`corpus/`](../corpus/) y un agente puede escribirlas **solo cuando el desarrollador lo pide**, siguiendo [`docs/corpus.md`](../docs/corpus.md) y verificándolas con `check-case`. El corpus no es un componente: no cambia C-1, C-2 ni C-3.
 - Redactar documentación académica o discutir hallazgos.
-- Extender el DSL, el orquestador o los baselines más allá de lo necesario para que los tres componentes funcionen.
+- Extender el DSL, el orquestador o los baselines más allá de lo necesario para que los componentes funcionen.
 
 ## 3. Qué debe hacer el pipeline construido
 
@@ -47,3 +50,4 @@ El motor **no intenta** detectar lógica de negocio incorrecta que sea bien tipa
 
 - Tecnologías y restricciones → [`tech-stack.md`](./tech-stack.md)
 - Fases de construcción y criterios de aceptación → [`roadmap.md`](./roadmap.md)
+- UI (C-4) → [`ui.md`](./ui.md)
