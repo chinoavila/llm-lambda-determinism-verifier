@@ -1,0 +1,229 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "STLC_AST_Schema",
+  "description": "Especificacion JSON Schema para la gramatica STLC: Var, Literal, Lam, App, BinaryOp, IfThenElse",
+  "$ref": "#/definitions/Expr",
+  "definitions": {
+    "Type": {
+      "type": "object",
+      "oneOf": [
+        {
+          "description": "Tipos base",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "Base"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "enum": [
+                "Double",
+                "Int",
+                "Bool",
+                "String"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Tipo funcion (T1 -> T2)",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "Arrow"
+              ]
+            },
+            "from": {
+              "$ref": "#/definitions/Type"
+            },
+            "to": {
+              "$ref": "#/definitions/Type"
+            }
+          },
+          "required": [
+            "kind",
+            "from",
+            "to"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Expr": {
+      "type": "object",
+      "oneOf": [
+        {
+          "description": "Var: Referencia a una variable o identificador",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "enum": [
+                "Var"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tag",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Literal: Constante primitiva tipada",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "enum": [
+                "Literal"
+              ]
+            },
+            "type": {
+              "$ref": "#/definitions/Type"
+            },
+            "value": {
+              "type": [
+                "number",
+                "boolean",
+                "string"
+              ]
+            }
+          },
+          "required": [
+            "tag",
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Lam: Abstraccion lambda (definicion de funcion)",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "enum": [
+                "Lam"
+              ]
+            },
+            "param": {
+              "type": "string"
+            },
+            "param_type": {
+              "$ref": "#/definitions/Type"
+            },
+            "body": {
+              "$ref": "#/definitions/Expr"
+            }
+          },
+          "required": [
+            "tag",
+            "param",
+            "param_type",
+            "body"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "App: Aplicacion de una funcion a un argumento",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "enum": [
+                "App"
+              ]
+            },
+            "func": {
+              "$ref": "#/definitions/Expr"
+            },
+            "arg": {
+              "$ref": "#/definitions/Expr"
+            }
+          },
+          "required": [
+            "tag",
+            "func",
+            "arg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "BinaryOp: Operacion binaria (aritmetica, comparacion, logica)",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "enum": [
+                "BinaryOp"
+              ]
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "+",
+                "-",
+                "*",
+                "/",
+                ">",
+                "<",
+                ">=",
+                "<=",
+                "==",
+                "&&",
+                "||"
+              ]
+            },
+            "left": {
+              "$ref": "#/definitions/Expr"
+            },
+            "right": {
+              "$ref": "#/definitions/Expr"
+            }
+          },
+          "required": [
+            "tag",
+            "op",
+            "left",
+            "right"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "IfThenElse: Bifurcacion condicional funcional",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "enum": [
+                "IfThenElse"
+              ]
+            },
+            "cond": {
+              "$ref": "#/definitions/Expr"
+            },
+            "then": {
+              "$ref": "#/definitions/Expr"
+            },
+            "else": {
+              "$ref": "#/definitions/Expr"
+            }
+          },
+          "required": [
+            "tag",
+            "cond",
+            "then",
+            "else"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

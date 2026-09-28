@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OutputRecordSchema",
+  "description": "Esquema JSON Schema para registrar el resultado de una prueba en formato JSON Lines (JSONL)",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "description": "Identificador unico de la regla o caso de prueba (ej: RULE_001)"
+    },
+    "lane": {
+      "type": "string",
+      "enum": [
+        "baseline_1_free_python",
+        "baseline_2_mypy_python",
+        "proposed_dsl_haskell"
+      ],
+      "description": "Carril experimental evaluado"
+    },
+    "prompt_input": {
+      "type": "string",
+      "description": "Texto en lenguaje natural enviado al LLM"
+    },
+    "raw_output": {
+      "type": "string",
+      "description": "Respuesta cruda generada por el LLM (codigo Python o string JSON)"
+    },
+    "syntax_valid": {
+      "type": "boolean",
+      "description": "Indica si la respuesta cumple con la sintaxis basica requerida"
+    },
+    "static_validation_passed": {
+      "type": "boolean",
+      "description": "Indica si supero la auditoria estatica (mypy en carril 2 o typechecker Haskell en carril 3; true por defecto en carril 1)"
+    },
+    "static_error_message": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Detalle del error interceptado antes de la ejecucion, si lo hubo"
+    },
+    "runtime_passed": {
+      "type": "boolean",
+      "description": "Indica si el codigo o regla se ejecuto sin lanzar excepciones en tiempo de ejecucion"
+    },
+    "runtime_error_message": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Mensaje de excepcion ocurrida durante el runtime, si la hubo"
+    },
+    "test_passed": {
+      "type": "boolean",
+      "description": "Indica si el resultado calculado coincide con el valor esperado de la regla (pass@1)"
+    },
+    "execution_time_ms": {
+      "type": "number",
+      "description": "Tiempo total de procesamiento en milisegundos"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento exacto en que se registro la prueba"
+    }
+  },
+  "required": [
+    "case_id",
+    "lane",
+    "prompt_input",
+    "raw_output",
+    "syntax_valid",
+    "static_validation_passed",
+    "runtime_passed",
+    "test_passed",
+    "execution_time_ms",
+    "timestamp"
+  ],
+  "additionalProperties": false
+}
