@@ -94,6 +94,7 @@ isNumeric :: Type -> Bool
 isNumeric t = t == TInt || t == TDecimal
 
 -- FP[Igualaciones]
+-- | Tipo base asociado a un literal; no inspecciona cómo se usa en la expresión.
 literalType :: LiteralValue -> Type
 literalType (VInt _) = TInt
 literalType (VDecimal _) = TDecimal
@@ -129,5 +130,6 @@ opSymbol Neq = "!="
 opSymbol And = "AND"
 opSymbol Or = "OR"
 
+-- | Nombre estable del operador unario en el AST JSON.
 unOpSymbol :: UnOp -> String
 unOpSymbol Not = "NOT"

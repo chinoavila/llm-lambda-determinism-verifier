@@ -44,16 +44,19 @@ data EnvError
   | InvalidEnvValue Name
   deriving (Show, Eq)
 
+-- | Identificador estable para el campo `error.code` del veredicto CLI.
 parseErrorCode :: ParseError -> String
 parseErrorCode (MalformedJson _) = "MALFORMED_JSON"
 parseErrorCode (InvalidAst _) = "INVALID_AST"
 parseErrorCode (LiteralTypeMismatch _) = "LITERAL_TYPE_MISMATCH"
 
+-- | Mensaje de parseo con contexto de la ruta JSON cuando está disponible.
 parseErrorMessage :: ParseError -> String
 parseErrorMessage (MalformedJson msg) = msg
 parseErrorMessage (InvalidAst msg) = msg
 parseErrorMessage (LiteralTypeMismatch msg) = msg
 
+-- | Diagnóstico de uso para errores al decodificar `--env` (exit 64).
 envErrorMessage :: EnvError -> String
 envErrorMessage EnvNotObject = "--env debe ser un objeto JSON"
 envErrorMessage (InvalidEnvName x) = "nombre inválido en --env: " ++ show x
