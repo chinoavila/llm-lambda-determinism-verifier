@@ -1,3 +1,4 @@
+/** Pruebas de renderizado del AST y validación/conversión de campos de reglas. */
 import { describe, expect, it } from "vitest";
 import type { AstNode, Rule } from "../api";
 import { render } from "./ast";

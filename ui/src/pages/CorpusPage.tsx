@@ -1,3 +1,4 @@
+/** Vista de corpus: busca, filtra, valida, crea, edita y elimina reglas. */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, errorText, type CheckReport, type Rule } from "../api";
 import { Badge, Button, Card, Confirm, Notice } from "../components/ui";
@@ -5,6 +6,7 @@ import { CheckResult, REVIEW, RuleEditor } from "./RuleEditor";
 
 const statusOf = (r: Rule) => r.review?.status ?? "pendiente";
 
+/** Carga las reglas desde la API y notifica cambios que afectan al estado global. */
 export function CorpusPage({ onChanged }: { onChanged: () => void }) {
   const [rules, setRules] = useState<Rule[] | null>(null);
   const [error, setError] = useState<string | null>(null);

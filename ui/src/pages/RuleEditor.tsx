@@ -1,9 +1,12 @@
+/** Editor por pestañas para los campos, escenarios, AST, Python y revisión de una regla. */
 import { useMemo, useState, type ReactNode } from "react";
 import { api, ApiError, errorText, type BaseType, type CheckReport, type ReviewStatus, type Rule } from "../api";
 import { AstPreview, Badge, Button, Confirm, Drawer, Errors, Field, fmtDate, inputClass, Notice, Tab } from "../components/ui";
 import { blankRule, defaultValue, parseCell, parseExpected, TYPES, validate, valueFits, type Errors as ErrorMap, type Tab as TabKey } from "../lib/rules";
 
+/** Dominios admitidos por el formulario y el contrato del corpus. */
 export const DOMAINS = ["fiscal", "salud", "credito", "seguros", "laboral"];
+/** Etiquetas y tonos de los estados de revisión mostrados por el editor. */
 export const REVIEW: Record<ReviewStatus, { label: string; tone: "neutral" | "ok" | "bad" }> = {
   pendiente: { label: "Pendiente", tone: "neutral" },
   aprobada: { label: "Aprobada", tone: "ok" },
@@ -28,6 +31,7 @@ const readReviewer = () => {
 let nextKey = 0;
 const newKey = () => ++nextKey;
 
+/** Formulario controlado que valida y persiste una regla mediante la API. */
 export function RuleEditor({
   initial,
   existing,
@@ -490,6 +494,7 @@ export function RuleEditor({
 const cellClass =
   "w-full min-w-[90px] rounded-md border border-transparent bg-transparent px-1.5 py-1 font-mono text-[12.5px] hover:border-line focus:border-accent focus:bg-surface focus:outline-none";
 
+/** Resume errores, avisos y expected completados por la verificación del servidor. */
 export function CheckResult({ report }: { report: CheckReport }) {
   const errors = report.issues.filter((i) => i.level === "error");
   const warnings = report.issues.filter((i) => i.level === "aviso");

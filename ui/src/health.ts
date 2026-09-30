@@ -1,5 +1,6 @@
 import type { Health } from "./api";
 
+/** Elemento normalizado que la barra de estado presenta para un subsistema. */
 export type Check = { key: string; label: string; ok: boolean; detail: string };
 
 /** Lo que muestra la barra de estado, en el orden en que se usa el pipeline. */

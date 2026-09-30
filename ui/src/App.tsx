@@ -1,3 +1,4 @@
+/** Aplicación raíz: navegación entre vistas, estado de salud y selección de página. */
 import { useCallback, useEffect, useState } from "react";
 import { api, errorText, type Health } from "./api";
 import { healthChecks } from "./health";
@@ -12,6 +13,7 @@ const SECTIONS = [
   { path: "/registros", label: "Registros", intro: "Los renglones de cada corrida, con la respuesta cruda del LLM y el expected de su escenario." },
 ] as const;
 
+/** Presenta estado/carga/error de los servicios y permite reintentar la consulta. */
 function HealthBar({ health, error, onRetry }: { health: Health | null; error: string | null; onRetry: () => void }) {
   if (error) {
     return (
@@ -41,6 +43,7 @@ function HealthBar({ health, error, onRetry }: { health: Health | null; error: s
   );
 }
 
+/** Resuelve la ruta actual y coordina las vistas Corpus, Corridas y Registros. */
 export default function App() {
   const path = usePath();
   useEffect(() => {
