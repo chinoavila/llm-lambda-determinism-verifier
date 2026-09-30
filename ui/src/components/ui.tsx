@@ -14,6 +14,7 @@ const VARIANTS: Record<Variant, string> = {
   "link-danger": "text-bad hover:bg-hover",
 };
 
+/** Botón semántico con variantes visuales y props nativas de HTMLButtonElement. */
 export function Button({
   variant = "default",
   small = false,
@@ -39,6 +40,7 @@ const TONES: Record<Tone, string> = {
   accent: "bg-accent-soft text-accent",
 };
 
+/** Etiqueta compacta para estados con tono accesible y texto proporcionado por el caller. */
 export function Badge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
   return (
     <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${TONES[tone]}`}>
@@ -48,6 +50,7 @@ export function Badge({ tone = "neutral", children }: { tone?: Tone; children: R
   );
 }
 
+/** Mensaje destacado que comparte la paleta de estados de Badge. */
 export function Notice({ tone = "warn", children }: { tone?: Tone; children: ReactNode }) {
   return <div className={`rounded-lg px-3.5 py-2.5 ${TONES[tone]} text-ink`}>{children}</div>;
 }
@@ -55,6 +58,7 @@ export function Notice({ tone = "warn", children }: { tone?: Tone; children: Rea
 export const inputClass =
   "w-full rounded-lg border border-line bg-surface px-2.5 py-2 disabled:opacity-60 focus:border-accent focus:outline-none";
 
+/** Asocia una etiqueta accesible y ayuda con el control creado por children(id). */
 export function Field({ label, help, children }: { label: string; help?: ReactNode; children: (id: string) => ReactNode }) {
   const id = useId();
   return (
@@ -68,6 +72,7 @@ export function Field({ label, help, children }: { label: string; help?: ReactNo
   );
 }
 
+/** Renderiza mensajes de validación; no crea markup cuando la lista está vacía. */
 export function Errors({ messages }: { messages?: string[] }) {
   if (!messages?.length) return null;
   return (
@@ -79,6 +84,7 @@ export function Errors({ messages }: { messages?: string[] }) {
   );
 }
 
+/** Panel lateral modal; Escape y click en el fondo llaman onClose. */
 export function Drawer({
   title,
   subtitle,
@@ -126,6 +132,7 @@ export function Drawer({
   );
 }
 
+/** Pestaña accesible con estado seleccionado e indicador opcional de errores. */
 export function Tab({ selected, flagged, onClick, children }: { selected: boolean; flagged?: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
@@ -141,6 +148,7 @@ export function Tab({ selected, flagged, onClick, children }: { selected: boolea
   );
 }
 
+/** Diálogo de confirmación; enfoca Cancelar al abrir y bloquea Confirmar si busy. */
 export function Confirm({
   title,
   children,
@@ -183,6 +191,7 @@ export function Confirm({
 
 const TOKEN_CLASS: Record<Token["kind"], string> = { kw: "font-medium text-accent", str: "text-ok", num: "text-warn", "": "" };
 
+/** Muestra el AST en su representación legible y con tokens coloreados. */
 export function AstPreview({ expr }: { expr: unknown }) {
   return (
     <pre className="overflow-x-auto rounded-lg border border-line bg-code p-3 font-mono text-[12.5px] leading-relaxed">
@@ -197,10 +206,12 @@ export function AstPreview({ expr }: { expr: unknown }) {
   );
 }
 
+/** Contenedor visual simple para agrupar contenido relacionado. */
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-xl border border-line bg-surface ${className}`}>{children}</div>;
 }
 
+/** Formatea ISO en horario/localización es-AR; devuelve raya si falta o es inválido. */
 export const fmtDate = (iso?: string | null) => {
   if (!iso) return "—";
   const d = new Date(iso);

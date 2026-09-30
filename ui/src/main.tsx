@@ -1,3 +1,4 @@
+/** Monta la aplicación React en el elemento raíz declarado por index.html. */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";

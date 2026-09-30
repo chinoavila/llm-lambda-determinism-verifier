@@ -1,3 +1,4 @@
+/** Pruebas de normalización del estado de corpus, engine, sandbox, LLM y corridas. */
 import { describe, expect, it } from "vitest";
 import type { Health } from "./api";
 import { healthChecks } from "./health";

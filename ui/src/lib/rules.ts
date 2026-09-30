@@ -6,6 +6,7 @@ export const TYPES: BaseType[] = ["Int", "Decimal", "Bool", "String"];
 export type Tab = "general" | "escenarios" | "ast" | "python" | "revision";
 export type Errors = Partial<Record<Tab, string[]>>;
 
+/** Comprueba compatibilidad básica de un valor JS con el tipo declarado. */
 export function valueFits(type: BaseType, v: unknown): boolean {
   switch (type) {
     case "Bool":
@@ -41,6 +42,7 @@ export function parseExpected(raw: string, previous?: Result): Result | undefine
 
 export const showValue = (v: unknown) => (typeof v === "string" ? `"${v}"` : String(v));
 
+/** Valida formato del formulario; la verificación semántica completa corre en el servidor/engine. */
 export function validate(r: Rule, isNew: boolean, existing: ReadonlySet<string>, astError: string | null): Errors {
   const errs: Errors = {};
   const add = (tab: Tab, msg: string) => (errs[tab] ??= []).push(msg);
@@ -72,6 +74,7 @@ export function validate(r: Rule, isNew: boolean, existing: ReadonlySet<string>,
   return errs;
 }
 
+/** Devuelve una regla mínima editable con dos escenarios de ejemplo. */
 export function blankRule(): Rule {
   return {
     case_id: "",
@@ -90,6 +93,7 @@ export function blankRule(): Rule {
   };
 }
 
+/** Valor inicial de formulario compatible con el tipo base seleccionado. */
 export function defaultValue(type: BaseType): unknown {
   return type === "Bool" ? false : type === "String" ? "" : type === "Decimal" ? 0.5 : 0;
 }

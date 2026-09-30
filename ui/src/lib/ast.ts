@@ -3,7 +3,9 @@
 import type { AstNode } from "../api";
 
 export type TokenKind = "kw" | "str" | "num" | "";
+/** Fragmento visual clasificado para coloreado del AST legible. */
 export type Token = { kind: TokenKind; text: string };
+/** Línea renderizada con nivel de indentación y tokens preservados. */
 export type Line = { indent: number; tokens: Token[] };
 
 const WIDTH = 72;
@@ -15,6 +17,7 @@ const t = (kind: TokenKind, text: string): Token => ({ kind, text });
 const node = (x: unknown): AstNode | null => (x && typeof x === "object" && "type" in x ? (x as AstNode) : null);
 const width = (ts: Token[]) => ts.reduce((n, x) => n + x.text.length, 0);
 
+/** Convierte una expresión en tokens de una línea, respetando precedencia. */
 export function inline(e: unknown, parent = 0): Token[] {
   const n = node(e);
   if (!n) return [t("", "?")];
@@ -59,6 +62,7 @@ function flatten(e: unknown, op: string): unknown[] {
   return n && n.type === "BinaryOp" && n.op === op ? [...flatten(n.left, op), ...flatten(n.right, op)] : [e];
 }
 
+/** Parte condicionales y expresiones largas en líneas legibles e indentadas. */
 export function lines(e: unknown, indent = 0): Line[] {
   const n = node(e);
   const one = inline(e);
@@ -101,6 +105,7 @@ export function lines(e: unknown, indent = 0): Line[] {
   return [{ indent, tokens: one }];
 }
 
+/** Produce texto multilínea para previsualizar el AST sin evaluarlo. */
 export const render = (e: unknown) =>
   lines(e)
     .map((l) => "  ".repeat(l.indent) + l.tokens.map((x) => x.text).join(""))
