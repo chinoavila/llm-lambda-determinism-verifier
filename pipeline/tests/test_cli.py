@@ -1,3 +1,5 @@
+"""Tests de pipeline/cli.py: subcomandos run, check-case y serve (integración ligera)."""
+
 from __future__ import annotations
 
 import json

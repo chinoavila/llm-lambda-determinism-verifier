@@ -1,6 +1,12 @@
-"""Comandos: `python -m pipeline run` (punta a punta, specs/orquestador.md),
-`python -m pipeline check-case` (verificación del corpus, docs/corpus.md) y
-`python -m pipeline serve` (UI y su API, specs/ui.md).
+"""Comandos del pipeline.
+
+Subcomandos y efectos principales:
+
+| subcomando | función | efectos secundarios |
+| --- | --- | --- |
+| `python -m pipeline run` | `prepare()` + `run()` | valida casos, calcula `γ`, abre balanceador y escribe `out/<run_id>.jsonl` |
+| `python -m pipeline check-case` | `check_cases()` | imprime un reporte textual por regla y opcionalmente rellena `expected` en JSON |
+| `python -m pipeline serve` | `pipeline.server.serve()` | levanta la API HTTP de la UI (`/api/*`) y sirve la SPA compilada |
 
 `run` lee los casos, verifica todos antes de la primera llamada al LLM (formato y Γ común),
 arma el balanceador y corre cada caso con los tres grupos. Los registros de cada caso se

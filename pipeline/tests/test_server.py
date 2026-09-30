@@ -1,3 +1,5 @@
+"""Tests HTTP de pipeline/server.py: rutas /api y manejo de errores."""
+
 from __future__ import annotations
 
 import json

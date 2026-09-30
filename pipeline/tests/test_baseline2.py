@@ -1,3 +1,5 @@
+"""Tests de baseline2: parse, mypy y ejecución con preámbulo Data desde Γ."""
+
 from __future__ import annotations
 
 import ast
