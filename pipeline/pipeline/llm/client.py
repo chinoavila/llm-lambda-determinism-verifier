@@ -22,11 +22,11 @@ RESPONSE_FORMAT = {"type": "json_object"}
 GENERATION_FAILED_CODES = frozenset({"json_validate_failed"})
 
 Outcome = Literal[
-    "ok",  # 2xx
-    "generation_failed",  # 400 por JSON inválido del modelo; no se reintenta
-    "quota_exhausted",  # 429 con espera > max_wait_seconds
-    "transport_error",  # red/timeout/5xx tras agotar max_transport_retries
-    "request_error",  # cualquier otro 4xx (config, auth, modelo inexistente)
+    "ok",  # 2xx: el orquestador ruteará la respuesta al runner del caso.
+    "generation_failed",  # 400 por JSON inválido del modelo; no se reintenta y el orquestador registra llm_error.
+    "quota_exhausted",  # 429 con espera > max_wait_seconds; el orquestador registra llm_error sin reintento.
+    "transport_error",  # red/timeout/5xx tras agotar retries; el orquestador lo trata como llm_error y corta el caso.
+    "request_error",  # cualquier otro 4xx (config, auth, modelo inexistente); se registra llm_error y no se reintenta.
 ]
 
 

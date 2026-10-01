@@ -1,3 +1,5 @@
+"""Tests de pipeline/corpus.py: check-case, Γ común y escritura de expected."""
+
 from __future__ import annotations
 
 import json

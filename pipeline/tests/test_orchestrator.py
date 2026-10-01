@@ -1,3 +1,5 @@
+"""Tests de pipeline/orchestrator.py: casos, runners, registro JSONL y engine simulado."""
+
 from __future__ import annotations
 
 import json

@@ -1,3 +1,5 @@
+"""Tests de pipeline/store.py: CRUD de reglas del corpus y control de versión (_version)."""
+
 from __future__ import annotations
 
 import json
