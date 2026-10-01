@@ -13,6 +13,16 @@ module Engine.Number
 import Data.Ratio (denominator, numerator, (%))
 import Data.Scientific (Scientific, base10Exponent, coefficient, normalize)
 
+-- Este módulo hace tres cosas con los números del DSL:
+--   1. Controla los límites: Int de 64 bits y Decimal de hasta 28 dígitos
+--      (intInRange, decimalInRange).
+--   2. Lee los números del JSON en forma exacta (isIntegral, scientificInt,
+--      scientificDecimal).
+--   3. Escribe un Decimal como texto (renderDecimal).
+-- Alternativa descartada: usar Double (punto flotante) para los decimales.
+-- Es más simple, pero aproxima: con Double, 0.1 + 0.2 da 0.30000000000000004.
+-- En reglas de negocio con montos eso no es aceptable; por eso se usa
+-- Rational (fracción exacta): 0.1 se guarda como 1/10.
 -- | 10^28: tope de valor absoluto y de denominador de un 'Decimal'.
 decimalLimit :: Integer
 decimalLimit = 10 ^ (28 :: Int)
