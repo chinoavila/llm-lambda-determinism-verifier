@@ -91,6 +91,13 @@ terminatingPlaces d = if rest == 1 then Just (max twos fives) else Nothing
   where
     (twos, afterTwos) = strip 2 d
     (fives, rest) = strip 5 afterTwos
+    -- strip cuenta cuántas veces se puede dividir n por p, y devuelve esa cantidad
+    -- junto con lo que queda. Ej.: strip 2 40 = (3, 5), porque 40 = 2*2*2*5.
+    -- Alternativa equivalente sin recursión explícita, NO probada con los tests:
+    --   strip p n = (k, n `div` p ^ k)
+    --     where k = length (takeWhile (\m -> m `mod` p == 0) (iterate (`div` p) n))
+    -- iterate genera n, n/p, n/p², ...; takeWhile se queda con los divisibles por p;
+    -- length cuenta cuántos hay.
     strip p n = go 0 n
       where
         go k m
