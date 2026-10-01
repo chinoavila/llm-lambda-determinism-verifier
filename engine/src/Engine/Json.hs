@@ -87,6 +87,16 @@ parseProgram bytes = case eitherDecode bytes of
       | literalMismatchTag `isInfixOf` msg = LiteralTypeMismatch msg
       | otherwise = InvalidAst msg
 
+      -- ¿Problema?: clasificar el error buscando el texto "LITERAL_TYPE_MISMATCH" dentro
+      -- del mensaje es frágil, porque otros mensajes copian texto que viene del LLM.
+      -- Ejemplo: nameField incluye el nombre inválido en su mensaje. Si el LLM manda
+      --   {"type": "Var", "name": "LITERAL_TYPE_MISMATCH"}
+      -- el nombre es inválido (empieza con mayúscula), pero el mensaje contiene la
+      -- marca y el error queda registrado como LITERAL_TYPE_MISMATCH en vez de
+      -- INVALID_AST. Detectado leyendo el código; no probado con los tests.
+      -- ALTERNATIVA: validar los literales en un segundo paso, después de que aeson
+      -- arme el árbol, con una función que devuelva Either ParseError en vez de texto.
+
 -- | aeson solo transporta errores como texto: esta marca distingue un
 -- literal con @value@ y @value_type@ inconsistentes de una forma inválida.
 literalMismatchTag :: String
@@ -113,6 +123,11 @@ envValue (Number s)
 envValue (Bool b) = Just (VBool b)
 envValue v@(String _) = VString <$> parseMaybe parseJSON v
 envValue _ = Nothing
+
+-- OBSERVACIÓN: para leer un texto se usa parseJSON en lugar de convertirlo
+-- directamente con Data.Text.unpack. Tiene sentido: unpack necesitaría sumar el
+-- paquete text a engine.cabal, y AGENTS.md pide no agregar dependencias.
+-- (Lo mismo se hace en literal, en el caso (TString, String _).)
 
 -- FP[Patrones de listas] FP[map/filter/fold] FP[Inferencia de tipos] FP[Funciones totales]
 -- | @^[a-z_][A-Za-z0-9_]*$@
@@ -170,6 +185,20 @@ instance FromJSON UnOp where
     case lookup s [(unOpSymbol op, op) | op <- [minBound .. maxBound]] of
       Just op -> pure op
       Nothing -> fail ("operador unario desconocido: " ++ show s)
+
+      -- Las instancias de BinOp y UnOp repiten el mismo código; solo cambian
+      -- la función que da el símbolo y el mensaje. Si se agregara otro tipo de
+      -- operador, habría que copiarlo una tercera vez.
+      -- ALTERNATIVA (no probada): una sola función polimórfica para las dos.
+      --   fromSymbol :: (Bounded a, Enum a) => String -> (a -> String) -> Value -> Parser a
+      --   fromSymbol what render v = do
+      --     s <- parseJSON v
+      --     case lookup s [(render x, x) | x <- [minBound .. maxBound]] of
+      --       Just x -> pure x
+      --       Nothing -> fail (what ++ " desconocido: " ++ show s)
+      --   instance FromJSON BinOp where parseJSON = fromSymbol "operador" opSymbol
+      --   instance FromJSON UnOp  where parseJSON = fromSymbol "operador unario" unOpSymbol
+      -- ¿se podría evaluar esta sugerencia?
 
 -- FP[Clases] FP[Patrones constantes] FP[Currificación]
 -- | Los constructores están currificados: @BinaryOp <$> op <*> l <*> r@ los
@@ -238,3 +267,11 @@ literal o = do
             ++ " pero value_type es "
             ++ renderType declared
         )
+
+        -- ¿Mismatch  no vuelve a leer "value_type" del JSON, aunque literal ya lo
+        -- leyó al principio en declared? Pasa porque el where no ve las variables
+        -- definidas dentro del do.
+        -- ALTERNATIVA (no probada): pasarle el tipo como argumento, sin volver a leer:
+        --   mismatch d actual = fail (literalMismatchTag ++ ": value es " ++ actual
+        --                             ++ " pero value_type es " ++ renderType d)
+        -- y llamarla como: mismatch declared "Bool".
