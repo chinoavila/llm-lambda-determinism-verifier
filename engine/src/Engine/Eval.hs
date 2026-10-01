@@ -23,6 +23,18 @@ import Engine.Env (Env, extend, lookupVar)
 import Engine.Number (decimalInRange, intInRange)
 import Engine.Types
 
+
+-- Qué hace este módulo (etapa 4 del motor, "execution"):
+-- recibe el Program que ya pasó TypeCheck.hs y los valores del caso
+-- (Env LiteralValue) y calcula el resultado de la regla.
+--   eval: recorre la expresión y calcula su valor. Ej.: con credit_score = 750,
+--     credit_score > 700 da true.
+--   evalProgram: arma el entorno de valores, llama a eval y devuelve el resultado.
+--   applyOp: hace la cuenta de cada operador (+, -, *, /, %, >, ==, ...).
+-- Las cuentas son exactas: Int y Rational, sin Double (ver Number.hs).
+-- Errores posibles (runtime_error): DIVISION_BY_ZERO y NUMERIC_OVERFLOW.
+-- Los errores "Stuck..." no deberían ocurrir nunca: si aparecen, es un bug del motor.
+
 -- FP[Tipos algebraicos] FP[Funciones lambda]
 -- | v ::= literal | ⟨λx. e, ρ⟩. Una clausura guarda el entorno donde se
 -- definió la lambda (alcance léxico).
