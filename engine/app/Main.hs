@@ -1,3 +1,6 @@
+-- | Punto de entrada IO del ejecutable del engine. Adapta argv y stdin a la
+-- función pura 'Engine.Cli.run', y traduce su respuesta a stdout, stderr y
+-- código de salida según el contrato de @contracts/README.md@ §2.
 module Main (main) where
 
 import Control.Exception (SomeException, displayException, evaluate, handle)

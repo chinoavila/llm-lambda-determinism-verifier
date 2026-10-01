@@ -96,6 +96,7 @@ typesOf :: Env LiteralValue -> Env Type
 typesOf = map (fmap literalType)
 
 -- FP[Patrones constantes]
+-- | Mapea desenlaces de programa a exit 0–4; uso e internos se resuelven en 'run'.
 verdictExit :: Verdict -> ExitCode
 verdictExit (Executed _) = ExitSuccess
 verdictExit (BlockedParse _) = ExitFailure 1

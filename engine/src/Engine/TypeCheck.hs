@@ -23,6 +23,7 @@ data Stage = Scope | TypeCheck
   deriving (Show, Eq)
 
 -- FP[Tipos algebraicos]
+-- | Fallos de scope/typecheck tipados; 'errorCode' los traduce al contrato CLI.
 data CheckError
   = UnboundVariable Name
   | OperandMismatch BinOp Type Type
@@ -124,6 +125,7 @@ checkProgram gamma (Program e) = do
   unless (isBase t) (Left (NonBaseResult t))
   Right t
 
+-- | Clasifica el error para seleccionar la etapa y exit code externos.
 errorStage :: CheckError -> Stage
 errorStage (UnboundVariable _) = Scope
 errorStage _ = TypeCheck
@@ -140,6 +142,7 @@ errorCode (NotAFunction _) = "NOT_A_FUNCTION"
 errorCode (ArgumentMismatch _ _) = "ARGUMENT_MISMATCH"
 errorCode (NonBaseResult _) = "NON_BASE_RESULT"
 
+-- | Mensaje legible; el código estable se obtiene con 'errorCode'.
 errorMessage :: CheckError -> String
 errorMessage (UnboundVariable x) = "variable no declarada: " ++ x
 errorMessage (OperandMismatch op a b) =
