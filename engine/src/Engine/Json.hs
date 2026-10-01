@@ -28,6 +28,17 @@ import Engine.Env (Env)
 import Engine.Number (isIntegral, scientificDecimal, scientificInt)
 import Engine.Types
 
+
+-- Qué hace este módulo (etapa 1 del motor, "parse"):
+--   parseProgram: recibe el texto JSON del LLM y lo convierte en un Program
+--     (las piezas de Types.hs). Aplica las reglas de contracts/ast-schema.json
+--     y además lo que el schema no puede controlar: que value coincida con
+--     value_type, los límites numéricos y que las options de In no estén vacías.
+--   envFromJSON: lee los datos del caso (--env) y arma el entorno de valores.
+-- Errores posibles: MALFORMED_JSON (no es JSON válido), INVALID_AST (no cumple
+-- la forma del schema) y LITERAL_TYPE_MISMATCH (value no coincide con value_type).
+
+
 -- FP[Tipos algebraicos]
 -- | Errores de la etapa @parse@. El texto es el mensaje de aeson, que incluye
 -- la ruta del nodo (por ejemplo @$.expr.left@).
