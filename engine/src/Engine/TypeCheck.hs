@@ -108,6 +108,17 @@ typeOf gamma (App f a) = do
       | otherwise -> Left (ArgumentMismatch param ta)
     _ -> Left (NotAFunction tf)
 
+    -- OBSERVACIÓN (caso Var): si scopeCheck ya pasó, ninguna variable debería
+    -- faltar en el entorno, así que este UnboundVariable no debería ocurrir en la
+    -- práctica. Igual tiene sentido dejarlo: así typeOf funciona bien por sí sola,
+    -- aunque alguien la llame sin pasar antes por scopeCheck.
+    
+    -- PREGUNTA (caso IfThenElse): las ramas tienen que ser del mismo tipo exacto,
+    -- sin promover Int a Decimal (lo pide contracts/README.md). Entonces una regla
+    -- como "si es socio, 0.15; si no, 0" queda bloqueada con BRANCH_MISMATCH
+    -- (Decimal contra Int), aunque en los operadores sí se promueve.
+    -- ¿Convendría permitir la promoción también acá? Implicaría cambiar el contrato.
+
 -- FP[Condicionales]
 -- | Tipo del resultado de un operador binario, o 'Nothing' si los operandos no
 -- sirven. Int se promueve a Decimal solo acá, dentro de operadores
@@ -153,6 +164,12 @@ errorCode (BranchMismatch _ _) = "BRANCH_MISMATCH"
 errorCode (NotAFunction _) = "NOT_A_FUNCTION"
 errorCode (ArgumentMismatch _ _) = "ARGUMENT_MISMATCH"
 errorCode (NonBaseResult _) = "NON_BASE_RESULT"
+
+-- OBSERVACIÓN: OperandMismatch, UnaryMismatch e InMismatch salen con el mismo
+-- código OPERAND_MISMATCH. En las estadísticas del experimento no se va a poder
+-- distinguir si el LLM se equivocó en un operador binario, en un NOT o en un
+-- IN; el detalle solo queda en el mensaje. Si ese dato interesara, se podrían
+-- separar los códigos (cambiando el contrato).
 
 -- | Mensaje legible; el código estable se obtiene con 'errorCode'.
 errorMessage :: CheckError -> String
