@@ -18,6 +18,18 @@ import Control.Monad (unless)
 import Engine.Env (Env, extend, lookupVar, names)
 import Engine.Types
 
+-- Qué hace este módulo (etapas 2 y 3 del motor, "scope" y "typecheck"):
+-- recibe el Program que armó Json.hs y el entorno de tipos (Env Type) y
+-- revisa, sin ejecutar nada, que la regla tenga sentido:
+--   scopeCheck: toda variable usada existe en el entorno. Si no, UNBOUND_VARIABLE.
+--   typeOf: calcula el tipo de cada expresión y verifica que encajen.
+--     Ej.: credit_score > 700 es Bool; credit_score + "hola" es OPERAND_MISMATCH.
+--   checkProgram: hace las dos cosas en orden y exige que el resultado final
+--     sea un tipo básico (Int, Decimal, Bool o String), no una función.
+-- Si algo falla, el programa se bloquea acá y no llega a ejecutarse (Eval.hs).
+-- Errores: UNBOUND_VARIABLE (scope) y OPERAND_MISMATCH, CONDITION_NOT_BOOL,
+-- BRANCH_MISMATCH, NOT_A_FUNCTION, ARGUMENT_MISMATCH, NON_BASE_RESULT (typecheck).
+
 -- | Etapa del contrato en la que se bloquea un programa.
 data Stage = Scope | TypeCheck
   deriving (Show, Eq)
