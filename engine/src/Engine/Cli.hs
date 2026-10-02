@@ -32,6 +32,16 @@ import Engine.Number (renderDecimal)
 import Engine.TypeCheck
 import Engine.Types
 
+-- Qué hace este módulo: une todas las etapas y arma la respuesta del motor.
+--   validate: pasa la respuesta del LLM por parse (Json.hs), scope y typecheck
+--     (TypeCheck.hs) y execution (Eval.hs), y se detiene en el primer error.
+--   run: lee los argumentos (--env, --print-gamma), llama a validate y arma la
+--     salida: una línea JSON con el veredicto y un código de salida.
+-- Códigos de salida: 0 ejecutado, 1 bloqueado en parse, 2 bloqueado en scope,
+-- 3 bloqueado en typecheck, 4 error al ejecutar (división por cero, desborde),
+-- 64 error de uso (argumentos o --env inválidos), 70 error interno del motor.
+-- Main.hs solo hace la entrada/salida alrededor de run.
+
 -- | @engine [--env '<objeto JSON>'] [--print-gamma]@
 data Options = Options
   { optEnv :: Maybe String
