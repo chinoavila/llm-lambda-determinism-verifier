@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Suite Hspec/QuickCheck del engine: cubre entorno, JSON → AST, scope,
+-- tipado, evaluación, contrato CLI y fixtures compartidas.
 module Main (main) where
 
 import Data.Aeson (Value, encode, eitherDecode, withObject, (.:))

@@ -1,3 +1,5 @@
+"""Tests de baseline1: extracción de code y veredictos de ejecución (sandbox mockeado)."""
+
 from __future__ import annotations
 
 import json

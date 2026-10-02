@@ -24,6 +24,10 @@ module Engine.Types
 -- | Nombre de variable. El parser garantiza @^[a-z_][A-Za-z0-9_]*$@.
 type Name = String
 
+-- Equivale a las reglas BaseType y Type de contracts/ast-schema.json.
+-- TInt, TDecimal, TBool y TString son los cuatro tipos básicos
+-- ("Int", "Decimal", "Bool" y "String" en el JSON).
+-- TArrow a b es el tipo de función { "from": a, "to": b }.
 -- FP[Tipos] FP[Tipos algebraicos]
 -- | τ ::= Int | Decimal | Bool | String | τ → τ
 data Type
@@ -65,6 +69,19 @@ data BinOp
   | Or
   deriving (Show, Eq, Enum, Bounded)
 
+
+-- Equivale a la regla Expr de contracts/ast-schema.json: una expresión es
+-- una de estas 8 formas. Los campos del JSON corresponden, en orden, a los
+-- datos que lleva cada forma:
+--   Literal    -> value y value_type (juntos en LiteralValue)
+--   Var        -> name
+--   UnaryOp    -> op, operand
+--   BinaryOp   -> op, left, right
+--   In         -> value, options
+--   IfThenElse -> condition, then, else
+--   Lam        -> param, param_type, body
+--   App        -> fn, arg
+-- Explicación de cada forma: docs/guia-ast-schema.md.
 -- FP[Tipos algebraicos] FP[Funciones lambda]
 -- | e ::= Literal | Var | UnaryOp | BinaryOp | In | IfThenElse | Lam | App
 data Expr
@@ -94,6 +111,7 @@ isNumeric :: Type -> Bool
 isNumeric t = t == TInt || t == TDecimal
 
 -- FP[Igualaciones]
+-- | Tipo base asociado a un literal; no inspecciona cómo se usa en la expresión.
 literalType :: LiteralValue -> Type
 literalType (VInt _) = TInt
 literalType (VDecimal _) = TDecimal
@@ -129,5 +147,6 @@ opSymbol Neq = "!="
 opSymbol And = "AND"
 opSymbol Or = "OR"
 
+-- | Nombre estable del operador unario en el AST JSON.
 unOpSymbol :: UnOp -> String
 unOpSymbol Not = "NOT"

@@ -1,3 +1,5 @@
+"""Tests del cliente LLM: config, balanceo, transporte inyectable y outcomes."""
+
 from __future__ import annotations
 
 import json

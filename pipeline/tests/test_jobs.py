@@ -1,3 +1,5 @@
+"""Tests de pipeline/jobs.py: RunManager, una corrida concurrente y cancelación."""
+
 from __future__ import annotations
 
 import json

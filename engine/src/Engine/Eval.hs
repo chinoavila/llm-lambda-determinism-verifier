@@ -23,6 +23,18 @@ import Engine.Env (Env, extend, lookupVar)
 import Engine.Number (decimalInRange, intInRange)
 import Engine.Types
 
+
+-- Qué hace este módulo (etapa 4 del motor, "execution"):
+-- recibe el Program que ya pasó TypeCheck.hs y los valores del caso
+-- (Env LiteralValue) y calcula el resultado de la regla.
+--   eval: recorre la expresión y calcula su valor. Ej.: con credit_score = 750,
+--     credit_score > 700 da true.
+--   evalProgram: arma el entorno de valores, llama a eval y devuelve el resultado.
+--   applyOp: hace la cuenta de cada operador (+, -, *, /, %, >, ==, ...).
+-- Las cuentas son exactas: Int y Rational, sin Double (ver Number.hs).
+-- Errores posibles (runtime_error): DIVISION_BY_ZERO y NUMERIC_OVERFLOW.
+-- Los errores "Stuck..." no deberían ocurrir nunca: si aparecen, es un bug del motor.
+
 -- FP[Tipos algebraicos] FP[Funciones lambda]
 -- | v ::= literal | ⟨λx. e, ρ⟩. Una clausura guarda el entorno donde se
 -- definió la lambda (alcance léxico).
@@ -32,11 +44,13 @@ data Value
   deriving (Show, Eq)
 
 -- | Errores del programa en ejecución (@contracts/README.md@ §1).
+-- | Fallo legítimo del programa bien tipado que no puede descartarse estáticamente.
 data RuntimeError
   = DivisionByZero
   | NumericOverflow
   deriving (Show, Eq)
 
+-- | Suma de errores runtime y estados atascados imposibles bajo el typechecker.
 data EvalError
   = Runtime RuntimeError
   | StuckVar Name
@@ -133,9 +147,11 @@ applyOp op x y = case (x, y) of
     intResult n = if intInRange n then Right (VInt (fromInteger n)) else runtime NumericOverflow
     decimalResult q = if decimalInRange q then Right (VDecimal q) else runtime NumericOverflow
 
+-- | Eleva un error runtime al tipo común de errores del evaluador.
 runtime :: RuntimeError -> Either EvalError a
 runtime = Left . Runtime
 
+-- | Convierte un literal numérico a racional; valores no numéricos dan 'Nothing'.
 rational :: LiteralValue -> Maybe Rational
 rational (VInt n) = Just (toRational n)
 rational (VDecimal q) = Just q
@@ -160,15 +176,18 @@ evalProgram env (Program e) = do
     VBase lit -> Right lit
     VClosure {} -> Left StuckResult
 
+-- | Código estable del contrato para un fallo runtime del programa.
 runtimeErrorCode :: RuntimeError -> String
 runtimeErrorCode DivisionByZero = "DIVISION_BY_ZERO"
 runtimeErrorCode NumericOverflow = "NUMERIC_OVERFLOW"
 
+-- | Mensaje humano del error runtime; no se usa como identificador estable.
 runtimeErrorMessage :: RuntimeError -> String
 runtimeErrorMessage DivisionByZero = "división por cero"
 runtimeErrorMessage NumericOverflow =
   "resultado fuera de rango: Int de 64 bits, o Decimal menor a 10^28 con denominador de a lo sumo 10^28"
 
+-- | Convierte cualquier error del evaluador a diagnóstico para stderr.
 evalErrorMessage :: EvalError -> String
 evalErrorMessage (Runtime err) = runtimeErrorMessage err
 evalErrorMessage (StuckVar x) = "variable sin valor en tiempo de ejecución: " ++ x

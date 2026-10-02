@@ -7,6 +7,13 @@ Baseline 2), todas sobre el mismo modelo asignado. El `outcome` de cada
 del grupo contra el `env` de cada escenario del caso (engine/ por subproceso o
 un baseline). Un renglón JSON Lines por escenario, según
 contracts/output-record-schema.json.
+
+Precondición común para todas las corridas: el caso ya fue validado con
+`read_case`/`case_gamma`, y el runner en turno recibe un `gamma` estable y una
+salida de LLM que se ejecuta en un entorno `env` sin modificar el caso.
+Postcondición: cada registro conserva `llm_raw` + `verdict` del escenario, la
+etapa `llm` solo aparece en errores del modelo y los `64/70` del engine abortan
+la corrida por contrato (`ENGINE_EXIT_STAGE` y `EngineError`).
 """
 
 from __future__ import annotations
@@ -111,11 +118,15 @@ class Case:
 
 
 def read_case(path: Path) -> Case:
-    """Lee un caso del corpus. Los números no enteros se leen como `Decimal` para verificar
-    que se puedan pasar sin pérdida al engine y al sandbox (ver `load_case`).
+    """Lee un caso del corpus y valida su estructura antes de usarlo.
 
-    Una fixture (contracts/README.md §4: un solo `env`, sin `scenarios`) se lee como un caso
-    con un único escenario `S1`; así el comando de punta a punta corre sobre las fixtures.
+    Precondición: `path` apunta a un JSON con formato `contracts/case-schema.json` o a una
+    fixture legacy con `env` directo. 
+    Postcondición: devuelve un `Case` con `case_id`,  `description` y escenarios normalizados; 
+    si falta `scenarios` pero hay `env`, se crea el escenario `S1` para compatibilidad con `python -m pipeline run`.
+
+    Los números no enteros se leen como `Decimal` para verificar que se puedan pasar sin
+    pérdida al engine y al sandbox (ver `load_case`).
     """
     try:
         data = json.loads(path.read_text(encoding="utf-8"), parse_float=Decimal)
@@ -287,7 +298,14 @@ def run_engine(
 def run_treatment(
     llm_raw: str, env: Mapping[str, object], gamma: Mapping[str, str]
 ) -> Verdict:
-    """Runner del grupo `treatment`. No usa Γ: el engine lo deduce de `env`."""
+    """Runner del grupo `treatment`. No usa Γ: el engine lo deduce de `env`. 
+
+    Precondición: `llm_raw` es la salida JSON de una llamada al LLM ya validada como `ok`;
+    el `env` del escenario ya fue normalizado y `gamma` es el Γ común del caso. El engine
+    recibe `stdin` con la regla y `--env` con el ambiente; si el proceso supera el timeout
+    o sale con 64/70 se registra el fallo de ejecución y el orquestador aborta la corrida
+    por `EngineError` si el protocolo se rompe.
+    """
     return run_engine(llm_raw, env)
 
 
@@ -408,9 +426,14 @@ def run_case(
     run_id: str,
     repetitions: int = 1,
 ) -> list[Record]:
-    """`repetitions` rondas de triple llamada (una por grupo), todas con el mismo modelo asignado.
+    """Ejecuta una corrida completa para un caso.
 
-    Cada llamada es una generación: su salida se ejecuta contra todos los escenarios del caso.
+    Precondición: `case` ya fue validado, `gamma` coincide entre escenarios y cada una de
+    las tres llamadas del LLM usa el mismo modelo del caso. 
+    Postcondición: devuelve un
+    `Record` por escenario y repetición; si la generación del LLM falla, se registra como
+    `llm_error` sin invocar el runner; si el runner falla, se conserva el `verdict` del
+    escenario con el `error` del engine o del sandbox.
     """
     if repetitions < 1:
         raise ValueError("repetitions debe ser >= 1")

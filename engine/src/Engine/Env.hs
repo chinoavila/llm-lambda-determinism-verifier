@@ -10,10 +10,15 @@ module Engine.Env
 
 import Engine.Types (Name)
 
+-- Un entorno es una lista de pares (nombre de variable, dato). Se usa de dos formas:
+--   Env Type:         nombre -> tipo.  Ej.: [("credit_score", TInt)].     Lo usa TypeCheck.hs.
+--   Env LiteralValue: nombre -> valor. Ej.: [("credit_score", VInt 750)]. Lo usa Eval.hs.
+-- Los dos salen del "env" de cada caso (por ejemplo, contracts/fixtures/rule-001.json).
 -- FP[Polimorfismo] FP[Tuplas]
 -- | Asociación nombre → dato. El binding más reciente queda al frente.
 type Env a = [(Name, a)]
 
+-- | Entorno sin bindings; base para Γ y para el entorno de evaluación.
 emptyEnv :: Env a
 emptyEnv = []
 
@@ -24,6 +29,7 @@ extend :: Name -> a -> Env a -> Env a
 extend x v env = (x, v) : env
 
 -- FP[Patrones de listas] FP[Tuplas] FP[Recursión] FP[Guardas] FP[Reducciones] FP[Funciones totales]
+-- | Busca desde el binding más reciente; devuelve 'Nothing' si el nombre falta.
 lookupVar :: Name -> Env a -> Maybe a
 lookupVar _ [] = Nothing
 lookupVar x ((k, v) : rest)
@@ -31,5 +37,6 @@ lookupVar x ((k, v) : rest)
   | otherwise = lookupVar x rest
 
 -- FP[map/filter/fold]
+-- | Proyecta los nombres en orden de precedencia (más reciente primero).
 names :: Env a -> [Name]
 names = map fst

@@ -1,8 +1,10 @@
+/** Vista para estimar, iniciar, consultar y cancelar corridas del pipeline. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText, type Estimate, type Health, type Job, type JobStatus, type Rule, type Runs, type Selection } from "../api";
 import { Badge, Button, Card, Confirm, fmtDate, inputClass, Notice, type Tone } from "../components/ui";
 import { navigate } from "../router";
 
+/** Presentación de estados de job compartida por la vista de corridas. */
 export const JOB_STATUS: Record<JobStatus, { label: string; tone: Tone }> = {
   running: { label: "En curso", tone: "accent" },
   finished: { label: "Terminada", tone: "ok" },
@@ -10,6 +12,7 @@ export const JOB_STATUS: Record<JobStatus, { label: string; tone: Tone }> = {
   cancelled: { label: "Cancelada", tone: "warn" },
 };
 
+/** Coordina el formulario de selección, el seguimiento del job y el log en vivo. */
 export function RunsPage({ health, onChanged }: { health: Health | null; onChanged: () => void }) {
   const [runs, setRuns] = useState<Runs | null>(null);
   const [rules, setRules] = useState<Rule[]>([]);

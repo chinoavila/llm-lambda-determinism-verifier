@@ -14,12 +14,14 @@ function subscribe(fn: () => void) {
   };
 }
 
+/** Cambia la URL sin recarga y notifica a los suscriptores del router. */
 export function navigate(path: string) {
   if (path === window.location.pathname) return;
   window.history.pushState(null, "", path);
   listeners.forEach((fn) => fn());
 }
 
+/** Se suscribe a cambios pushState/popstate y devuelve pathname actual. */
 export function usePath(): string {
   return useSyncExternalStore(subscribe, () => window.location.pathname);
 }

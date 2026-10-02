@@ -24,6 +24,7 @@ type FilterKey = (typeof FILTERS)[number][0];
 
 const result = (r: Result | null | undefined) => (r ? showValue(r.value) : "—");
 
+/** Consulta y filtra los registros de una corrida, mostrando el expected asociado. */
 export function RecordsPage({ runId }: { runId: string | null }) {
   const [runs, setRuns] = useState<RunInfo[] | null>(null);
   const [rows, setRows] = useState<RecordRow[] | null>(null);
