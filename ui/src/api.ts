@@ -97,6 +97,20 @@ export type RecordRow = {
   expected: Result | null;
 };
 
+/** Estado de cada observación metodológica en el reporte con IA. */
+export type ObservationStatus = "se_repite" | "no_se_repite" | "no_concluyente";
+/** Informe que redacta el LLM (specs/ui.md §Reporte con IA); el servidor valida su forma. */
+export type AiReport = {
+  title: string;
+  abstract: string;
+  sections: { heading: string; paragraphs: string[] }[];
+  observations: { number: number; status: ObservationStatus; text: string }[];
+  limitations: string[];
+  conclusions: string[];
+};
+/** Respuesta de POST /api/runs/{id}/report; `saved` es la traza en out/. */
+export type ReportResponse = { report: AiReport; model: string; usage: Record<string, unknown> | null; saved: string };
+
 export class ApiError extends Error {
   /** Error HTTP con status para que la UI distinga conflictos y fallos de servicio. */
   constructor(
@@ -160,6 +174,8 @@ export const api = {
     const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== "")).toString();
     return request<RecordRow[]>(`/api/runs/${enc(id)}/records${q ? `?${q}` : ""}`);
   },
+  /** Una llamada al LLM: redacta el informe de la corrida a partir de la evidencia. */
+  report: (id: string, evidence: unknown) => request<ReportResponse>(`/api/runs/${enc(id)}/report`, { method: "POST", body: { evidence } }),
 };
 
 export const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));

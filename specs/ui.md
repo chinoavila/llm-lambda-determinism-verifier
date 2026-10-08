@@ -75,7 +75,7 @@
 2. Corpus: CRUD de `corpus/*.json` desde la UI, con `check-case` al guardar. Hecha.
 3. Corridas y registros: lanzar `run` con confirmación de cuota, log en vivo, cancelación y exploración de `out/<run_id>.jsonl`. Hecha.
 4. Estadísticas: pantalla por corrida calculada en la SPA (§Estadísticas). Hecha.
-5. Reporte con IA: informe en PDF de una corrida redactado por el LLM (§Reporte con IA). En curso.
+5. Reporte con IA: informe en PDF de una corrida redactado por el LLM (§Reporte con IA). Hecha.
 
 ## Relación con los generadores del corpus
 

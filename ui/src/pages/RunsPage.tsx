@@ -1,8 +1,10 @@
 /** Vista para estimar, iniciar, consultar y cancelar corridas del pipeline. */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, errorText, type Estimate, type Health, type Job, type JobStatus, type Rule, type Runs, type Selection } from "../api";
+import { api, errorText, type Estimate, type Health, type Job, type JobStatus, type Rule, type RunInfo, type Runs, type Selection } from "../api";
 import { Badge, Button, Card, Confirm, fmtDate, inputClass, Notice, type Tone } from "../components/ui";
 import { EXPORT_FORMATS, exportRecords, type ExportFormat } from "../lib/export";
+import { buildReportData } from "../lib/report";
+import { downloadReportPdf, reportDocDefinition } from "../lib/reportPdf";
 import { navigate } from "../router";
 
 /** Presentación de estados de job compartida por la vista de corridas. */
@@ -26,6 +28,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   const [confirming, setConfirming] = useState<{ error: string | null; busy: boolean } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [logFor, setLogFor] = useState<string | null>(null);
+  const [reporting, setReporting] = useState<{ run: RunInfo; busy: boolean; error: string | null } | null>(null);
 
   const selection: Selection = { source, repetitions, ...(source === "corpus" && picked.length ? { case_ids: picked } : {}) };
   const selectionKey = JSON.stringify(selection);
@@ -98,6 +101,21 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
       setError(errorText(e));
     } finally {
       setCancelling(false);
+    }
+  }
+
+  // Una llamada al LLM: la evidencia la arma la SPA y el PDF también (specs/ui.md §Reporte con IA).
+  async function generateReport(run: RunInfo) {
+    setReporting({ run, busy: true, error: null });
+    try {
+      const rows = await api.records(run.run_id, {});
+      const data = buildReportData(run, rows, new Map(rules.map((r) => [r.case_id, r])));
+      const res = await api.report(run.run_id, data.evidence);
+      const doc = reportDocDefinition(res.report, data, { model: res.model, createdAt: new Date().toLocaleString("es-AR") });
+      await downloadReportPdf(doc, `${run.run_id}-reporte.pdf`);
+      setReporting(null);
+    } catch (e) {
+      setReporting({ run, busy: false, error: errorText(e) });
     }
   }
 
@@ -232,6 +250,16 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                       </Button>
                     )}
                     {r.records > 0 && <ExportMenu runId={r.run_id} onError={setError} />}
+                    {r.records > 0 && (
+                      <Button
+                        variant="link"
+                        disabled={!llmReady || !!reporting?.busy}
+                        title={llmReady ? undefined : "Faltan las credenciales del LLM"}
+                        onClick={() => setReporting({ run: r, busy: false, error: null })}
+                      >
+                        {reporting?.busy && reporting.run.run_id === r.run_id ? "Generando…" : "Generar reporte con IA"}
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -251,6 +279,22 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
         >
           Hace <b className="text-ink">{estimate.calls} llamadas</b> al LLM ({health?.llm.models.join(", ")}) y consume cuota del proveedor.
           Los registros se agregan a <code className="font-mono">out/</code> a medida que termina cada caso.
+        </Confirm>
+      )}
+
+      {reporting && (
+        <Confirm
+          title="¿Generar el reporte con IA?"
+          confirmLabel="Generar reporte (1 llamada)"
+          busy={reporting.busy}
+          error={reporting.error}
+          onConfirm={() => void generateReport(reporting.run)}
+          onCancel={() => !reporting.busy && setReporting(null)}
+        >
+          Hace <b className="text-ink">1 llamada</b> al LLM ({health?.llm.models.join(", ")}) con las estadísticas de{" "}
+          <code className="font-mono">{reporting.run.run_id}</code> y las bases metodológicas del proyecto, y consume cuota del proveedor. El
+          texto lo redacta el modelo; las tablas del PDF salen de los registros. La respuesta queda guardada en{" "}
+          <code className="font-mono">out/</code>.
         </Confirm>
       )}
     </div>

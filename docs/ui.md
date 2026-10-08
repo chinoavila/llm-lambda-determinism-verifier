@@ -59,7 +59,7 @@ flowchart LR
 | 2. Corpus | Crear, editar y eliminar reglas de `corpus/`, con `check-case` al guardar | hecha |
 | 3. Corridas y registros | Lanzar `run` con confirmación de cuota, log en vivo, cancelar y explorar los registros | hecha |
 | 4. Estadísticas | Resumen de una corrida calculado en el navegador | hecha |
-| 5. Reporte con IA | Informe en PDF de una corrida redactado por el LLM | en curso |
+| 5. Reporte con IA | Informe en PDF de una corrida redactado por el LLM | hecha |
 
 ## Cómo se cuentan las estadísticas
 
