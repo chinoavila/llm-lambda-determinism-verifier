@@ -77,6 +77,7 @@
 3. Corridas y registros: lanzar `run` con confirmación de cuota, log en vivo, cancelación y exploración de `out/<run_id>.jsonl`. Hecha.
 4. Estadísticas: pantalla por corrida calculada en la SPA (§Estadísticas). Hecha.
 5. Reporte con IA: informe en PDF de una corrida redactado por el LLM (§Reporte con IA). Hecha.
+6. Condiciones de corrida: modelo fijo (por defecto el primero de `llm.toml`; "Automático" avisa que mezcla modelos), temperatura (por defecto 0) y 5 repeticiones por defecto; "Reanudar" en cada corrida con registros; aviso de reglas sin review aprobada (`ui/src/lib/runs.ts`). Pendiente: guardar `request_params` en el registro (cambio de contrato).
 
 ## Relación con los generadores del corpus
 

@@ -52,7 +52,15 @@ export type Health = {
 };
 
 /** Selección para estimar o iniciar una corrida; case_ids restringe el corpus; resume continúa una corrida existente. */
-export type Selection = { source: "corpus" | "fixtures"; case_ids?: string[]; repetitions: number; resume?: string };
+export type Selection = {
+  source: "corpus" | "fixtures";
+  case_ids?: string[];
+  repetitions: number;
+  /** Id de modelo de llm.toml, o "auto" para el balanceo por prioridad. */
+  model?: string;
+  temperature?: number;
+  resume?: string;
+};
 /** Estimación de volumen; `calls` es casos × grupos × repeticiones. */
 export type Estimate = { cases: number; repetitions: number; calls: number };
 /** Estados terminales y activo del proceso de corrida. */
@@ -63,6 +71,10 @@ export type Job = {
   source: string;
   cases: string[];
   repetitions: number;
+  /** null = balanceo por prioridad / temperatura de llm.toml o del proveedor. */
+  model: string | null;
+  temperature: number | null;
+  resume: boolean;
   calls: number;
   started_at: string;
   status: JobStatus;

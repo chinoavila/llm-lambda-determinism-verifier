@@ -5,6 +5,7 @@ import { Badge, Button, Card, Confirm, fmtDate, inputClass, Notice, type Tone } 
 import { EXPORT_FORMATS, exportRecords, type ExportFormat } from "../lib/export";
 import { buildReportData } from "../lib/report";
 import { downloadReportPdf, reportDocDefinition } from "../lib/reportPdf";
+import { AUTO_MODEL, runSelection, unreviewedRules } from "../lib/runs";
 import { navigate } from "../router";
 
 /** Presentación de estados de job compartida por la vista de corridas. */
@@ -22,7 +23,9 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<Selection["source"]>("corpus");
   const [picked, setPicked] = useState<string[]>([]);
-  const [repetitions, setRepetitions] = useState(1);
+  const [repetitions, setRepetitions] = useState(5);
+  const [model, setModel] = useState(AUTO_MODEL);
+  const [temperature, setTemperature] = useState(0);
   const [resume, setResume] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [estimateError, setEstimateError] = useState<string | null>(null);
@@ -31,12 +34,15 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   const [logFor, setLogFor] = useState<string | null>(null);
   const [reporting, setReporting] = useState<{ run: RunInfo; busy: boolean; error: string | null } | null>(null);
 
-  const selection: Selection = {
-    source,
-    repetitions,
-    ...(source === "corpus" && picked.length ? { case_ids: picked } : {}),
-    ...(resume ? { resume } : {}),
-  };
+  const selection = runSelection({ source, picked, repetitions, model, temperature, resume });
+  const unreviewed = unreviewedRules(rules, { source, picked });
+
+  // Por defecto, el primer modelo de llm.toml: el experimento pide un modelo fijo por corrida.
+  const modelTouched = useRef(false);
+  const firstModel = health?.llm.models[0];
+  useEffect(() => {
+    if (firstModel && !modelTouched.current) setModel(firstModel);
+  }, [firstModel]);
   const selectionKey = JSON.stringify(selection);
 
   const loadRuns = useCallback(() => {
@@ -176,7 +182,49 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
               className={`${inputClass} w-28 tabular-nums`}
             />
           </label>
+          <label className="grid content-start gap-1.5">
+            <span className="text-[12.5px] font-medium text-muted">Modelo</span>
+            <select
+              value={model}
+              onChange={(e) => {
+                modelTouched.current = true;
+                setModel(e.target.value);
+              }}
+              className={`${inputClass} w-64`}
+            >
+              {health?.llm.models.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+              <option value={AUTO_MODEL}>Automático (cambia según la cuota; no recomendado para el experimento)</option>
+            </select>
+          </label>
+          <label className="grid content-start gap-1.5">
+            <span className="text-[12.5px] font-medium text-muted">Temperatura</span>
+            <input
+              type="number"
+              min={0}
+              max={2}
+              step={0.1}
+              value={temperature}
+              onChange={(e) => setTemperature(Math.max(0, Math.min(2, Number(e.target.value) || 0)))}
+              className={`${inputClass} w-28 tabular-nums`}
+            />
+          </label>
         </div>
+        {model === AUTO_MODEL && (
+          <Notice>
+            Con el modelo automático, cada caso puede ir a un modelo distinto según la cuota, y el modelo queda mezclado con la categoría. Para
+            el experimento, fijá un modelo.
+          </Notice>
+        )}
+        {unreviewed.length > 0 && (
+          <Notice>
+            {unreviewed.length} de las reglas elegidas no tienen la revisión manual aprobada: sus <code className="font-mono">expected</code>{" "}
+            los calculó el engine y nadie los validó todavía.
+          </Notice>
+        )}
         {source === "corpus" && rules.length > 0 && (
           <details className="rounded-lg border border-line px-3.5 py-2.5">
             <summary className="cursor-pointer text-muted">
@@ -275,6 +323,9 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                           if (r.job) {
                             setSource(r.job.source === "fixtures" ? "fixtures" : "corpus");
                             setRepetitions(r.job.repetitions);
+                            modelTouched.current = true;
+                            setModel(r.job.model ?? AUTO_MODEL);
+                            if (r.job.temperature !== null) setTemperature(r.job.temperature);
                           }
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
@@ -310,7 +361,9 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
           onConfirm={launch}
           onCancel={() => setConfirming(null)}
         >
-          Hace <b className="text-ink">{estimate.calls} llamadas</b> al LLM ({health?.llm.models.join(", ")}) y consume cuota del proveedor.
+          Hace <b className="text-ink">{estimate.calls} llamadas</b> al LLM con{" "}
+          <b className="text-ink">{model === AUTO_MODEL ? `balanceo entre ${health?.llm.models.join(", ")}` : model}</b> a temperatura{" "}
+          <b className="text-ink">{temperature}</b>, y consume cuota del proveedor.
           Los registros se agregan a <code className="font-mono">out/</code> a medida que termina cada caso.
         </Confirm>
       )}
