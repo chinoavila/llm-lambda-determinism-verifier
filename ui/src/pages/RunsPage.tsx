@@ -6,6 +6,7 @@ import { EXPORT_FORMATS, exportRecords, type ExportFormat } from "../lib/export"
 import { buildReportData } from "../lib/report";
 import { downloadReportPdf, reportDocDefinition } from "../lib/reportPdf";
 import { AUTO_MODEL, runSelection, unreviewedRules } from "../lib/runs";
+import { generations, runConditions } from "../lib/stats";
 import { navigate } from "../router";
 
 /** Presentación de estados de job compartida por la vista de corridas. */
@@ -36,6 +37,22 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
 
   const selection = runSelection({ source, picked, repetitions, model, temperature, resume });
   const unreviewed = unreviewedRules(rules, { source, picked });
+
+  // Tokens por llamada de la corrida más reciente que los registra (registro 2.1), para estimar el gasto.
+  const [tokenRef, setTokenRef] = useState<{ runId: string; perCall: number } | null>(null);
+  const runIds = (runs?.runs ?? []).filter((r) => r.records > 0).map((r) => r.run_id).slice(0, 3).join(",");
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      for (const id of runIds ? runIds.split(",") : []) {
+        const perCall = runConditions(generations(await api.records(id, {}))).tokensPerCall;
+        if (perCall !== null) return alive && setTokenRef({ runId: id, perCall });
+      }
+    })().catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [runIds]);
 
   // Por defecto, el primer modelo de llm.toml: el experimento pide un modelo fijo por corrida.
   const modelTouched = useRef(false);
@@ -263,6 +280,12 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                 (resume
                   ? `${estimate.calls} llamadas al LLM pendientes de ${estimate.cases * 3 * estimate.repetitions}`
                   : `${estimate.cases} casos × 3 grupos × ${estimate.repetitions} ${estimate.repetitions === 1 ? "repetición" : "repeticiones"} = ${estimate.calls} llamadas al LLM`))}
+            {estimate && tokenRef && (
+              <span title={`Promedio de ${Math.round(tokenRef.perCall)} tokens por llamada en ${tokenRef.runId}`}>
+                {" "}
+                · ≈ {Math.round(estimate.calls * tokenRef.perCall).toLocaleString("es-AR")} tokens
+              </span>
+            )}
             {active && " · ya hay una corrida en curso"}
           </span>
         </div>

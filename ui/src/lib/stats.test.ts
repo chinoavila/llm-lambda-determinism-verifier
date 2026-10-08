@@ -4,6 +4,11 @@ import type { RecordRow, Rule } from "../api";
 import { blankRule } from "./rules";
 import {
   blockedStages,
+  consistency,
+  kValues,
+  passAtK,
+  passAtKOne,
+  runConditions,
   durationByGroup,
   errorsByGroup,
   fmtRate,
@@ -130,5 +135,61 @@ describe("fmtRate", () => {
   it("escribe el porcentaje con coma decimal", () => {
     expect(fmtRate(0.5)).toBe("50,0 %");
     expect(fmtRate(null)).toBe("—");
+  });
+});
+
+describe("repeticiones", () => {
+  // c1: pasa 1 de 3; c2: pasa 3 de 3; c3: una sola repetición, que falla.
+  const wrong = { result: { type: "Bool" as const, value: false } };
+  const gens = generations([
+    row({ repetition: 1 }),
+    row({ repetition: 2, ...wrong }),
+    row({ repetition: 3, ...wrong }),
+    row({ case_id: "c2", repetition: 1 }),
+    row({ case_id: "c2", repetition: 2 }),
+    row({ case_id: "c2", repetition: 3 }),
+    row({ case_id: "c3", ...wrong }),
+  ]);
+
+  it("pass@k con el estimador insesgado, solo sobre reglas con k generaciones", () => {
+    expect(passAtKOne(3, 1, 1)).toBeCloseTo(1 / 3);
+    expect(passAtKOne(3, 1, 2)).toBeCloseTo(2 / 3);
+    expect(passAtKOne(5, 0, 3)).toBe(0);
+    expect(passAtKOne(5, 3, 3)).toBe(1);
+    const [k1, k3] = passAtK(gens, [1, 3]);
+    expect(k1!.byGroup.treatment).toEqual({ rate: (1 / 3 + 1 + 0) / 3, cases: 3 });
+    expect(k3!.byGroup.treatment).toEqual({ rate: 1, cases: 2 });
+    expect(k1!.byGroup.baseline1).toEqual({ rate: null, cases: 0 });
+    expect(kValues(5)).toEqual([1, 2, 3, 5]);
+  });
+
+  it("una regla es inestable si sus repeticiones pasan y fallan", () => {
+    expect(consistency(gens).treatment).toEqual({ cases: 2, stable: 1, unstable: ["c1"] });
+  });
+});
+
+describe("runConditions", () => {
+  it("lee temperatura y tokens una vez por generación", () => {
+    const params = { model: "m", temperature: 0 };
+    const gens = generations([
+      row({ request_params: params, usage: { total_tokens: 100 } }),
+      row({ scenario_id: "S2", request_params: params, usage: { total_tokens: 100 } }),
+      row({ group: "baseline1", request_params: params, usage: { total_tokens: 300 } }),
+      row({ group: "baseline2", request_params: params, usage: null }),
+    ]);
+    expect(runConditions(gens)).toEqual({
+      models: ["m"],
+      temperatures: ["0"],
+      repetitions: 1,
+      generations: 3,
+      withUsage: 2,
+      totalTokens: 400,
+      tokensPerCall: 200,
+    });
+  });
+
+  it("distingue un registro 2.0 de una temperatura que no se envió", () => {
+    const gens = generations([row({}), row({ case_id: "c2", request_params: { model: "m" }, usage: null })]);
+    expect(runConditions(gens)).toMatchObject({ temperatures: ["del proveedor", "no registrada"], tokensPerCall: null });
   });
 });

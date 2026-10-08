@@ -119,6 +119,14 @@ export function evidenceAnnex(e: Evidence, passByRule: BreakdownRow[]): Content[
     ]),
     table(["*", "auto"], ["6. Bloqueos del Tratamiento por código", "Generaciones"], Object.entries(o.treatment_blocks_by_code).sort(([, a], [, b]) => b - a).map(([k, n]) => [{ text: k, style: "mono" }, num(n)])),
     note(`7. Repeticiones: ${e.run.repetitions}. Temperatura: ${e.run.temperature}.`),
+    ...(e.pass_at_k.length > 1
+      ? [
+          table(["*", ...GROUPS.map(() => "auto")], ["7. pass@k (reglas con k generaciones)", ...GROUPS.map((g) => GROUP[g]!)], [
+            ...e.pass_at_k.map((r) => [`pass@${r.k}`, ...GROUPS.map((g) => num(`${fmtRate(r.byGroup[g].rate)} (${r.byGroup[g].cases})`))]),
+            ["7. Reglas inestables entre repeticiones", ...GROUPS.map((g) => num(e.consistency[g].cases ? `${e.consistency[g].unstable} de ${e.consistency[g].cases}` : "—"))],
+          ]),
+        ]
+      : []),
     note(`8. Escenarios en que los tres grupos coinciden entre sí y contradicen el expected: ${o.expected_contradictions.scenarios}.`),
     h2("A.11 pass@1 por regla"),
     breakdown("Regla", passByRule),
@@ -178,6 +186,8 @@ export function reportDocDefinition(report: AiReport, data: ReportData, meta: Re
         ["Reglas / escenarios", `${e.run.cases} / ${e.run.scenarios}`],
         ["Repeticiones", String(e.run.repetitions)],
         ["Modelos de la corrida", e.run.models.join(", ")],
+        ["Temperatura", e.run.temperature],
+        ["Tokens", e.run.tokens.per_call === null ? "no registrados" : `${e.run.tokens.total} (${Math.round(e.run.tokens.per_call)} por llamada)`],
         ["Texto redactado por", `${meta.model}, ${meta.createdAt}`],
       ]),
       note(`El texto de este informe lo redactó ${meta.model} a partir de la evidencia del Anexo A y de las bases metodológicas del proyecto (pipeline/pipeline/report_methodology.md). Las cifras de las tablas las calculó la SPA a partir de out/${e.run.run_id}.jsonl; ante una diferencia con el texto, valen las tablas.`),

@@ -86,6 +86,8 @@ describe("buildReportData", () => {
     const { evidence: e, passByRule } = buildReportData(RUN, rows, RULES);
     expect(e.run).toMatchObject({ run_id: "r", records: 5, generations: 4, cases: 2, scenarios: 3, repetitions: 1, models: ["m1"] });
     expect(e.run.cases_by_category).toEqual({ "Cat. 1 · estructura": 1, "Cat. 2 · tipos": 1 });
+    expect(e.run).toMatchObject({ temperature: "no registrada", tokens: { total: 0, per_call: null, generations_with_usage: 0 } }); // registros 2.0
+    expect(e.pass_at_k.map((r) => r.k)).toEqual([1]);
     expect(e.pass_by_group.treatment).toMatchObject({ pass: 1, fail: 1 });
     expect(e.observations.llm_error_generations).toEqual({ treatment: 0, baseline1: 0, baseline2: 1 });
     expect(e.observations.double_escaped_syntax_errors).toEqual({ baseline1: 1, baseline2: 0 });

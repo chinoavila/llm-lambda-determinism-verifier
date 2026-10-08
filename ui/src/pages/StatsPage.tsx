@@ -5,6 +5,10 @@ import { api, errorText, type RecordRow, type Rule, type RunInfo } from "../api"
 import { Button, Card, Notice, Tab, type Tone } from "../components/ui";
 import {
   blockedStages,
+  consistency,
+  kValues,
+  passAtK,
+  runConditions,
   durationByGroup,
   errorsByGroup,
   fmtRate,
@@ -125,12 +129,15 @@ export function StatsPage({ runId }: { runId: string | null }) {
     return {
       gens,
       pass: passByGroup(gens),
+      conditions: runConditions(gens),
       outcomes: outcomesByGroup(rows),
       stages: blockedStages(rows),
       errors: errorsByGroup(rows),
       duration: durationByGroup(rows),
+      consistency: consistency(gens),
     };
   }, [rows]);
+  const passK = useMemo(() => (stats ? passAtK(stats.gens, kValues(stats.conditions.repetitions)) : []), [stats]);
   const breakdownRows = useMemo(() => (stats ? passBy(stats.gens, breakdown, rules) : []), [stats, breakdown, rules]);
 
   return (
@@ -168,6 +175,42 @@ export function StatsPage({ runId }: { runId: string | null }) {
 
       {stats && (
         <>
+          <Section title="Condiciones de la corrida" help="Leídas de los registros: model, request_params.temperature y usage.total_tokens (registro 2.1), una vez por generación.">
+            <dl className="grid gap-px bg-line sm:grid-cols-4">
+              {(
+                [
+                  ["Modelos", stats.conditions.models.join(", ")],
+                  ["Temperatura", stats.conditions.temperatures.join(", ")],
+                  ["Repeticiones", String(stats.conditions.repetitions)],
+                  [
+                    "Tokens",
+                    stats.conditions.tokensPerCall === null
+                      ? "no registrados"
+                      : `${stats.conditions.totalTokens.toLocaleString("es-AR")} · ${Math.round(stats.conditions.tokensPerCall).toLocaleString("es-AR")} por llamada`,
+                  ],
+                ] as const
+              ).map(([label, value]) => (
+                <div key={label} className="grid content-start gap-1 bg-surface px-4 py-3">
+                  <dt className="text-[12.5px] font-medium text-muted">{label}</dt>
+                  <dd className="font-mono text-[12.5px] break-words">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {(stats.conditions.models.length > 1 ||
+              stats.conditions.temperatures.length > 1 ||
+              stats.conditions.temperatures.some((t) => t === "no registrada" || t === "del proveedor") ||
+              stats.conditions.repetitions < 2) && (
+              <div className="grid gap-2 border-t border-line p-3">
+                {stats.conditions.models.length > 1 && <Notice>Más de un modelo: las diferencias entre categorías pueden deberse al modelo y no a la categoría.</Notice>}
+                {stats.conditions.temperatures.length > 1 && <Notice>La temperatura no fue la misma en toda la corrida.</Notice>}
+                {stats.conditions.temperatures.some((t) => t === "no registrada" || t === "del proveedor") && (
+                  <Notice>Hay generaciones sin temperatura fijada o registrada: no se puede reproducir con las mismas condiciones.</Notice>
+                )}
+                {stats.conditions.repetitions < 2 && <Notice>Una sola repetición: no se puede medir la variabilidad entre generaciones.</Notice>}
+              </div>
+            )}
+          </Section>
+
           <Section
             title="pass@1 por grupo"
             help="Generaciones (regla × grupo × repetición) que aciertan el expected en todos sus escenarios, sobre las que tienen expected. Las cortadas por cuota o red quedan pendientes: no cuentan y se reintentan al reanudar la corrida."
@@ -190,6 +233,41 @@ export function StatsPage({ runId }: { runId: string | null }) {
               })}
             </ul>
           </Section>
+
+          {stats.conditions.repetitions > 1 && (
+            <Section
+              title="Repeticiones: pass@k y consistencia"
+              help="pass@k: probabilidad de que al menos una de k generaciones de una regla acierte (estimador insesgado de Chen et al. 2021), promediada entre las reglas con al menos k generaciones juzgadas. Una regla es inestable si unas repeticiones aciertan y otras no."
+            >
+              <Table head={["", ...GROUPS.map((g) => GROUP[g])]}>
+                {passK.map((row) => (
+                  <tr key={row.k} className="border-b border-line">
+                    <td className={`${td} whitespace-nowrap`}>pass@{row.k}</td>
+                    {GROUPS.map((g) => {
+                      const p = row.byGroup[g];
+                      return (
+                        <td key={g} className={`${td} text-right whitespace-nowrap tabular-nums`}>
+                          <span className={p.rate === null ? "text-faint" : ""}>{fmtRate(p.rate)}</span>
+                          <span className="ml-2 text-[12px] text-muted">{p.cases ? `${p.cases} reglas` : ""}</span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                <tr className="border-b border-line last:border-b-0">
+                  <td className={`${td} whitespace-nowrap`}>Reglas inestables</td>
+                  {GROUPS.map((g) => {
+                    const c = stats.consistency[g];
+                    return (
+                      <td key={g} className={`${td} text-right tabular-nums`} title={c.unstable.join(", ") || undefined}>
+                        {c.cases ? `${c.unstable.length} de ${c.cases}` : "—"}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </Table>
+            </Section>
+          )}
 
           <Section title="Desenlaces por grupo" help="Renglones por desenlace: uno por escenario, así un bloqueo cuenta una vez por cada escenario de la regla.">
             <Table head={["Grupo", ...OUTCOMES.map((o) => OUTCOME[o].label), "Total"]}>

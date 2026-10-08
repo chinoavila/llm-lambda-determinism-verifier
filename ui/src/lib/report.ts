@@ -4,6 +4,10 @@
 import type { Group, RecordRow, Result, Rule, RunInfo } from "../api";
 import {
   blockedStages,
+  consistency,
+  kValues,
+  passAtK,
+  runConditions,
   CATEGORY_LABEL,
   durationByGroup,
   errorsByGroup,
@@ -16,6 +20,7 @@ import {
   rowMatches,
   type BreakdownRow,
   type CountRow,
+  type PassAtK,
   type Generation,
   type PassCount,
 } from "./stats";
@@ -52,12 +57,15 @@ export type Evidence = {
     cases_by_category: Record<string, number>;
     cases_by_domain: Record<string, number>;
     temperature: string;
+    tokens: { total: number; per_call: number | null; generations_with_usage: number };
   };
   definitions: Record<string, string>;
   pass_by_group: PerGroup<PassCount>;
   pass_by_category: BreakdownRow[];
   pass_by_domain: BreakdownRow[];
   pass_by_model: BreakdownRow[];
+  pass_at_k: PassAtK[];
+  consistency: PerGroup<{ cases: number; stable: number; unstable: number; unstable_examples: string[] }>;
   generations_by_model_and_category: Record<string, Record<string, number>>;
   outcomes_by_group: ReturnType<typeof outcomesByGroup>;
   blocked_stages: CountRow[];
@@ -191,6 +199,8 @@ export function buildReportData(run: RunInfo, rows: RecordRow[], rules: Readonly
   };
   const cat2 = of("treatment").filter((g) => rules.get(g.case_id)?.category === 2);
   const contradictions = expectedContradictions(rows);
+  const conditions = runConditions(gens);
+  const stable = consistency(gens);
 
   const evidence: Evidence = {
     run: {
@@ -204,17 +214,22 @@ export function buildReportData(run: RunInfo, rows: RecordRow[], rules: Readonly
       models: [...new Set(rows.map((r) => r.model))].sort(),
       cases_by_category: tally(caseIds.map((id) => categoryOf(rules, id))),
       cases_by_domain: tally(caseIds.map((id) => rules.get(id)?.domain ?? OUTSIDE_CORPUS)),
-      temperature: "no figura en los registros (se usa la del proveedor salvo que llm.toml la fije)",
+      temperature: conditions.temperatures.join(", "),
+      tokens: { total: conditions.totalTokens, per_call: conditions.tokensPerCall, generations_with_usage: conditions.withUsage },
     },
     definitions: {
       generacion: "una respuesta del LLM: regla × grupo × repetición, con un renglón por escenario",
-      pass_at_1: "generaciones que aciertan todos sus escenarios / generaciones con expected",
+      pass_at_1: "generaciones que aciertan todos sus escenarios / generaciones con expected; las pendientes (cuota o red) no cuentan",
+      pass_at_k: "probabilidad de que al menos una de k generaciones de una regla acierte (estimador insesgado de Chen et al. 2021), promediada entre las reglas con al menos k generaciones juzgadas",
+      temperatura: "request_params.temperature de cada generación; \"no registrada\" = registro 2.0, \"del proveedor\" = no se envió",
       renglones: "los conteos de desenlaces, etapas, errores y duración son por renglón (escenario)",
     },
     pass_by_group: passByGroup(gens),
     pass_by_category: passBy(gens, "category", rules),
     pass_by_domain: passBy(gens, "domain", rules),
     pass_by_model: passByModel(gens),
+    pass_at_k: passAtK(gens, kValues(conditions.repetitions)),
+    consistency: perGroup((g) => ({ cases: stable[g].cases, stable: stable[g].stable, unstable: stable[g].unstable.length, unstable_examples: stable[g].unstable.slice(0, 10) })),
     generations_by_model_and_category: modelByCategory(gens, rules),
     outcomes_by_group: outcomesByGroup(rows),
     blocked_stages: blockedStages(rows),

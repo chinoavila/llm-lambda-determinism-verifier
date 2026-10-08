@@ -136,3 +136,96 @@ export function durationByGroup(rows: RecordRow[]): PerGroup<Duration> {
 /** Porcentaje con un decimal en formato es-AR, o raya si no hay tasa. */
 export const fmtRate = (rate: number | null) =>
   rate === null ? "—" : `${(rate * 100).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+
+export type RunConditions = {
+  models: string[];
+  /** Una etiqueta por valor distinto: el número, "del proveedor" (no se envió) o "no registrada" (registro 2.0). */
+  temperatures: string[];
+  repetitions: number;
+  generations: number;
+  /** Generaciones cuyo registro trae `usage.total_tokens` (registro 2.1 con respuesta del proveedor). */
+  withUsage: number;
+  totalTokens: number;
+  tokensPerCall: number | null;
+};
+
+const temperatureLabel = (r: RecordRow) => {
+  if (r.request_params === undefined) return "no registrada";
+  const t = r.request_params.temperature;
+  return typeof t === "number" ? String(t) : "del proveedor";
+};
+
+const totalTokens = (r: RecordRow) => {
+  const t = r.usage?.total_tokens;
+  return typeof t === "number" ? t : null;
+};
+
+/** Modelo, temperatura y tokens de la corrida, leídos de `request_params` y `usage` (una vez por generación). */
+export function runConditions(gens: Generation[]): RunConditions {
+  const firsts = gens.map((g) => g.rows[0]!).filter(Boolean);
+  const tokens = firsts.map(totalTokens).filter((t): t is number => t !== null);
+  const sum = tokens.reduce((a, b) => a + b, 0);
+  return {
+    models: [...new Set(firsts.map((r) => r.model))].sort(),
+    temperatures: [...new Set(firsts.map(temperatureLabel))].sort(),
+    repetitions: new Set(gens.map((g) => g.repetition)).size,
+    generations: gens.length,
+    withUsage: tokens.length,
+    totalTokens: sum,
+    tokensPerCall: tokens.length ? sum / tokens.length : null,
+  };
+}
+
+/** Generaciones juzgadas (pass o fail) de cada regla de un grupo: n repeticiones, c aciertos. */
+function perCase(gens: Generation[], group: Group): Map<string, { n: number; c: number }> {
+  const byCase = new Map<string, { n: number; c: number }>();
+  for (const g of gens) {
+    if (g.group !== group || (g.status !== "pass" && g.status !== "fail")) continue;
+    const e = byCase.get(g.case_id) ?? { n: 0, c: 0 };
+    e.n++;
+    if (g.status === "pass") e.c++;
+    byCase.set(g.case_id, e);
+  }
+  return byCase;
+}
+
+/** Estimador insesgado de pass@k para una regla (Chen et al. 2021): 1 - C(n-c, k) / C(n, k). */
+export function passAtKOne(n: number, c: number, k: number): number {
+  if (n - c < k) return 1;
+  let miss = 1;
+  for (let i = n - c + 1; i <= n; i++) miss *= 1 - k / i;
+  return 1 - miss;
+}
+
+export type PassAtK = { k: number; byGroup: PerGroup<{ rate: number | null; cases: number }> };
+
+/** pass@k por grupo: promedio entre las reglas con al menos k generaciones juzgadas. */
+export function passAtK(gens: Generation[], ks: number[]): PassAtK[] {
+  const byGroup = perGroup(() => [] as { n: number; c: number }[]);
+  for (const group of GROUPS) byGroup[group] = [...perCase(gens, group).values()];
+  return ks.map((k) => {
+    const at = (group: Group) => {
+      const cases = byGroup[group].filter((e) => e.n >= k);
+      return { rate: cases.length ? cases.reduce((s, e) => s + passAtKOne(e.n, e.c, k), 0) / cases.length : null, cases: cases.length };
+    };
+    return { k, byGroup: { treatment: at("treatment"), baseline1: at("baseline1"), baseline2: at("baseline2") } };
+  });
+}
+
+/** Valores de k que tiene sentido mostrar para una corrida de `repetitions` repeticiones. */
+export const kValues = (repetitions: number) => [1, 2, 3, 5, 10, 20].filter((k) => k <= repetitions);
+
+export type Consistency = { cases: number; stable: number; unstable: string[] };
+
+/** Reglas con 2+ generaciones juzgadas: estables si pasan todas o fallan todas; inestables si se mezclan. */
+export function consistency(gens: Generation[]): PerGroup<Consistency> {
+  const out = perGroup<Consistency>(() => ({ cases: 0, stable: 0, unstable: [] }));
+  for (const group of GROUPS)
+    for (const [caseId, { n, c }] of [...perCase(gens, group)].sort(([a], [b]) => a.localeCompare(b))) {
+      if (n < 2) continue;
+      out[group].cases++;
+      if (c === 0 || c === n) out[group].stable++;
+      else out[group].unstable.push(caseId);
+    }
+  return out;
+}
