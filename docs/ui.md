@@ -9,10 +9,10 @@ docker compose up --build ui
 
 ## Qué se puede hacer
 
-- **Corpus:** buscar y filtrar reglas; crear, editar y eliminar. El panel de edición tiene las pestañas General, Variables y escenarios, AST (con vista legible), Python y Revisión (estado y comentarios). Al guardar se corre `check-case`: los `expected` que faltan los calcula el engine y los errores se muestran en el panel. "Verificar todas" revisa el corpus entero sin escribir.
-- **Corridas:** elegir el corpus completo, algunas reglas o las fixtures, y las repeticiones. La UI muestra cuántas llamadas al LLM va a hacer la corrida y pide confirmar ese número antes de lanzarla. Mientras corre, se ve el log y se puede cancelar. Cada corrida del listado se puede exportar a JSONL, TXT, MD, CSV, Excel o PDF; todos salvo el JSONL incluyen el `expected` de cada escenario. "Generar reporte con IA" descarga un informe en PDF de la corrida (ver más abajo).
+- **Corpus:** buscar y filtrar reglas; crear, editar y eliminar. El panel de edición tiene las pestañas General, Variables y escenarios, AST (con vista legible), Python y Revisión (estado, comentarios, revisión a ciegas de los `expected` y aviso si los escenarios no prueban los umbrales). La lista cuenta cuántas reglas están aprobadas. Al guardar se corre `check-case`: los `expected` que faltan los calcula el engine y los errores se muestran en el panel. "Verificar todas" revisa el corpus entero sin escribir.
+- **Corridas:** elegir el corpus completo, algunas reglas o las fixtures, las repeticiones (5 por defecto), el modelo y la temperatura (0 por defecto), y si esperar a que se libere la cuota. La UI muestra cuántas llamadas al LLM va a hacer la corrida, una estimación de tokens si hay una corrida previa que los registre, y pide confirmar ese número antes de lanzarla. "Reanudar" continúa una corrida cortada con sus mismas condiciones ([`condiciones-de-corrida.md`](condiciones-de-corrida.md)). Mientras corre, se ve el log y se puede cancelar. Cada corrida del listado se puede exportar a JSONL, TXT, MD, CSV, Excel o PDF; todos salvo el JSONL incluyen el `expected` de cada escenario. "Generar reporte con IA" descarga un informe en PDF de la corrida (ver más abajo).
 - **Registros:** elegir una corrida y filtrar por regla, grupo, desenlace o modelo. Cada renglón muestra el resultado junto a su `expected`, y al abrirlo, la respuesta cruda del LLM.
-- **Estadísticas:** el resumen de una corrida, desde la sección o con "Ver estadísticas" en el listado de Corridas: `pass@1` por grupo, desenlaces por grupo, el desglose por regla, categoría y dominio, la duración y los códigos de error.
+- **Estadísticas:** el resumen de una corrida, desde la sección o con "Ver estadísticas" en el listado de Corridas: las condiciones de la corrida (modelos, temperatura, tokens), `pass@1` por grupo, `pass@k` y reglas inestables si hay varias repeticiones, desenlaces por grupo, dónde se detecta cada falla, el desglose por regla, categoría y dominio, la duración y los códigos de error. Se puede limitar a las reglas con la revisión aprobada.
 
 Si una regla la escribe un script de `corpus/tools/`, el editor lo avisa: el cambio hay que llevarlo también al script, o se pierde la próxima vez que se corra. Cuando dos personas editan la misma regla, la segunda en guardar recibe un aviso en lugar de pisar el cambio de la primera.
 
@@ -60,6 +60,8 @@ flowchart LR
 | 3. Corridas y registros | Lanzar `run` con confirmación de cuota, log en vivo, cancelar y explorar los registros | hecha |
 | 4. Estadísticas | Resumen de una corrida calculado en el navegador | hecha |
 | 5. Reporte con IA | Informe en PDF de una corrida redactado por el LLM | hecha |
+| 6. Condiciones de corrida | Modelo fijo, temperatura, rondas, reanudar y esperar la cuota ([`condiciones-de-corrida.md`](condiciones-de-corrida.md)) | hecha |
+| 7. Revisión de expected | Revisión a ciegas, contador de aprobadas y aviso de escenarios flojos | hecha |
 
 ## Cómo se cuentan las estadísticas
 
