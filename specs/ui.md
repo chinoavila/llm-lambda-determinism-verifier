@@ -26,6 +26,7 @@
   - `GET /api/runs`: `{active, runs}`, con las corridas de `out/` (registros, log, última escritura y, si se lanzó desde este servidor, su estado). `POST /api/runs/{id}/cancel` termina el subproceso (los casos ya escritos quedan). `GET /api/runs/{id}/log?offset=n` devuelve el log desde `n` para leerlo de a partes.
   - `GET /api/runs/{id}/records`: los renglones del JSONL, filtrables por igualdad en `case_id`, `scenario_id`, `group`, `repetition`, `outcome`, `stage` y `model`, cada uno con el `expected` de su escenario si la regla está en `corpus/`. Nunca conteos, tasas ni resúmenes.
   - `run_id` solo admite letras, dígitos, `-` y `_`: no puede salir de `out/`.
+  - Exportar: cada fila de Corridas con registros ofrece JSONL, TXT, MD, CSV, Excel (.xlsx) y PDF. Se arma en el navegador (`ui/src/lib/export.ts`) a partir de `GET /api/runs/{id}/records` sin filtros; la API no cambia. El JSONL son los registros como en `out/` (sin `expected`); los demás formatos agregan el `expected` de cada escenario. XLSX (ZIP sin comprimir) y PDF (Courier, WinAnsi) se generan sin dependencias. Solo renglones: sin conteos, tasas ni resúmenes.
 - Errores de la verificación o de la corrida por el engine o el sandbox caídos: 503.
 - **Nunca** devolver una clave de API, ni parte de ella, ni el contenido de `.env`. De la configuración del LLM solo se expone si está lista, los nombres de modelo y el mensaje de `ConfigError` (que nombra la variable, no su valor). Lo verifica `test_health_never_returns_the_api_key`.
 

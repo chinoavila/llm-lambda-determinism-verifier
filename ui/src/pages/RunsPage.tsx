@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText, type Estimate, type Health, type Job, type JobStatus, type Rule, type Runs, type Selection } from "../api";
 import { Badge, Button, Card, Confirm, fmtDate, inputClass, Notice, type Tone } from "../components/ui";
+import { EXPORT_FORMATS, exportRecords, type ExportFormat } from "../lib/export";
 import { navigate } from "../router";
 
 /** Presentación de estados de job compartida por la vista de corridas. */
@@ -225,6 +226,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                         Ver registros
                       </Button>
                     )}
+                    {r.records > 0 && <ExportMenu runId={r.run_id} onError={setError} />}
                   </td>
                 </tr>
               ))}
@@ -247,6 +249,76 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
         </Confirm>
       )}
     </div>
+  );
+}
+
+/** Menú por fila que descarga los registros de la corrida en el formato elegido. */
+function ExportMenu({ runId, onError }: { runId: string; onError: (message: string) => void }) {
+  const [at, setAt] = useState<{ top: number; right: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const root = useRef<HTMLSpanElement>(null);
+
+  // El menú es `fixed` para que no lo recorte el `overflow` de la tabla.
+  useEffect(() => {
+    if (!at) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !root.current?.contains(e.target as Node)) setAt(null);
+    };
+    const reset = () => setAt(null);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    window.addEventListener("scroll", reset, true);
+    window.addEventListener("resize", reset);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", close);
+      window.removeEventListener("scroll", reset, true);
+      window.removeEventListener("resize", reset);
+    };
+  }, [at]);
+
+  async function download(format: ExportFormat, mime: string) {
+    setAt(null);
+    setBusy(true);
+    try {
+      const rows = await api.records(runId, {});
+      const url = URL.createObjectURL(new Blob([exportRecords(runId, rows, format)], { type: mime }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${runId}.${format}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (e) {
+      onError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <span ref={root}>
+      <Button
+        variant="link"
+        disabled={busy}
+        aria-haspopup="menu"
+        aria-expanded={!!at}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setAt(at ? null : { top: r.bottom + 4, right: window.innerWidth - r.right });
+        }}
+      >
+        {busy ? "Exportando…" : "Exportar ▾"}
+      </Button>
+      {at && (
+        <span role="menu" style={at} className="fixed z-10 grid min-w-40 rounded-lg border border-line bg-surface py-1 text-left shadow-lg">
+          {EXPORT_FORMATS.map(({ format, label, mime }) => (
+            <button key={format} type="button" role="menuitem" onClick={() => void download(format, mime)} className="px-3 py-1.5 text-left hover:bg-hover">
+              Exportar {label}
+            </button>
+          ))}
+        </span>
+      )}
+    </span>
   );
 }
 
