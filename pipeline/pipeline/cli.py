@@ -19,7 +19,7 @@ import argparse
 import secrets
 import sys
 from collections import Counter
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Container, Mapping, Sequence
 from contextlib import AbstractContextManager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -35,9 +35,12 @@ from pipeline.llm import (
     NoModelAvailable,
     build_balancer,
     load_config,
+    with_run_params,
 )
 from pipeline.orchestrator import (
     DEFAULT_ENGINE_CMD,
+    GROUPS,
+    CallKey,
     Case,
     CaseError,
     Completer,
@@ -46,9 +49,11 @@ from pipeline.orchestrator import (
     Runner,
     append_jsonl,
     case_gamma,
+    drop_pending,
     per_scenario,
     read_case,
-    run_case,
+    resolved_calls,
+    run_repetition,
     run_treatment,
 )
 
@@ -111,17 +116,30 @@ def run(
     repetitions: int,
     runners: Mapping[Group, Runner] = RUNNERS,
     log: Callable[[str], None] = lambda msg: print(msg, file=sys.stderr, flush=True),
+    resolved: Container[CallKey] = frozenset(),
 ) -> int:
-    """Corre los casos en orden y devuelve cuántos registros escribió."""
+    """Corre por rondas: la repetición 1 de todos los casos, después la 2, y así; si la
+    corrida se corta, lo hecho queda balanceado entre casos. Cada (caso, repetición) usa un
+    solo modelo para sus tres grupos. Saltea las llamadas de `resolved` (`--resume`).
+    Devuelve cuántos registros escribió."""
     written = 0
-    for i, (case, gamma) in enumerate(prepared, start=1):
-        with balancer.acquire() as assignment:
-            records = run_case(case, assignment, runners, gamma, run_id=run_id, repetitions=repetitions)
-        append_jsonl(out, records)
-        written += len(records)
-        outcomes = Counter(r["outcome"] for r in records)
-        summary = ", ".join(f"{o}={n}" for o, n in sorted(outcomes.items()))
-        log(f"[{i}/{len(prepared)}] {case.case_id}: {len(records)} registros ({summary})")
+    for repetition in range(1, repetitions + 1):
+        for i, (case, gamma) in enumerate(prepared, start=1):
+            groups = [g for g in GROUPS if (case.case_id, repetition, g) not in resolved]
+            if not groups:
+                continue
+            with balancer.acquire() as assignment:
+                records = run_repetition(
+                    case, assignment, runners, gamma, run_id=run_id, repetition=repetition, groups=groups
+                )
+            append_jsonl(out, records)
+            written += len(records)
+            outcomes = Counter(r["outcome"] for r in records)
+            summary = ", ".join(f"{o}={n}" for o, n in sorted(outcomes.items()))
+            log(
+                f"[rep {repetition}/{repetitions}] [{i}/{len(prepared)}] {case.case_id}: "
+                f"{len(records)} registros ({summary})"
+            )
     return written
 
 
@@ -163,8 +181,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         help=f"archivos o directorios de casos (por defecto {DEFAULT_CASES.relative_to(REPO_ROOT)})",
     )  # fmt: skip
     p_run.add_argument("--repetitions", type=int, default=1, help="rondas de triple llamada por caso")
+    p_run.add_argument(
+        "--model", default=None,
+        help="id de modelo de llm.toml; toda la corrida usa solo ese modelo (por defecto, el balanceo por prioridad)",
+    )  # fmt: skip
+    p_run.add_argument(
+        "--temperature", type=float, default=None,
+        help="temperatura de todas las llamadas (por defecto, la de params o la del proveedor)",
+    )  # fmt: skip
     p_run.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     p_run.add_argument("--run-id", default=None, help="por defecto, fecha y hora UTC más un sufijo")
+    p_run.add_argument(
+        "--resume", action="store_true",
+        help="continúa la corrida --run-id: saltea las llamadas resueltas y reintenta las cortadas por cuota o red",
+    )  # fmt: skip
     p_check = sub.add_parser("check-case", help="verifica reglas del corpus (docs/corpus.md)")
     p_check.add_argument("cases", nargs="+", type=Path, help="archivos o directorios de reglas")
     p_check.add_argument(
@@ -188,12 +218,18 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.repetitions < 1:
         parser.error("--repetitions debe ser >= 1")
+    if args.temperature is not None and not 0 <= args.temperature <= 2:
+        parser.error("--temperature debe estar entre 0 y 2")
+    if args.resume and not args.run_id:
+        parser.error("--resume necesita --run-id")
     run_id = args.run_id or new_run_id()
     out = args.out_dir / f"{run_id}.jsonl"
+    if args.resume and not out.exists():
+        parser.error(f"--resume: no existe {out}")
 
     try:
         prepared = prepare(args.cases)
-        config = load_config()
+        config = with_run_params(load_config(), model=args.model, temperature=args.temperature)
     except MissingCredentials as e:
         print(
             f"sin credenciales del LLM ({e}): se omite la corrida. "
@@ -205,9 +241,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error antes de empezar: {e}", file=sys.stderr)
         return 1
 
+    resolved: set[CallKey] = set()
+    if args.resume:
+        dropped = drop_pending(out)
+        resolved = resolved_calls(out)
+        print(
+            f"reanudando {run_id}: {len(resolved)} llamadas ya resueltas, "
+            f"{dropped} registros pendientes descartados para reintentar",
+            file=sys.stderr,
+        )
     print(f"run_id={run_id}: {len(prepared)} casos, {args.repetitions} repeticiones -> {out}", file=sys.stderr)
+    print(
+        f"modelo={args.model or 'balanceo por prioridad'}, "
+        f"temperatura={'de params/proveedor' if args.temperature is None else args.temperature}",
+        file=sys.stderr,
+    )
     try:
-        written = run(prepared, build_balancer(config), out, run_id=run_id, repetitions=args.repetitions)
+        written = run(
+            prepared, build_balancer(config), out, run_id=run_id, repetitions=args.repetitions, resolved=resolved
+        )
     except (EngineError, SandboxError, StaticCheckError, NoModelAvailable) as e:
         # Fallas del sistema, no del modelo: se corta la corrida. Lo ya escrito queda.
         print(f"corrida abortada: {type(e).__name__}: {e}", file=sys.stderr)

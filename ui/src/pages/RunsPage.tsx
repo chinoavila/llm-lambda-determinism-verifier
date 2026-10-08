@@ -23,6 +23,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   const [source, setSource] = useState<Selection["source"]>("corpus");
   const [picked, setPicked] = useState<string[]>([]);
   const [repetitions, setRepetitions] = useState(1);
+  const [resume, setResume] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [estimateError, setEstimateError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<{ error: string | null; busy: boolean } | null>(null);
@@ -30,7 +31,12 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   const [logFor, setLogFor] = useState<string | null>(null);
   const [reporting, setReporting] = useState<{ run: RunInfo; busy: boolean; error: string | null } | null>(null);
 
-  const selection: Selection = { source, repetitions, ...(source === "corpus" && picked.length ? { case_ids: picked } : {}) };
+  const selection: Selection = {
+    source,
+    repetitions,
+    ...(source === "corpus" && picked.length ? { case_ids: picked } : {}),
+    ...(resume ? { resume } : {}),
+  };
   const selectionKey = JSON.stringify(selection);
 
   const loadRuns = useCallback(() => {
@@ -85,6 +91,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
     try {
       const job = await api.startRun(selection, estimate.calls);
       setConfirming(null);
+      setResume(null);
       setLogFor(job.run_id);
       loadRuns();
     } catch (e) {
@@ -134,6 +141,15 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
           </p>
         </div>
         {!llmReady && health && <Notice>Faltan las credenciales del LLM: {health.llm.error}. Completá .env y reiniciá el servicio ui.</Notice>}
+        {resume && (
+          <Notice>
+            Reanudando <code className="font-mono">{resume}</code>: se saltean las llamadas ya resueltas y se reintentan las cortadas por cuota o
+            red. Elegí los mismos casos y repeticiones que la corrida original.{" "}
+            <Button variant="link" onClick={() => setResume(null)}>
+              Volver a una corrida nueva
+            </Button>
+          </Notice>
+        )}
         <div className="flex flex-wrap gap-6">
           <fieldset className="grid gap-1.5">
             <legend className="mb-1.5 text-[12.5px] font-medium text-muted">Casos</legend>
@@ -191,12 +207,14 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
         )}
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="primary" disabled={!estimate || !llmReady || !!active} onClick={() => setConfirming({ error: null, busy: false })}>
-            Lanzar corrida…
+            {resume ? "Reanudar corrida…" : "Lanzar corrida…"}
           </Button>
           <span className={`text-[13px] ${estimateError ? "text-bad" : "text-muted"}`}>
             {estimateError ??
               (estimate &&
-                `${estimate.cases} casos × 3 grupos × ${estimate.repetitions} ${estimate.repetitions === 1 ? "repetición" : "repeticiones"} = ${estimate.calls} llamadas al LLM`)}
+                (resume
+                  ? `${estimate.calls} llamadas al LLM pendientes de ${estimate.cases * 3 * estimate.repetitions}`
+                  : `${estimate.cases} casos × 3 grupos × ${estimate.repetitions} ${estimate.repetitions === 1 ? "repetición" : "repeticiones"} = ${estimate.calls} llamadas al LLM`))}
             {active && " · ya hay una corrida en curso"}
           </span>
         </div>
@@ -249,6 +267,21 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                         Ver estadísticas
                       </Button>
                     )}
+                    {r.records > 0 && !active && (
+                      <Button
+                        variant="link"
+                        onClick={() => {
+                          setResume(r.run_id);
+                          if (r.job) {
+                            setSource(r.job.source === "fixtures" ? "fixtures" : "corpus");
+                            setRepetitions(r.job.repetitions);
+                          }
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      >
+                        Reanudar
+                      </Button>
+                    )}
                     {r.records > 0 && <ExportMenu runId={r.run_id} onError={setError} />}
                     {r.records > 0 && (
                       <Button
@@ -270,8 +303,8 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
 
       {confirming && estimate && (
         <Confirm
-          title="¿Lanzar la corrida?"
-          confirmLabel={`Lanzar ${estimate.calls} llamadas`}
+          title={resume ? `¿Reanudar ${resume}?` : "¿Lanzar la corrida?"}
+          confirmLabel={`${resume ? "Reanudar" : "Lanzar"} ${estimate.calls} llamadas`}
           busy={confirming.busy}
           error={confirming.error}
           onConfirm={launch}

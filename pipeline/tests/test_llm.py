@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from pipeline.llm import ConfigError, NoModelAvailable, load_config
+from pipeline.llm import ConfigError, NoModelAvailable, load_config, with_run_params
 from pipeline.llm.balancer import Balancer, build_balancer
 from pipeline.llm.config import LLMConfig, parse_config
 from pipeline.llm.ratelimit import parse_duration
@@ -228,6 +228,28 @@ def test_low_remaining_tokens_moves_new_cases_to_next_model() -> None:
     t.now = 21.0  # pasó el reset del TPM
     with b.acquire() as assignment:
         assert assignment.endpoint.name == "big"
+
+
+def test_run_params_fix_model_and_temperature() -> None:
+    cfg = with_run_params(config(), model="m-small", temperature=0.7)
+    assert [e.name for e in cfg.endpoints] == ["small"]
+    t, transport = FakeTime(), FakeTransport([ok()])
+    with balancer(cfg, transport, t).acquire() as assignment:
+        call = assignment.complete(MESSAGES)
+    assert call.model == "m-small" and call.request_params["temperature"] == 0.7
+    assert with_run_params(config(), temperature=0).endpoints[1].params == {"temperature": 0}
+    assert with_run_params(config()) == config()
+    with pytest.raises(ConfigError, match="m-otro"):
+        with_run_params(config(), model="m-otro")
+
+
+def test_fixed_model_never_falls_back_to_another() -> None:
+    t, transport = FakeTime(), FakeTransport([status(429, {"retry-after": "3600"})])
+    b = balancer(with_run_params(config(), model="m-big"), transport, t)
+    with b.acquire() as assignment:
+        assert assignment.complete(MESSAGES).outcome == "quota_exhausted"
+    with pytest.raises(NoModelAvailable):  # el único modelo sigue en cooldown: se corta, no cambia
+        b.acquire()
 
 
 def test_active_assignments_reserve_tokens() -> None:

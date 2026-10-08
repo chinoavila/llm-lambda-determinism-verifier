@@ -51,8 +51,8 @@ export type Health = {
   runs: number;
 };
 
-/** Selección para estimar o iniciar una corrida; case_ids restringe el corpus. */
-export type Selection = { source: "corpus" | "fixtures"; case_ids?: string[]; repetitions: number };
+/** Selección para estimar o iniciar una corrida; case_ids restringe el corpus; resume continúa una corrida existente. */
+export type Selection = { source: "corpus" | "fixtures"; case_ids?: string[]; repetitions: number; resume?: string };
 /** Estimación de volumen; `calls` es casos × grupos × repeticiones. */
 export type Estimate = { cases: number; repetitions: number; calls: number };
 /** Estados terminales y activo del proceso de corrida. */

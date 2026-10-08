@@ -62,15 +62,25 @@ describe("generations y pass@1", () => {
       [1, 2, "pass"],
       [2, 2, "fail"],
     ]);
-    expect(passByGroup(gens).treatment).toEqual({ pass: 1, fail: 1, noExpected: 0, rate: 0.5 });
+    expect(passByGroup(gens).treatment).toEqual({ pass: 1, fail: 1, noExpected: 0, pending: 0, rate: 0.5 });
   });
 
   it("deja las generaciones sin expected fuera del denominador", () => {
     const gens = generations([row({}), row({ case_id: "fx", expected: null }), blocked({ group: "baseline2" })]);
     const p = passByGroup(gens);
-    expect(p.treatment).toEqual({ pass: 1, fail: 0, noExpected: 1, rate: 1 });
+    expect(p.treatment).toEqual({ pass: 1, fail: 0, noExpected: 1, pending: 0, rate: 1 });
     expect(p.baseline2.rate).toBe(0);
     expect(p.baseline1.rate).toBeNull();
+  });
+
+  it("las llamadas cortadas por cuota o red quedan pendientes, no son fallas del modelo", () => {
+    const llmError = (code: string, group: RecordRow["group"]) =>
+      row({ group, outcome: "llm_error", stage: "llm", result: null, error: { code, message: "" } });
+    const gens = generations([row({}), { ...llmError("quota_exhausted", "treatment"), repetition: 2 }]);
+    expect(gens.map((g) => g.status)).toEqual(["pass", "pending"]);
+    expect(passByGroup(gens).treatment).toEqual({ pass: 1, fail: 0, noExpected: 0, pending: 1, rate: 1 });
+    const failed = generations([llmError("generation_failed", "baseline1"), llmError("transport_error", "baseline2")]);
+    expect(failed.map((g) => g.status)).toEqual(["fail", "pending"]);
   });
 });
 

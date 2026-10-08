@@ -5,10 +5,10 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 ## Triple llamada, repeticiones y escenarios
 
 - "Triple llamada por grupo" significa una llamada al LLM por grupo del caso: `treatment`, `baseline1` y `baseline2`, en ese orden. No son repeticiones dentro de un grupo.
-- Las tres llamadas usan el mismo `ModelAssignment` (un modelo por caso, ver `specs/llm-client.md`). Nunca pedir otro modelo dentro de un caso.
+- Las tres llamadas de una ronda (caso, repetición) usan el mismo `ModelAssignment` (ver `specs/llm-client.md`). Nunca pedir otro modelo dentro de una ronda.
 - Cada grupo recibe su propio prompt (`build_messages`). Los tres piden JSON.
 - El LLM solo ve `description` y Γ (más las instrucciones de su grupo). `canonical_ast`, `canonical_python`, `expected`, `source` y el resto de los campos del corpus son la clave de respuestas y nunca van al prompt. Lo verifican `test_corpus_answer_key_never_reaches_the_llm` (marcas en cada campo) y `test_corpus_descriptions_do_not_embed_the_answer_key` (cada regla de `corpus/`) en `pipeline/tests/test_orchestrator.py`.
-- `run_case(case, assignment, runners, gamma, run_id=, repetitions=1)` hace `repetitions` rondas de triple llamada, todas con el mismo `ModelAssignment`. Cada llamada es una **generación**, identificada por `(run_id, case_id, group, repetition)`; `repetition` empieza en 1.
+- `run_repetition(case, assignment, runners, gamma, run_id=, repetition=, groups=GROUPS)` hace una ronda: una llamada por grupo de `groups`. `run_case(..., repetitions=1)` encadena `repetitions` rondas con el mismo `ModelAssignment`. Cada llamada es una **generación**, identificada por `(run_id, case_id, group, repetition)`; `repetition` empieza en 1.
 - La salida de una generación se ejecuta contra el `env` de **cada escenario** del caso, en orden, y produce un registro por escenario con su `scenario_id`. Nunca llamar al LLM por escenario.
 - `run_case` devuelve los registros; no los escribe. Obtener el modelo (`balancer.acquire()`) y Γ (`case_gamma`) es responsabilidad de quien llama.
 
@@ -39,11 +39,13 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 ## Comando de punta a punta (`python -m pipeline run`)
 
 - Código: `pipeline/pipeline/cli.py`; entrada `pipeline/pipeline/__main__.py`.
-- `python -m pipeline run [casos...] [--repetitions N] [--out-dir DIR] [--run-id ID]`. Sin casos, usa `contracts/fixtures/`. Un directorio aporta sus `*.json` en orden alfabético.
+- `python -m pipeline run [casos...] [--repetitions N] [--model ID] [--temperature T] [--out-dir DIR] [--run-id ID [--resume]]`. Sin casos, usa `contracts/fixtures/`. Un directorio aporta sus `*.json` en orden alfabético.
+- `--model` deja en el pool solo los endpoints de ese id de modelo (sin fallback a otro) y `--temperature` (0 a 2) pisa la de `params` (`with_run_params` en `pipeline/llm/config.py`). Sin ellos, el balanceo y los `params` de `llm.toml`.
 - Acepta casos en formato `contracts/case-schema.json` y también fixtures (§4): `read_case` lee una fixture como caso de un único escenario `S1` (`FIXTURE_SCENARIO_ID`).
 - Antes de la primera llamada al LLM, `prepare` lee y valida **todos** los casos (formato, `case_id` sin repetir, Γ común con `case_gamma`). Un error ahí sale con código 1 sin llamar al LLM.
 - Sin la clave del LLM en el entorno (`MissingCredentials`, subclase de `ConfigError`), avisa por stderr y sale con 0: así `docker compose up` sigue sirviendo para correr los gates. Cualquier otro `ConfigError` sale con 1.
-- Por caso: `balancer.acquire()` (un modelo por caso), `run_case` con `RUNNERS` (`per_scenario(run_treatment)`, `per_scenario(run_baseline_1)`, `run_baseline_2_scenarios`) y `append_jsonl` apenas termina el caso.
+- Por rondas: la repetición 1 de todos los casos, después la 2, y así; si la corrida se corta, lo hecho queda balanceado entre casos. Por (caso, repetición): `balancer.acquire()`, `run_repetition` con `RUNNERS` (`per_scenario(run_treatment)`, `per_scenario(run_baseline_1)`, `run_baseline_2_scenarios`) y `append_jsonl` apenas termina la ronda.
+- Pendientes: un `llm_error` con código `quota_exhausted` o `transport_error` (`PENDING_CODES`) es falla de infraestructura, no del modelo. `--resume` sobre un `run_id` existente borra del JSONL los registros de esas llamadas (`drop_pending`, reescritura atómica), saltea las ya resueltas (`resolved_calls`) y corre solo el resto, agregando al mismo archivo. Hay que pasarle los mismos casos y repeticiones.
 - Salida: `<out-dir>/<run_id>.jsonl`, por defecto `out/` en la raíz del repo (montado en el contenedor, fuera de Git). `run_id` = fecha y hora UTC + 6 hex (`new_run_id`).
 - `EngineError`, `SandboxError`, `StaticCheckError` y `NoModelAvailable` cortan la corrida con código 1; lo ya escrito queda. Son fallas del sistema, no desenlaces del modelo.
 - Los casos corren en secuencia. No agregar concurrencia sin revisar las cuotas del pool (`specs/llm-client.md`).

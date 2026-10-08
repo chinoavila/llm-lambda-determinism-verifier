@@ -439,21 +439,87 @@ def run_case(
         raise ValueError("repetitions debe ser >= 1")
     records: list[Record] = []
     for repetition in range(1, repetitions + 1):
-        for group in GROUPS:
-            call = assignment.complete(build_messages(group, case.description, gamma))
-            records.extend(
-                route_call(
-                    call,
-                    runners[group],
-                    case.scenarios,
-                    gamma=gamma,
-                    run_id=run_id,
-                    case_id=case.case_id,
-                    group=group,
-                    repetition=repetition,
-                )
-            )
+        records.extend(
+            run_repetition(case, assignment, runners, gamma, run_id=run_id, repetition=repetition)
+        )
     return records
+
+
+def run_repetition(
+    case: Case,
+    assignment: Completer,
+    runners: Mapping[Group, Runner],
+    gamma: Mapping[str, str],
+    *,
+    run_id: str,
+    repetition: int,
+    groups: Sequence[Group] = GROUPS,
+) -> list[Record]:
+    """Una ronda del caso: una llamada por grupo de `groups`, todas al modelo de `assignment`."""
+    records: list[Record] = []
+    for group in groups:
+        call = assignment.complete(build_messages(group, case.description, gamma))
+        records.extend(
+            route_call(
+                call,
+                runners[group],
+                case.scenarios,
+                gamma=gamma,
+                run_id=run_id,
+                case_id=case.case_id,
+                group=group,
+                repetition=repetition,
+            )
+        )
+    return records
+
+
+# Fallas de infraestructura, no del modelo: la llamada queda pendiente y `--resume` la reintenta.
+PENDING_CODES = frozenset({"quota_exhausted", "transport_error"})
+CallKey = tuple[str, int, str]  # (case_id, repetition, group)
+
+
+def is_pending(record: Mapping[str, Any]) -> bool:
+    error = record.get("error")
+    return (
+        record.get("outcome") == "llm_error"
+        and isinstance(error, dict)
+        and error.get("code") in PENDING_CODES
+    )
+
+
+def call_key(record: Mapping[str, Any]) -> CallKey:
+    return (str(record.get("case_id")), int(record.get("repetition", 0)), str(record.get("group")))
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [json.loads(line) for line in lines if line.strip()]
+
+
+def resolved_calls(path: Path) -> set[CallKey]:
+    """Llamadas ya resueltas de una corrida: las que tienen registros y no quedaron pendientes."""
+    records = read_jsonl(path)
+    pending = {call_key(r) for r in records if is_pending(r)}
+    return {call_key(r) for r in records} - pending
+
+
+def drop_pending(path: Path) -> int:
+    """Reescribe el JSONL sin los registros de llamadas pendientes; devuelve cuántos sacó.
+    Se reemplaza de una vez (archivo temporal + rename) para no dejarlo a medias."""
+    records = read_jsonl(path)
+    pending = {call_key(r) for r in records if is_pending(r)}
+    kept = [r for r in records if call_key(r) not in pending]
+    if len(kept) == len(records):
+        return 0
+    tmp = path.with_suffix(".jsonl.tmp")
+    with tmp.open("w", encoding="utf-8", newline="\n") as f:
+        for r in kept:
+            f.write(json.dumps(r, ensure_ascii=False, separators=(",", ":")) + "\n")
+    tmp.replace(path)
+    return len(records) - len(kept)
 
 
 def append_jsonl(path: Path, records: Iterable[Record]) -> None:

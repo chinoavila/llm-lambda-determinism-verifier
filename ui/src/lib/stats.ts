@@ -21,8 +21,12 @@ export function rowMatches(r: RecordRow): boolean {
   );
 }
 
-export type GenerationStatus = "pass" | "fail" | "no_expected";
+export type GenerationStatus = "pass" | "fail" | "no_expected" | "pending";
 export type Generation = { case_id: string; group: Group; repetition: number; rows: RecordRow[]; status: GenerationStatus };
+
+/** Fallas de infraestructura (cuota, red), no del modelo: la llamada queda pendiente y `--resume` la reintenta. */
+export const PENDING_CODES = ["quota_exhausted", "transport_error"];
+export const isPending = (r: RecordRow) => r.outcome === "llm_error" && PENDING_CODES.includes(r.error?.code ?? "");
 
 /** Agrupa los renglones por generación `(case_id, group, repetition)`, en orden de aparición. */
 export function generations(rows: RecordRow[]): Generation[] {
@@ -34,15 +38,21 @@ export function generations(rows: RecordRow[]): Generation[] {
     g.rows.push(r);
   }
   for (const g of byKey.values())
-    g.status = g.rows.some((r) => r.expected === null) ? "no_expected" : g.rows.every(rowMatches) ? "pass" : "fail";
+    g.status = g.rows.some(isPending)
+      ? "pending"
+      : g.rows.some((r) => r.expected === null)
+        ? "no_expected"
+        : g.rows.every(rowMatches)
+          ? "pass"
+          : "fail";
   return [...byKey.values()];
 }
 
-/** `rate` es pass / (pass + fail); null si no hay generaciones con expected. */
-export type PassCount = { pass: number; fail: number; noExpected: number; rate: number | null };
+/** `rate` es pass / (pass + fail); null si no hay generaciones con expected. Las pendientes no cuentan. */
+export type PassCount = { pass: number; fail: number; noExpected: number; pending: number; rate: number | null };
 
 function passCount(gens: Generation[]): PassCount {
-  const c = { pass: 0, fail: 0, noExpected: 0 };
+  const c = { pass: 0, fail: 0, noExpected: 0, pending: 0 };
   for (const g of gens) c[g.status === "no_expected" ? "noExpected" : g.status]++;
   const judged = c.pass + c.fail;
   return { ...c, rate: judged ? c.pass / judged : null };

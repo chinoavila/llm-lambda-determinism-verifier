@@ -170,7 +170,7 @@ export function StatsPage({ runId }: { runId: string | null }) {
         <>
           <Section
             title="pass@1 por grupo"
-            help="Generaciones (regla × grupo × repetición) que aciertan el expected en todos sus escenarios, sobre las que tienen expected."
+            help="Generaciones (regla × grupo × repetición) que aciertan el expected en todos sus escenarios, sobre las que tienen expected. Las cortadas por cuota o red quedan pendientes: no cuentan y se reintentan al reanudar la corrida."
           >
             <ul className="grid gap-px bg-line sm:grid-cols-3">
               {GROUPS.map((g) => {
@@ -183,6 +183,7 @@ export function StatsPage({ runId }: { runId: string | null }) {
                     <span className="text-[12.5px] text-muted">
                       {p.pass + p.fail ? `${p.pass} de ${p.pass + p.fail} generaciones` : "Sin generaciones con expected"}
                       {p.noExpected > 0 && ` · ${p.noExpected} sin expected`}
+                      {p.pending > 0 && ` · ${p.pending} pendientes (cuota o red)`}
                     </span>
                   </li>
                 );
@@ -232,7 +233,7 @@ export function StatsPage({ runId }: { runId: string | null }) {
                   {GROUPS.map((g) => {
                     const p = r.byGroup[g];
                     return (
-                      <td key={g} className={`${td} text-right whitespace-nowrap tabular-nums`} title={p.noExpected ? `${p.noExpected} sin expected` : undefined}>
+                      <td key={g} className={`${td} text-right whitespace-nowrap tabular-nums`} title={[p.noExpected && `${p.noExpected} sin expected`, p.pending && `${p.pending} pendientes`].filter(Boolean).join(" · ") || undefined}>
                         <span className={p.rate === null ? "text-faint" : ""}>{fmtRate(p.rate)}</span>
                         <span className="ml-2 text-[12px] text-muted">{passText(p)}</span>
                       </td>

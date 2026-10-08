@@ -2,7 +2,13 @@
 
 from pipeline.llm.balancer import Balancer, ModelAssignment, NoModelAvailable, build_balancer
 from pipeline.llm.client import Attempt, LLMCall, Outcome
-from pipeline.llm.config import ConfigError, LLMConfig, MissingCredentials, load_config
+from pipeline.llm.config import (
+    ConfigError,
+    LLMConfig,
+    MissingCredentials,
+    load_config,
+    with_run_params,
+)
 
 __all__ = [
     "Attempt",
@@ -16,4 +22,5 @@ __all__ = [
     "Outcome",
     "build_balancer",
     "load_config",
+    "with_run_params",
 ]
