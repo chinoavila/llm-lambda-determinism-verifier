@@ -89,7 +89,7 @@ export type LogChunk = { text: string; offset: number; status: JobStatus | null 
 
 /** Identificadores estables de los tres carriles experimentales. */
 export type Group = "treatment" | "baseline1" | "baseline2";
-/** Desenlaces admitidos por el registro de salida v2.0. */
+/** Desenlaces admitidos por el registro de salida (v2.0 y v2.1). */
 export type Outcome = "executed" | "blocked" | "runtime_error" | "timeout" | "llm_error";
 /** Registro JSONL, enriquecido por el servidor con expected del corpus si existe. */
 export type RecordRow = {
@@ -106,6 +106,9 @@ export type RecordRow = {
   result: Result | null;
   error: { code: string; message: string } | null;
   duration_ms: number | null;
+  /** Desde el registro 2.1: cuerpo enviado al LLM (temperature, etc.) y tokens que informó el proveedor. */
+  request_params?: Record<string, unknown>;
+  usage?: Record<string, unknown> | null;
   expected: Result | null;
 };
 

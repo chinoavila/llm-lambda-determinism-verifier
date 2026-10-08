@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from decimal import Decimal
 import shutil
 import sys
@@ -106,8 +107,11 @@ def route(call: LLMCall, runner: Runner, case_id: str = "c", group: Group = "tre
 
 def assert_record_shape(record: Any) -> None:
     """Chequeo mínimo contra el contrato (sin dependencias de jsonschema)."""
-    assert set(record) == set(RECORD_SCHEMA["required"])
-    assert record["schema_version"] == "2.0"
+    required = RECORD_SCHEMA["allOf"][0]["then"]["required"]  # obligatorios desde 2.1
+    assert set(record) == set(RECORD_SCHEMA["required"]) | set(required)
+    assert record["schema_version"] == "2.1" and record["schema_version"] in RECORD_SCHEMA["properties"]["schema_version"]["enum"]
+    assert isinstance(record["request_params"], dict) and "messages" not in record["request_params"]
+    assert record["usage"] is None or isinstance(record["usage"], dict)
     assert isinstance(record["repetition"], int) and record["repetition"] >= 1
     assert isinstance(record["scenario_id"], str) and record["scenario_id"]
     if record["outcome"] == "executed":
@@ -276,6 +280,17 @@ def test_route_call_same_raw_output_against_each_scenario() -> None:
             blocked["error"],
         )
         assert_record_shape(record)
+
+
+def test_route_call_records_request_params_and_usage() -> None:
+    ok: Verdict = {"outcome": "executed", "stage": "execution", "result": {"type": "Int", "value": 1}, "error": None}
+    params = {"model": "m", "response_format": {"type": "json_object"}, "temperature": 0}
+    call = replace(llm_call(), request_params=params, usage={"total_tokens": 42})
+    for record in route(call, fixed_runner(ok, [])):
+        assert record["request_params"] == params and record["usage"] == {"total_tokens": 42}
+        assert_record_shape(record)
+    failed = route(replace(llm_call("quota_exhausted", None), request_params=params), fixed_runner(ok, []))
+    assert all(r["request_params"] == params and r["usage"] is None for r in failed)
 
 
 def test_route_call_rejects_runner_with_wrong_count() -> None:

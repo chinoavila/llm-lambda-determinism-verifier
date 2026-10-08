@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://llm-lambda-determinism-verifier.local/contracts/output-record-schema.json",
-  "$comment": "Un objeto por línea (JSON Lines), uno por escenario de cada generación. Una generación es una llamada al LLM, identificada por (run_id, case_id, group, repetition); produce exactamente un registro por escenario del caso, en el orden del caso. Un bloqueo (llm_error o blocked) se repite igual en todos los escenarios de la generación. Un Result de tipo Decimal lleva el valor como texto decimal canónico (ver contracts/README.md §3), para no perder exactitud en un número JSON. Es registro, no medición: no incluye resultado esperado ni comparaciones. 'duration_ms' lo mide el orquestador desde que lanza el subproceso (engine o sandbox) hasta que termina; excluye la llamada al LLM y es null solo si outcome = llm_error.",
+  "$comment": "Versión 2.1 (2.0 sin request_params ni usage sigue siendo válida). Un objeto por línea (JSON Lines), uno por escenario de cada generación. Una generación es una llamada al LLM, identificada por (run_id, case_id, group, repetition); produce exactamente un registro por escenario del caso, en el orden del caso. Un bloqueo (llm_error o blocked) se repite igual en todos los escenarios de la generación. Un Result de tipo Decimal lleva el valor como texto decimal canónico (ver contracts/README.md §3), para no perder exactitud en un número JSON. Es registro, no medición: no incluye resultado esperado ni comparaciones. 'duration_ms' lo mide el orquestador desde que lanza el subproceso (engine o sandbox) hasta que termina; excluye la llamada al LLM y es null solo si outcome = llm_error.",
   "title": "Registro de salida del pipeline",
   "type": "object",
   "properties": {
-    "schema_version": { "const": "2.0" },
+    "schema_version": { "enum": ["2.0", "2.1"] },
     "run_id": { "type": "string", "minLength": 1 },
     "case_id": { "type": "string", "minLength": 1 },
     "group": { "enum": ["treatment", "baseline1", "baseline2"] },
@@ -18,7 +18,15 @@
     "stage": { "$ref": "#/$defs/Stage" },
     "result": { "anyOf": [{ "$ref": "#/$defs/Result" }, { "type": "null" }] },
     "error": { "anyOf": [{ "$ref": "#/$defs/Error" }, { "type": "null" }] },
-    "duration_ms": { "type": ["integer", "null"], "minimum": 0 }
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "request_params": {
+      "$comment": "Desde 2.1. Cuerpo del request chat/completions tal como se envió, sin messages: model, response_format y los params de la corrida (temperature, seed, etc.). Nunca lleva claves: van en los headers, que no se registran.",
+      "type": "object"
+    },
+    "usage": {
+      "$comment": "Desde 2.1. El objeto usage de la respuesta del proveedor, sin tocar (prompt_tokens, completion_tokens, total_tokens, ...); null si no lo informó (por ejemplo, en un llm_error). Se repite en cada escenario de la generación: para contar tokens, contar una vez por generación.",
+      "type": ["object", "null"]
+    }
   },
   "required": [
     "schema_version", "run_id", "case_id", "group", "repetition", "scenario_id", "model", "timestamp",
@@ -26,6 +34,10 @@
   ],
   "additionalProperties": false,
   "allOf": [
+    {
+      "if": { "properties": { "schema_version": { "const": "2.1" } } },
+      "then": { "required": ["request_params", "usage"] }
+    },
     {
       "if": { "properties": { "outcome": { "const": "executed" } } },
       "then": { "properties": { "result": { "$ref": "#/$defs/Result" }, "error": { "type": "null" } } },

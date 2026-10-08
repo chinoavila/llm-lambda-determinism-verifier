@@ -37,7 +37,7 @@ DEFAULT_ENGINE_CMD = (os.environ.get("ENGINE_BIN", "engine"),)
 GAMMA_TIMEOUT_SECONDS = 10.0
 ENGINE_TIMEOUT_SECONDS = 10.0
 
-SCHEMA_VERSION = "2.0"
+SCHEMA_VERSION = "2.1"
 # Escenario único con el que se lee una fixture como caso (ver `read_case`).
 FIXTURE_SCENARIO_ID = "S1"
 AST_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contracts" / "ast-schema.json"
@@ -82,6 +82,8 @@ class Record(TypedDict):
     result: dict[str, Any] | None
     error: dict[str, str] | None
     duration_ms: int | None
+    request_params: dict[str, Any]
+    usage: dict[str, Any] | None
 
 
 # Ejecuta la salida cruda del LLM con los datos de UN escenario (`env`) y Γ del caso.
@@ -394,6 +396,8 @@ def route_call(
             "llm_raw": llm_raw,
             **verdict,
             "duration_ms": duration_ms,
+            "request_params": dict(call.request_params),
+            "usage": dict(call.usage) if call.usage is not None else None,
         }
 
     if call.outcome != "ok" or call.content is None:

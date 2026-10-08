@@ -147,7 +147,7 @@ Diagnóstico libre. El orquestador no lo parsea.
 
 ## 3. Registro de salida
 
-Un objeto por línea en [`output-record-schema.json`](./output-record-schema.json) (versión `2.0`). Es registro, no medición: no incluye el resultado esperado ni comparaciones. `pass@1` lo calcula el experimento cruzando cada registro con el `expected` de su escenario en el corpus.
+Un objeto por línea en [`output-record-schema.json`](./output-record-schema.json) (versión `2.1`; un renglón `2.0`, sin `request_params` ni `usage`, sigue siendo válido). Es registro, no medición: no incluye el resultado esperado ni comparaciones. `pass@1` lo calcula el experimento cruzando cada registro con el `expected` de su escenario en el corpus.
 
 - **Generación:** una llamada al LLM para un caso, un grupo y una repetición. Se identifica por `(run_id, case_id, group, repetition)`. `repetition` empieza en 1 y cuenta las llamadas de ese caso y grupo dentro de la corrida; cuántas repeticiones se hacen es configuración de la corrida, no del contrato.
 - **Un registro por escenario:** cada generación produce exactamente un registro por escenario del caso, en el orden del caso, con su `scenario_id`. La **misma** respuesta del LLM (`llm_raw`) se ejecuta contra el `env` de cada escenario: nunca se vuelve a llamar al LLM por escenario.
@@ -159,6 +159,8 @@ Un objeto por línea en [`output-record-schema.json`](./output-record-schema.jso
 - **Texto canónico de `Decimal`:** notación posicional sin exponente, sin ceros finales ni punto final, con `-` solo si el valor es negativo (`"1500.5"`, `"0.3"`, `"-2"`, `"0"`). Si el valor exacto no termina en decimal (`10 / 3`), se redondea a 28 dígitos significativos con *half-even*, como el contexto por defecto de `decimal` en Python: `"3.333333333333333333333333333"`. El redondeo ocurre solo al escribir el resultado; los cálculos y las comparaciones son exactos.
 - **`llm_raw`:** la respuesta cruda del LLM; `null` solo si `outcome = "llm_error"`.
 - **`duration_ms`:** medido por el orquestador desde que lanza el subproceso (engine o sandbox) hasta que termina; excluye la llamada al LLM. `null` solo si `outcome = "llm_error"`.
+- **`request_params`** (desde 2.1, obligatorio): el cuerpo del request `chat/completions` tal como se envió, sin `messages`. Lleva `model`, `response_format` y los parámetros de la corrida (`temperature`, `seed`, …), así que deja registradas las condiciones de cada generación. Nunca lleva claves.
+- **`usage`** (desde 2.1, obligatorio): el objeto `usage` de la respuesta del proveedor, sin tocar (`prompt_tokens`, `completion_tokens`, `total_tokens`, …), o `null` si no lo informó. Como `llm_raw`, se repite en todos los registros de la generación: para sumar tokens, contar una vez por generación.
 
 ## 4. Fixtures
 

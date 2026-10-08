@@ -68,9 +68,9 @@ Código: `pipeline/pipeline/orchestrator.py`. Explicación para humanos: `docs/o
 ## Registro JSON Lines
 
 - `append_jsonl(path, records)`: un objeto por línea, UTF-8 sin escapar (`ensure_ascii=False`), separadores compactos, saltos de línea `\n`.
-- Solo agrega: nunca reescribir ni truncar el archivo. Crea el directorio si falta.
+- Solo agrega: nunca reescribir ni truncar el archivo, salvo `drop_pending` al reanudar (§CLI). Crea el directorio si falta.
 - `timestamp` es UTC en ISO 8601, tomado al armar el registro.
-- No agregar campos al registro: `output-record-schema.json` tiene `additionalProperties: false`. El bloque `llm` propuesto en `specs/llm-client.md` sigue pendiente de acuerdo.
+- No agregar campos al registro sin cambiar el contrato: `output-record-schema.json` tiene `additionalProperties: false`. Versión 2.1: `request_params` (cuerpo enviado, sin `messages` ni claves) y `usage` (de la respuesta, o `null`) de la `LLMCall` de la generación, repetidos en cada escenario.
 
 ## Pendiente de acuerdo del equipo
 
