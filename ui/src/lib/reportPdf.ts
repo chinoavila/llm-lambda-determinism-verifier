@@ -6,7 +6,7 @@ import type { TDocumentDefinitions, TVirtualFileSystem } from "pdfmake/interface
 import type { AiReport, Group, ObservationStatus, Outcome } from "../api";
 import { GROUP, OUTCOME } from "../pages/RecordsPage";
 import type { Evidence, ReportData } from "./report";
-import { fmtRate, GROUPS, OUTCOMES, type BreakdownRow, type CountRow, type PassCount } from "./stats";
+import { fmtRate, GROUPS, LAYERS, OUTCOMES, type BreakdownRow, type CountRow, type PassCount } from "./stats";
 
 /** Títulos de las observaciones de report_methodology.md §4, en el mismo orden. */
 export const OBSERVATION_TITLES = [
@@ -128,7 +128,10 @@ export function evidenceAnnex(e: Evidence, passByRule: BreakdownRow[]): Content[
         ]
       : []),
     note(`8. Escenarios en que los tres grupos coinciden entre sí y contradicen el expected: ${o.expected_contradictions.scenarios}.`),
-    h2("A.11 pass@1 por regla"),
+    h2("A.11 Dónde se detecta cada falla (generaciones con expected)"),
+    note("Bloqueada: el motor en el Tratamiento, el análisis previo en los baselines. Resultado incorrecto: ejecutó y solo lo detectaron los escenarios (los errores lógicos de la categoría 3)."),
+    table(["*", "auto", ...LAYERS.map(() => "auto"), "auto"], ["Categoría", "Grupo", "LLM", "Bloqueada", "Error ejec.", "Incorrecto", "Acierta", "Total"], e.failure_layers_by_category.map((r) => [r.label, GROUP[r.group]!, ...LAYERS.map((l) => num(r.counts[l])), num(r.total)])),
+    h2("A.12 pass@1 por regla"),
     breakdown("Regla", passByRule),
   ];
 }

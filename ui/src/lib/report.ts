@@ -6,6 +6,7 @@ import {
   blockedStages,
   consistency,
   kValues,
+  layersByCategory,
   passAtK,
   runConditions,
   CATEGORY_LABEL,
@@ -20,6 +21,7 @@ import {
   rowMatches,
   type BreakdownRow,
   type CountRow,
+  type LayerRow,
   type PassAtK,
   type Generation,
   type PassCount,
@@ -65,6 +67,7 @@ export type Evidence = {
   pass_by_domain: BreakdownRow[];
   pass_by_model: BreakdownRow[];
   pass_at_k: PassAtK[];
+  failure_layers_by_category: LayerRow[];
   consistency: PerGroup<{ cases: number; stable: number; unstable: number; unstable_examples: string[] }>;
   generations_by_model_and_category: Record<string, Record<string, number>>;
   outcomes_by_group: ReturnType<typeof outcomesByGroup>;
@@ -223,12 +226,14 @@ export function buildReportData(run: RunInfo, rows: RecordRow[], rules: Readonly
       pass_at_k: "probabilidad de que al menos una de k generaciones de una regla acierte (estimador insesgado de Chen et al. 2021), promediada entre las reglas con al menos k generaciones juzgadas",
       temperatura: "request_params.temperature de cada generación; \"no registrada\" = registro 2.0, \"del proveedor\" = no se envió",
       renglones: "los conteos de desenlaces, etapas, errores y duración son por renglón (escenario)",
+      capas: "failure_layers_by_category: generaciones con expected por capa; blocked = el motor en el Tratamiento o el análisis previo en los baselines; wrong = ejecutó con resultado incorrecto, solo lo detectan los escenarios",
     },
     pass_by_group: passByGroup(gens),
     pass_by_category: passBy(gens, "category", rules),
     pass_by_domain: passBy(gens, "domain", rules),
     pass_by_model: passByModel(gens),
     pass_at_k: passAtK(gens, kValues(conditions.repetitions)),
+    failure_layers_by_category: layersByCategory(gens, rules),
     consistency: perGroup((g) => ({ cases: stable[g].cases, stable: stable[g].stable, unstable: stable[g].unstable.length, unstable_examples: stable[g].unstable.slice(0, 10) })),
     generations_by_model_and_category: modelByCategory(gens, rules),
     outcomes_by_group: outcomesByGroup(rows),

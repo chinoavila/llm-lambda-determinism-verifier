@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { api, ApiError, errorText, type BaseType, type CheckReport, type ReviewStatus, type Rule } from "../api";
 import { AstPreview, Badge, Button, Confirm, Drawer, Errors, Field, fmtDate, inputClass, Notice, Tab } from "../components/ui";
 import { blankRule, defaultValue, parseCell, parseExpected, TYPES, validate, valueFits, type Errors as ErrorMap, type Tab as TabKey } from "../lib/rules";
+import { scenarioCoverage } from "../lib/review";
 import { BlindReview } from "./BlindReview";
 
 /** Dominios admitidos por el formulario y el contrato del corpus. */
@@ -68,6 +69,7 @@ export function RuleEditor({
     });
   const vars = Object.keys(draft.gamma);
   const review = draft.review ?? { status: "pendiente" as const, comments: [] };
+  const coverage = useMemo(() => scenarioCoverage(draft), [draft]);
 
   async function save() {
     const errs = validate(draft, isNew, existing, astError);
@@ -390,6 +392,26 @@ export function RuleEditor({
 
     revision: (
       <>
+        {(coverage.sameExpected || coverage.missingBorders.length > 0) && (
+          <Notice>
+            Los escenarios podrían no alcanzar para detectar errores lógicos (los atrapan los escenarios, no el motor):
+            <ul className="mt-1 list-disc pl-5">
+              {coverage.sameExpected && <li>todos esperan el mismo resultado, así que una regla constante también acertaría;</li>}
+              {coverage.missingBorders.length > 0 && (
+                <li>
+                  sin escenario justo en el umbral de{" "}
+                  {coverage.missingBorders.map((b, i) => (
+                    <span key={b}>
+                      {i > 0 && ", "}
+                      <code className="font-mono">{b}</code>
+                    </span>
+                  ))}
+                  .
+                </li>
+              )}
+            </ul>
+          </Notice>
+        )}
         <BlindReview
           key={draft.case_id}
           rule={draft}

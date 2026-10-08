@@ -52,7 +52,7 @@ La corrida preliminar de la segunda entrega mostró estos puntos. El informe de 
 ## 5. Cautela al interpretar
 
 - Con una sola repetición, sin temperatura fija, con más de un modelo o con los problemas anteriores sin resolver, las cifras no permiten comparar los grupos ni confirmar hipótesis: se presentan para revisar el diseño del experimento.
-- El motor verifica estructura, alcance y tipos, no la lógica de la regla: los errores lógicos (categoría 3) solo los detectan los escenarios con su esperado. No atribuir al motor un acierto o un fallo lógico; describirlo como resultado de los escenarios.
+- El motor verifica estructura, alcance y tipos, no la lógica de la regla: los errores lógicos (categoría 3) solo los detectan los escenarios con su esperado. No atribuir al motor un acierto o un fallo lógico; describirlo como resultado de los escenarios (`failure_layers_by_category`: `blocked` frente a `wrong`).
 - Las cifras citadas deben salir de la evidencia de la corrida. No se infieren tendencias que la evidencia no muestra ni se generalizan los resultados fuera del corpus.
 
 ## 6. Referencias

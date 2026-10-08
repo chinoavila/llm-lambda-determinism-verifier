@@ -229,3 +229,39 @@ export function consistency(gens: Generation[]): PerGroup<Consistency> {
     }
   return out;
 }
+
+/** Dónde quedó cada generación juzgada: sin respuesta del LLM, bloqueada antes de ejecutar
+ * (en el Tratamiento, por el motor), con error de ejecución, ejecutada con un resultado
+ * incorrecto (solo lo detectan los escenarios) o acertada. */
+export type Layer = "llm" | "blocked" | "runtime" | "wrong" | "pass";
+export const LAYERS: Layer[] = ["llm", "blocked", "runtime", "wrong", "pass"];
+
+export function layerOf(g: Generation): Layer {
+  if (g.rows.some((r) => r.outcome === "llm_error")) return "llm";
+  if (g.rows.some((r) => r.outcome === "blocked")) return "blocked";
+  if (g.rows.some((r) => r.outcome === "runtime_error" || r.outcome === "timeout")) return "runtime";
+  return g.status === "pass" ? "pass" : "wrong";
+}
+
+export type LayerRow = { label: string; group: Group; counts: Record<Layer, number>; total: number };
+
+/** Generaciones juzgadas (con expected, no pendientes) por categoría, grupo y capa. */
+export function layersByCategory(gens: Generation[], rules: ReadonlyMap<string, Rule>): LayerRow[] {
+  const rows = new Map<string, LayerRow>();
+  for (const g of gens) {
+    if (g.status !== "pass" && g.status !== "fail") continue;
+    const rule = rules.get(g.case_id);
+    const label = rule ? (CATEGORY_LABEL[rule.category] ?? `Cat. ${rule.category}`) : OUTSIDE_CORPUS;
+    const key = `${label}\u0000${g.group}`;
+    let row = rows.get(key);
+    if (!row) rows.set(key, (row = { label, group: g.group, counts: { llm: 0, blocked: 0, runtime: 0, wrong: 0, pass: 0 }, total: 0 }));
+    row.counts[layerOf(g)]++;
+    row.total++;
+  }
+  return [...rows.values()].sort(
+    (a, b) =>
+      Number(a.label === OUTSIDE_CORPUS) - Number(b.label === OUTSIDE_CORPUS) ||
+      a.label.localeCompare(b.label) ||
+      GROUPS.indexOf(a.group) - GROUPS.indexOf(b.group),
+  );
+}

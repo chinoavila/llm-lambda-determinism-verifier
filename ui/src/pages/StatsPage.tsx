@@ -7,6 +7,9 @@ import {
   blockedStages,
   consistency,
   kValues,
+  LAYERS,
+  layersByCategory,
+  type Layer,
   passAtK,
   runConditions,
   durationByGroup,
@@ -31,6 +34,13 @@ const BREAKDOWN: [BreakdownKey, string][] = [
   ["category", "Categoría"],
   ["domain", "Dominio"],
 ];
+const LAYER: Record<Layer, { label: string; tone: Tone }> = {
+  llm: { label: "Sin respuesta del LLM", tone: "neutral" },
+  blocked: { label: "Bloqueada antes de ejecutar", tone: "warn" },
+  runtime: { label: "Error de ejecución", tone: "bad" },
+  wrong: { label: "Resultado incorrecto", tone: "bad" },
+  pass: { label: "Acierta", tone: "ok" },
+};
 const ms = (v: number | null) => (v === null ? "—" : `${Math.round(v).toLocaleString("es-AR")} ms`);
 const th = "border-b border-line px-4 py-2.5 font-medium whitespace-nowrap";
 const td = "px-4 py-2.5";
@@ -143,6 +153,7 @@ export function StatsPage({ runId }: { runId: string | null }) {
   }, [all, approvedOnly, rules]);
   const passK = useMemo(() => (stats ? passAtK(stats.gens, kValues(stats.conditions.repetitions)) : []), [stats]);
   const breakdownRows = useMemo(() => (stats ? passBy(stats.gens, breakdown, rules) : []), [stats, breakdown, rules]);
+  const layers = useMemo(() => (stats ? layersByCategory(stats.gens, rules) : []), [stats, rules]);
 
   return (
     <div className="grid gap-4">
@@ -332,6 +343,29 @@ export function StatsPage({ runId }: { runId: string | null }) {
               ))}
             </Table>
           </Section>
+
+          {layers.length > 0 && (
+            <Section
+              title="Dónde se detecta cada falla"
+              help="Generaciones con expected, por categoría y grupo. En el Tratamiento, «bloqueada» es el motor (parse, alcance, tipos); en los baselines, el análisis previo (sintaxis, mypy). Un resultado incorrecto pasó esas barreras y solo lo detectan los escenarios: es lo esperable en la categoría 3 (lógica), que el motor no puede ver."
+            >
+              <Table head={["Categoría", "Grupo", ...LAYERS.map((l) => LAYER[l].label), "Total"]}>
+                {layers.map((r) => (
+                  <tr key={`${r.label}-${r.group}`} className="border-b border-line last:border-b-0">
+                    <td className={`${td} whitespace-nowrap`}>{r.label}</td>
+                    <td className={`${td} text-right whitespace-nowrap`}>{GROUP[r.group]}</td>
+                    {LAYERS.map((l) => (
+                      <td key={l} className={td} title={`${r.counts[l]} de ${r.total}`}>
+                        <span className={`block text-right tabular-nums ${r.counts[l] ? "" : "text-faint"}`}>{r.counts[l]}</span>
+                        <Meter share={r.total ? r.counts[l] / r.total : 0} tone={LAYER[l].tone} />
+                      </td>
+                    ))}
+                    <td className={`${td} text-right font-medium tabular-nums`}>{r.total}</td>
+                  </tr>
+                ))}
+              </Table>
+            </Section>
+          )}
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Section title="Duración" help="duration_ms de cada renglón que lo tiene.">

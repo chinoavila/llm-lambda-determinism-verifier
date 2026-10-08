@@ -6,6 +6,7 @@ import {
   blockedStages,
   consistency,
   kValues,
+  layersByCategory,
   passAtK,
   passAtKOne,
   runConditions,
@@ -191,5 +192,22 @@ describe("runConditions", () => {
   it("distingue un registro 2.0 de una temperatura que no se envió", () => {
     const gens = generations([row({}), row({ case_id: "c2", request_params: { model: "m" }, usage: null })]);
     expect(runConditions(gens)).toMatchObject({ temperatures: ["del proveedor", "no registrada"], tokensPerCall: null });
+  });
+});
+
+describe("layersByCategory", () => {
+  it("separa lo que bloquea el motor de lo que solo detectan los escenarios", () => {
+    const rules = new Map<string, Rule>([["c1", { ...blankRule(), case_id: "c1", category: 3 }]]);
+    const gens = generations([
+      row({ repetition: 1 }),
+      row({ repetition: 2, result: { type: "Bool", value: false } }),
+      blocked({ repetition: 3 }),
+      row({ repetition: 4, outcome: "runtime_error", result: null, error: { code: "x", message: "" } }),
+      row({ repetition: 5, outcome: "llm_error", stage: "llm", result: null, error: { code: "generation_failed", message: "" } }),
+      row({ repetition: 6, outcome: "llm_error", stage: "llm", result: null, error: { code: "quota_exhausted", message: "" } }),
+    ]);
+    expect(layersByCategory(gens, rules)).toEqual([
+      { label: "Cat. 3 · lógica", group: "treatment", counts: { llm: 1, blocked: 1, runtime: 1, wrong: 1, pass: 1 }, total: 5 },
+    ]);
   });
 });

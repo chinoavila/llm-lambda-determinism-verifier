@@ -55,3 +55,39 @@ export function blindSummary(rows: BlindRow[]): string {
   const missing = rows.length - judged.length;
   return [head, ...lines, ...(missing ? [`${missing} sin respuesta o sin expected.`] : [])].join("\n");
 }
+
+const ORDER_OPS = new Set(["<", "<=", ">", ">="]);
+type Node = { type?: unknown; [key: string]: unknown };
+const isNode = (x: unknown): x is Node => typeof x === "object" && x !== null && !Array.isArray(x);
+
+/** Comparaciones `Var op Literal` (o al revés) con literal numérico: los umbrales de la regla. */
+export function thresholds(expr: unknown): { name: string; op: string; value: number }[] {
+  const out: { name: string; op: string; value: number }[] = [];
+  const walk = (x: unknown): void => {
+    if (Array.isArray(x)) return x.forEach(walk);
+    if (!isNode(x)) return;
+    if (x.type === "BinaryOp" && typeof x.op === "string" && ORDER_OPS.has(x.op)) {
+      const [v, l] = isNode(x.left) && x.left.type === "Var" ? [x.left, x.right] : [x.right, x.left];
+      if (isNode(v) && v.type === "Var" && isNode(l) && l.type === "Literal" && (l.value_type === "Int" || l.value_type === "Decimal"))
+        out.push({ name: String(v.name), op: x.op, value: Number(l.value) });
+    }
+    Object.values(x).forEach(walk);
+  };
+  walk(expr);
+  return out;
+}
+
+export type Coverage = { sameExpected: boolean; missingBorders: string[] };
+
+/** Indicios de escenarios flojos: todos esperan lo mismo (una regla constante acertaría) o
+ * hay umbrales del AST canónico sin un escenario justo en el borde. */
+export function scenarioCoverage(rule: Rule): Coverage {
+  const expected = rule.scenarios.filter((s) => s.expected).map((s) => JSON.stringify(s.expected));
+  const missing = thresholds(rule.canonical_ast.expr).filter(
+    (t) => !rule.scenarios.some((s) => s.env[t.name] !== undefined && s.env[t.name] !== null && Number(s.env[t.name]) === t.value),
+  );
+  return {
+    sameExpected: expected.length > 1 && new Set(expected).size === 1,
+    missingBorders: [...new Set(missing.map((t) => `${t.name} ${t.op} ${t.value}`))],
+  };
+}

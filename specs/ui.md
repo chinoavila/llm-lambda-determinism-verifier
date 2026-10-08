@@ -37,6 +37,7 @@
 - Generación: `(case_id, group, repetition)`, con un renglón por escenario (`docs/orquestador.md`).
 - Un renglón acierta si `outcome` es `executed`, tiene `result` y `expected`, y los dos coinciden en `type` y `value` (comparación estricta: `Int 5` contra `Decimal "5"` es fallo; los `Decimal` llegan en texto canónico, `contracts/README.md` §3).
 - Una generación pasa si aciertan todos sus renglones. Si a algún renglón le falta `expected` (fixtures, regla fuera del corpus), queda "sin expected" y fuera del denominador.
+- "Dónde se detecta cada falla" (`layersByCategory`): generaciones con expected por categoría, grupo y capa (sin respuesta del LLM, bloqueada antes de ejecutar, error de ejecución, resultado incorrecto, acierta). Muestra que los errores lógicos los atrapan los escenarios y no el motor. También va en la evidencia del reporte (`failure_layers_by_category`).
 - Filtro "Solo reglas con revisión aprobada": recalcula todo sobre las reglas con `review.status = aprobada`.
 - Una generación cortada por cuota o red (`llm_error` con `quota_exhausted` o `transport_error`) queda "pendiente": fuera del denominador, porque no es una falla del modelo. Se reintenta con "Reanudar" en Corridas.
 - `pass@1` de un grupo: generaciones que pasan / generaciones con `expected`.
@@ -81,7 +82,7 @@
 4. Estadísticas: pantalla por corrida calculada en la SPA (§Estadísticas). Hecha.
 5. Reporte con IA: informe en PDF de una corrida redactado por el LLM (§Reporte con IA). Hecha.
 6. Condiciones de corrida: modelo fijo (por defecto el primero de `llm.toml`; "Automático" avisa que mezcla modelos), temperatura (por defecto 0) y 5 repeticiones por defecto; "Reanudar" en cada corrida con registros; aviso de reglas sin review aprobada (`ui/src/lib/runs.ts`). Cada corrida guarda sus condiciones en `out/<run_id>.run.json`; "Reanudar" las reutiliza y "Esperar a que se libere la cuota" pasa `--wait-quota`.
-7. Revisión de expected: contador de aprobadas en Corpus; revisión a ciegas en la pestaña Revisión (`ui/src/lib/review.ts`, `BlindReview.tsx`): el revisor anota el resultado de cada escenario viendo solo el enunciado y el `env`, se compara con el `expected` (decimales en texto canónico) y el resultado queda como comentario de `review`; filtro de aprobadas en Estadísticas.
+7. Revisión de expected: contador de aprobadas en Corpus; en la pestaña Revisión, aviso si todos los escenarios esperan lo mismo o si un umbral `Var op Literal` del AST canónico no tiene escenario en el borde (`scenarioCoverage`); revisión a ciegas en la pestaña Revisión (`ui/src/lib/review.ts`, `BlindReview.tsx`): el revisor anota el resultado de cada escenario viendo solo el enunciado y el `env`, se compara con el `expected` (decimales en texto canónico) y el resultado queda como comentario de `review`; filtro de aprobadas en Estadísticas.
 
 ## Relación con los generadores del corpus
 
