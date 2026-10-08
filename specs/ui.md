@@ -6,7 +6,7 @@
 
 - Una SPA (React + Vite + TypeScript + Tailwind) en `ui/` y una API HTTP en `pipeline/pipeline/server.py`, servidas juntas por `python -m pipeline serve`.
 - Ejecuta las acciones del pipeline que hoy existen en la CLI: gestionar el corpus (`check-case`), correr el pipeline (`run`) y explorar los registros. No agrega lógica de dominio propia: la API llama a las mismas funciones que la CLI.
-- Las estadísticas de una corrida se calculan solo en la SPA, a partir de sus registros (§Estadísticas). La API no agrega ni resume: devuelve renglones (`mission.md` §2).
+- Las estadísticas de una corrida se calculan solo en la SPA, a partir de sus registros (§Estadísticas). La API no agrega ni resume: devuelve renglones (`mission.md` §2). El reporte con IA (§Reporte con IA) recibe esas estadísticas ya calculadas.
 
 ## API
 
@@ -40,6 +40,15 @@
 - `pass@1` de un grupo: generaciones que pasan / generaciones con `expected`.
 - Contenido: `pass@1` por grupo; desenlaces por grupo (renglones por `outcome`, y por `stage` en los bloqueos); desglose de `pass@1` por regla, categoría y dominio (las dos últimas salen de `corpus/`; un caso que no está ahí va a "fuera del corpus"); duración (n, media y mediana de `duration_ms`) y códigos de error por grupo.
 
+## Reporte con IA
+
+- Cada fila de Corridas con registros tiene "Generar reporte con IA". Pide confirmación dentro de la página (una llamada al LLM, consume cuota) y está deshabilitado si el LLM no está listo o si ya hay un reporte en curso. Un agente no lo usa sin pedido del desarrollador.
+- La SPA arma la evidencia en `ui/src/lib/report.ts` (funciones puras con tests) reutilizando `stats.ts`: metadata de la corrida, `pass@1` por grupo y su desglose por regla, categoría, dominio y modelo, la matriz modelo × categoría, desenlaces, bloqueos por etapa, errores y duración, los indicadores de las observaciones metodológicas (`report_methodology.md` §4) y una muestra acotada de fallos (`llm_raw` truncado), para no superar el límite de tokens del proveedor.
+- `POST /api/runs/{id}/report` con `{"evidence": {...}}` (`pipeline/pipeline/report.py`, clase `Reporter`). El servidor no calcula nada: arma el prompt con `report_methodology.md` y la evidencia, hace una sola llamada con el balanceador y valida la forma de la respuesta sin repararla. Responde `{report, model, usage, saved}`, con `report` = `{title, abstract, sections: [{heading, paragraphs}], observations: [{number 1-8, status: se_repite | no_se_repite | no_concluyente, text}], limitations, conclusions}`.
+- Errores: 400 si `evidence` no es un objeto; 404 si la corrida no tiene registros; 409 sin credenciales o sin metodología; 429 si se agotó la cuota; 502 si el LLM falla o el informe no tiene la forma pedida; 503 si no hay modelos disponibles.
+- Cada llamada guarda `out/<run_id>.report-<timestamp>.json` (evidencia, modelo, `request_params`, `usage`, respuesta cruda), también cuando el informe es inválido. No son corridas: `GET /api/runs` solo lista `*.jsonl` y `*.log`.
+- El PDF lo arma la SPA con `pdfmake` (`ui/src/lib/reportPdf.ts`, importado de forma dinámica, con las fuentes embebidas): portada, resumen, secciones, contraste con las observaciones, limitaciones, conclusiones, referencias fijas de la metodología, Anexo A con las tablas de la evidencia y Anexo B con la muestra de fallos. Las cifras de las tablas salen de la evidencia, nunca del texto del LLM, y el PDF dice qué modelo redactó el texto.
+
 ## Seguridad
 
 - `serve` escucha por defecto en `127.0.0.1`. En Docker escucha en `0.0.0.0` dentro del contenedor y compose publica el puerto solo en `127.0.0.1:8000`. No publicar en otra interfaz: el contenedor tiene las credenciales del LLM.
@@ -66,6 +75,7 @@
 2. Corpus: CRUD de `corpus/*.json` desde la UI, con `check-case` al guardar. Hecha.
 3. Corridas y registros: lanzar `run` con confirmación de cuota, log en vivo, cancelación y exploración de `out/<run_id>.jsonl`. Hecha.
 4. Estadísticas: pantalla por corrida calculada en la SPA (§Estadísticas). Hecha.
+5. Reporte con IA: informe en PDF de una corrida redactado por el LLM (§Reporte con IA). En curso.
 
 ## Relación con los generadores del corpus
 

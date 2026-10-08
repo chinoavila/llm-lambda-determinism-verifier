@@ -27,6 +27,7 @@ from pipeline.baselines.sandbox import SandboxError
 from pipeline.jobs import RunManager
 from pipeline.llm import ConfigError, load_config
 from pipeline.orchestrator import EngineError
+from pipeline.report import Reporter
 from pipeline.store import RuleStore, StoreError
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -115,7 +116,9 @@ def body_object(req: Request) -> dict[str, Any]:
     return req.body
 
 
-def build_routes(paths: Paths, store: RuleStore, runs: RunManager) -> list[tuple[str, re.Pattern[str], Handler]]:
+def build_routes(
+    paths: Paths, store: RuleStore, runs: RunManager, reporter: Reporter
+) -> list[tuple[str, re.Pattern[str], Handler]]:
     """Tabla de rutas de la API. Ver specs/ui.md."""
 
     def saved(case_id: str, status: HTTPStatus) -> tuple[HTTPStatus, Json]:
@@ -139,12 +142,22 @@ def build_routes(paths: Paths, store: RuleStore, runs: RunManager) -> list[tuple
     def check_all(_req: Request) -> tuple[HTTPStatus, Json]:
         return HTTPStatus.OK, [store.verify(case_id, write=False) for case_id in store.paths()]
 
-    def start_run(req: Request) -> tuple[HTTPStatus, Json]:
-        body = body_object(req)
+    def require_llm() -> None:
         if not llm_status()["ready"]:
             raise StoreError(409, "faltan las credenciales del LLM: completá .env (ver .env.example)")
+
+    def start_run(req: Request) -> tuple[HTTPStatus, Json]:
+        body = body_object(req)
+        require_llm()
         job = runs.start(body, body.get("confirm_calls"))
         return HTTPStatus.CREATED, job.summary()
+
+    def report(req: Request) -> tuple[HTTPStatus, Json]:
+        evidence = body_object(req).get("evidence")
+        if not isinstance(evidence, dict):
+            raise StoreError(400, "evidence debe ser un objeto JSON")
+        require_llm()
+        return HTTPStatus.OK, reporter.generate(runs.check_id(req.match["id"]), evidence)
 
     def records(req: Request) -> tuple[HTTPStatus, Json]:
         unknown = sorted(set(req.query) - set(RECORD_FILTERS))
@@ -175,6 +188,7 @@ def build_routes(paths: Paths, store: RuleStore, runs: RunManager) -> list[tuple
         ("POST", rf"/api/runs/{run_id}/cancel", lambda r: (HTTPStatus.OK, runs.cancel(r.match["id"]).summary())),
         ("GET", rf"/api/runs/{run_id}/log", lambda r: (HTTPStatus.OK, runs.log(r.match["id"], offset(r)))),
         ("GET", rf"/api/runs/{run_id}/records", records),
+        ("POST", rf"/api/runs/{run_id}/report", report),
     ]
     return [(method, re.compile(pattern), handler) for method, pattern, handler in table]
 
@@ -184,8 +198,10 @@ def _active(runs: RunManager) -> Json:
     return job.summary() if job else None
 
 
-def make_handler(paths: Paths, store: RuleStore, runs: RunManager) -> type[BaseHTTPRequestHandler]:
-    routes = build_routes(paths, store, runs)
+def make_handler(
+    paths: Paths, store: RuleStore, runs: RunManager, reporter: Reporter
+) -> type[BaseHTTPRequestHandler]:
+    routes = build_routes(paths, store, runs, reporter)
 
     class RequestHandler(BaseHTTPRequestHandler):
         server_version = "pipeline-ui"
@@ -284,11 +300,18 @@ def make_handler(paths: Paths, store: RuleStore, runs: RunManager) -> type[BaseH
 
 
 def make_server(
-    host: str, port: int, paths: Paths, *, store: RuleStore | None = None, runs: RunManager | None = None
+    host: str,
+    port: int,
+    paths: Paths,
+    *,
+    store: RuleStore | None = None,
+    runs: RunManager | None = None,
+    reporter: Reporter | None = None,
 ) -> ThreadingHTTPServer:
     store = store or RuleStore(paths.corpus)
     runs = runs or RunManager(paths.out, store, paths.fixtures)
-    return ThreadingHTTPServer((host, port), make_handler(paths, store, runs))
+    reporter = reporter or Reporter(paths.out)
+    return ThreadingHTTPServer((host, port), make_handler(paths, store, runs, reporter))
 
 
 def serve(host: str, port: int, paths: Paths | None = None) -> int:

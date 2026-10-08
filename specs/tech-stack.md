@@ -61,7 +61,7 @@ Detalle en [`ui.md`](./ui.md).
 - **Prohibido** que C-1 dependa de la red durante la validación.
 - **Prohibido** hardcodear claves de API: solo variables de entorno, `.env` fuera de Git.
 - **Prohibido** reparar, reintentar o normalizar silenciosamente la salida del LLM antes de registrarla.
-- **Prohibido** agregar código de agregación, cálculo de métricas, estadística o graficación en `pipeline/`, `engine/` o `contracts/` — incluidas dependencias como `pandas` o `matplotlib`. Única excepción: la pantalla de Estadísticas de la UI, que agrega en TypeScript dentro de la SPA y sin dependencias nuevas (`ui.md` §Estadísticas).
+- **Prohibido** agregar código de agregación, cálculo de métricas, estadística o graficación en `pipeline/`, `engine/` o `contracts/` — incluidas dependencias como `pandas` o `matplotlib`. Única excepción: la pantalla de Estadísticas de la UI, que agrega en TypeScript dentro de la SPA y sin dependencias nuevas (`ui.md` §Estadísticas). El reporte con IA reutiliza esas funciones y suma una sola dependencia, `pdfmake`, en `ui/` (`ui.md` §Reporte con IA).
 - **Prohibido** agregar dependencias que no sirvan directamente a C-1, C-2, C-3 o C-4. En particular, la API de la UI no agrega frameworks web al `pyproject.toml`.
 - **Prohibido** instalar o correr Node o npm en el host, o dejar `ui/node_modules` fuera de un contenedor.
 - **Prohibido** publicar el puerto de la UI en una interfaz distinta de `127.0.0.1`, o devolver credenciales del LLM desde su API.

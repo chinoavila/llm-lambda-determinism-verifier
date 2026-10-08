@@ -24,7 +24,7 @@ Rechazar toda tarea que implique:
 - Ejecutar corridas experimentales o producir datos por iniciativa propia. La UI (C-4) permite que el desarrollador lance una corrida; un agente no la lanza sin que se lo pidan.
 - Recolectar, agregar, analizar o graficar resultados, o calcular métricas, en el pipeline (C-1, C-2, C-3), la CLI o los contratos. Excepción decidida por el desarrollador (2026-10-07): la UI (C-4) muestra estadísticas de una corrida (desenlaces, `pass@1` por grupo y su desglose, duración y errores), calculadas en la SPA a partir de sus registros. Reglas en [`ui.md`](./ui.md) §Estadísticas.
 - Construir o poblar un corpus de datos por iniciativa propia. Excepción acordada con el equipo (2026-09-26): las reglas del experimento se versionan en [`corpus/`](../corpus/) y un agente puede escribirlas **solo cuando el desarrollador lo pide**, siguiendo [`docs/corpus.md`](../docs/corpus.md) y verificándolas con `check-case`. El corpus no es un componente: no cambia C-1, C-2 ni C-3.
-- Redactar documentación académica o discutir hallazgos.
+- Redactar documentación académica o discutir hallazgos. Excepción decidida por el desarrollador (2026-10-07): el botón "Generar reporte con IA" de la UI pide al LLM un informe de una corrida a partir de sus estadísticas y de las bases metodológicas versionadas en `pipeline/pipeline/report_methodology.md`. El agente construye el botón; no redacta ni genera informes por su cuenta. Reglas en [`ui.md`](./ui.md) §Reporte con IA.
 - Extender el DSL, el orquestador o los baselines más allá de lo necesario para que los componentes funcionen.
 
 ## 3. Qué debe hacer el pipeline construido
