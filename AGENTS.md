@@ -24,7 +24,7 @@ Esto corre el build, los gates (`cabal test` para `engine/`, `mypy` + `pytest` p
 
 ## Reglas que importan
 
-- **Alcance:** solo construir el pipeline (`engine/`, `pipeline/`, `contracts/`) y su UI (`ui/`, `pipeline/pipeline/server.py`). No ejecutar el experimento, no calcular métricas, no analizar resultados — eso es posterior y de otra persona. La UI puede lanzar corridas, pero un agente no lo hace sin que el desarrollador lo pida: consume cuota igual que `run`.
+- **Alcance:** solo construir el pipeline (`engine/`, `pipeline/`, `contracts/`) y su UI (`ui/`, `pipeline/pipeline/server.py`). No ejecutar el experimento, no calcular métricas, no analizar resultados — eso es posterior y de otra persona. Única excepción: la pantalla de Estadísticas de la UI, que resume una corrida dentro de la SPA ([`specs/ui.md`](specs/ui.md) §Estadísticas). La UI puede lanzar corridas, pero un agente no lo hace sin que el desarrollador lo pida: consume cuota igual que `run`.
 - **Sandbox obligatorio:** nunca `eval`/`exec` sobre salida de un LLM fuera del contenedor `sandbox` (sin red, sin `.env`, sin filesystem del repo). No relajar su configuración; ver [`specs/sandbox.md`](specs/sandbox.md).
 - **Rutas siempre relativas.** Nunca hardcodear `C:\Users\...` ni `/home/...`.
 - **Sin claves en el repo.** Credenciales del LLM van por variables de entorno (`.env`, fuera de Git).

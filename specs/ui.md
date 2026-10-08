@@ -6,7 +6,7 @@
 
 - Una SPA (React + Vite + TypeScript + Tailwind) en `ui/` y una API HTTP en `pipeline/pipeline/server.py`, servidas juntas por `python -m pipeline serve`.
 - Ejecuta las acciones del pipeline que hoy existen en la CLI: gestionar el corpus (`check-case`), correr el pipeline (`run`) y explorar los registros. No agrega lógica de dominio propia: la API llama a las mismas funciones que la CLI.
-- No calcula métricas ni agrega resultados (`mission.md` §2). Mostrar un registro, filtrarlo o ponerlo junto a su `expected` está permitido; contar, promediar o graficar `pass@1` no.
+- Las estadísticas de una corrida se calculan solo en la SPA, a partir de sus registros (§Estadísticas). La API no agrega ni resume: devuelve renglones (`mission.md` §2).
 
 ## API
 
@@ -24,11 +24,21 @@
   - `POST /api/runs/estimate` con `{"source": "corpus" | "fixtures", "case_ids"?: [...], "repetitions": 1-20}` devuelve `{cases, repetitions, calls}`, con `calls = casos × 3 × repeticiones`.
   - `POST /api/runs` con la misma selección más `confirm_calls`: lanza `python -m pipeline run` como subproceso (`pipeline_command`), con `--run-id` y la salida en `out/<run_id>.log`. 409 si `confirm_calls` no es exactamente `calls`, si ya hay una corrida en curso o si faltan credenciales del LLM. A lo sumo una corrida a la vez.
   - `GET /api/runs`: `{active, runs}`, con las corridas de `out/` (registros, log, última escritura y, si se lanzó desde este servidor, su estado). `POST /api/runs/{id}/cancel` termina el subproceso (los casos ya escritos quedan). `GET /api/runs/{id}/log?offset=n` devuelve el log desde `n` para leerlo de a partes.
-  - `GET /api/runs/{id}/records`: los renglones del JSONL, filtrables por igualdad en `case_id`, `scenario_id`, `group`, `repetition`, `outcome`, `stage` y `model`, cada uno con el `expected` de su escenario si la regla está en `corpus/`. Nunca conteos, tasas ni resúmenes.
+  - `GET /api/runs/{id}/records`: los renglones del JSONL, filtrables por igualdad en `case_id`, `scenario_id`, `group`, `repetition`, `outcome`, `stage` y `model`, cada uno con el `expected` de su escenario si la regla está en `corpus/`. Nunca conteos, tasas ni resúmenes: eso lo calcula la SPA.
   - `run_id` solo admite letras, dígitos, `-` y `_`: no puede salir de `out/`.
   - Exportar: cada fila de Corridas con registros ofrece JSONL, TXT, MD, CSV, Excel (.xlsx) y PDF. Se arma en el navegador (`ui/src/lib/export.ts`) a partir de `GET /api/runs/{id}/records` sin filtros; la API no cambia. El JSONL son los registros como en `out/` (sin `expected`); los demás formatos agregan el `expected` de cada escenario. XLSX (ZIP sin comprimir) y PDF (Courier, WinAnsi) se generan sin dependencias. Solo renglones: sin conteos, tasas ni resúmenes.
 - Errores de la verificación o de la corrida por el engine o el sandbox caídos: 503.
 - **Nunca** devolver una clave de API, ni parte de ella, ni el contenido de `.env`. De la configuración del LLM solo se expone si está lista, los nombres de modelo y el mensaje de `ConfigError` (que nombra la variable, no su valor). Lo verifica `test_health_never_returns_the_api_key`.
+
+## Estadísticas
+
+- Ruta `/estadisticas/<run_id>` (sección de la navegación, con selector de corrida como Registros). Cada fila del listado de Corridas con registros tiene "Ver estadísticas".
+- Se calculan en `ui/src/lib/stats.ts` (funciones puras con tests de vitest) sobre `GET /api/runs/{id}/records` y `GET /api/rules`. No hay endpoint de estadísticas ni dependencias de gráficos: tablas y barras con Tailwind y los tokens de color.
+- Generación: `(case_id, group, repetition)`, con un renglón por escenario (`docs/orquestador.md`).
+- Un renglón acierta si `outcome` es `executed`, tiene `result` y `expected`, y los dos coinciden en `type` y `value` (comparación estricta: `Int 5` contra `Decimal "5"` es fallo; los `Decimal` llegan en texto canónico, `contracts/README.md` §3).
+- Una generación pasa si aciertan todos sus renglones. Si a algún renglón le falta `expected` (fixtures, regla fuera del corpus), queda "sin expected" y fuera del denominador.
+- `pass@1` de un grupo: generaciones que pasan / generaciones con `expected`.
+- Contenido: `pass@1` por grupo; desenlaces por grupo (renglones por `outcome`, y por `stage` en los bloqueos); desglose de `pass@1` por regla, categoría y dominio (las dos últimas salen de `corpus/`; un caso que no está ahí va a "fuera del corpus"); duración (n, media y mediana de `duration_ms`) y códigos de error por grupo.
 
 ## Seguridad
 
@@ -55,6 +65,7 @@
 1. Base: servidor, `GET /api/health`, SPA con navegación (Corpus, Corridas, Registros) y barra de estado. Hecha.
 2. Corpus: CRUD de `corpus/*.json` desde la UI, con `check-case` al guardar. Hecha.
 3. Corridas y registros: lanzar `run` con confirmación de cuota, log en vivo, cancelación y exploración de `out/<run_id>.jsonl`. Hecha.
+4. Estadísticas: pantalla por corrida calculada en la SPA (§Estadísticas). En curso.
 
 ## Relación con los generadores del corpus
 

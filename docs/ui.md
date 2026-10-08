@@ -12,6 +12,7 @@ docker compose up --build ui
 - **Corpus:** buscar y filtrar reglas; crear, editar y eliminar. El panel de edición tiene las pestañas General, Variables y escenarios, AST (con vista legible), Python y Revisión (estado y comentarios). Al guardar se corre `check-case`: los `expected` que faltan los calcula el engine y los errores se muestran en el panel. "Verificar todas" revisa el corpus entero sin escribir.
 - **Corridas:** elegir el corpus completo, algunas reglas o las fixtures, y las repeticiones. La UI muestra cuántas llamadas al LLM va a hacer la corrida y pide confirmar ese número antes de lanzarla. Mientras corre, se ve el log y se puede cancelar. Cada corrida del listado se puede exportar a JSONL, TXT, MD, CSV, Excel o PDF; todos salvo el JSONL incluyen el `expected` de cada escenario.
 - **Registros:** elegir una corrida y filtrar por regla, grupo, desenlace o modelo. Cada renglón muestra el resultado junto a su `expected`, y al abrirlo, la respuesta cruda del LLM.
+- **Estadísticas:** el resumen de una corrida, desde la sección o con "Ver estadísticas" en el listado de Corridas: `pass@1` por grupo, desenlaces por grupo, el desglose por regla, categoría y dominio, la duración y los códigos de error.
 
 Si una regla la escribe un script de `corpus/tools/`, el editor lo avisa: el cambio hay que llevarlo también al script, o se pierde la próxima vez que se corra. Cuando dos personas editan la misma regla, la segunda en guardar recibe un aviso en lugar de pisar el cambio de la primera.
 
@@ -57,5 +58,13 @@ flowchart LR
 | 1. Base | Servidor, `GET /api/health`, navegación y barra de estado | hecha |
 | 2. Corpus | Crear, editar y eliminar reglas de `corpus/`, con `check-case` al guardar | hecha |
 | 3. Corridas y registros | Lanzar `run` con confirmación de cuota, log en vivo, cancelar y explorar los registros | hecha |
+| 4. Estadísticas | Resumen de una corrida calculado en el navegador | en curso |
 
-La UI no calcula métricas: mostrar un registro al lado de su `expected` sí, contar `pass@1` por grupo no. Eso sigue siendo trabajo del experimento ([`specs/mission.md`](../specs/mission.md) §2).
+## Cómo se cuentan las estadísticas
+
+Se decidió el 2026-10-07 que la UI resuma una corrida. El cálculo se hace en el navegador con los mismos registros que muestra Registros: el pipeline y la API siguen sin agregar nada, y el análisis del experimento sigue siendo aparte ([`specs/mission.md`](../specs/mission.md) §2).
+
+- Una **generación** es una respuesta del LLM: una regla, un grupo, una repetición. Tiene un renglón por escenario.
+- Una generación **pasa** si en todos sus escenarios ejecutó y el resultado es igual al `expected`, con el mismo tipo (`5` entero no es igual a `5` decimal).
+- Si algún escenario no tiene `expected` (por ejemplo, las fixtures), la generación no cuenta para `pass@1`.
+- **`pass@1`** de un grupo: generaciones que pasan sobre generaciones con `expected`.

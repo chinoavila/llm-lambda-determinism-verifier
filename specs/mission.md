@@ -22,8 +22,7 @@ C-4 es una extensión posterior al MVP, decidida por el equipo el 2026-09-26: la
 Rechazar toda tarea que implique:
 
 - Ejecutar corridas experimentales o producir datos por iniciativa propia. La UI (C-4) permite que el desarrollador lance una corrida; un agente no la lanza sin que se lo pidan.
-- Recolectar, agregar, analizar o graficar resultados. Mostrar registros en la UI, filtrarlos o ponerlos junto a su `expected` no es análisis; contarlos o resumirlos, sí.
-- Calcular métricas de cualquier tipo, también en la UI.
+- Recolectar, agregar, analizar o graficar resultados, o calcular métricas, en el pipeline (C-1, C-2, C-3), la CLI o los contratos. Excepción decidida por el desarrollador (2026-10-07): la UI (C-4) muestra estadísticas de una corrida (desenlaces, `pass@1` por grupo y su desglose, duración y errores), calculadas en la SPA a partir de sus registros. Reglas en [`ui.md`](./ui.md) §Estadísticas.
 - Construir o poblar un corpus de datos por iniciativa propia. Excepción acordada con el equipo (2026-09-26): las reglas del experimento se versionan en [`corpus/`](../corpus/) y un agente puede escribirlas **solo cuando el desarrollador lo pide**, siguiendo [`docs/corpus.md`](../docs/corpus.md) y verificándolas con `check-case`. El corpus no es un componente: no cambia C-1, C-2 ni C-3.
 - Redactar documentación académica o discutir hallazgos.
 - Extender el DSL, el orquestador o los baselines más allá de lo necesario para que los componentes funcionen.
