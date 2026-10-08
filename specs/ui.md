@@ -65,7 +65,7 @@
 1. Base: servidor, `GET /api/health`, SPA con navegación (Corpus, Corridas, Registros) y barra de estado. Hecha.
 2. Corpus: CRUD de `corpus/*.json` desde la UI, con `check-case` al guardar. Hecha.
 3. Corridas y registros: lanzar `run` con confirmación de cuota, log en vivo, cancelación y exploración de `out/<run_id>.jsonl`. Hecha.
-4. Estadísticas: pantalla por corrida calculada en la SPA (§Estadísticas). En curso.
+4. Estadísticas: pantalla por corrida calculada en la SPA (§Estadísticas). Hecha.
 
 ## Relación con los generadores del corpus
 

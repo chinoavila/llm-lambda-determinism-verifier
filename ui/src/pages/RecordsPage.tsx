@@ -1,19 +1,18 @@
-// Registros de una corrida, renglón por renglón. Sin conteos ni resúmenes: eso es
-// análisis y queda fuera del repo (specs/mission.md §2, specs/ui.md).
+// Registros de una corrida, renglón por renglón. Los resúmenes están en StatsPage.
 import { useEffect, useMemo, useState } from "react";
 import { api, errorText, type Outcome, type RecordRow, type Result, type RunInfo } from "../api";
 import { Badge, Card, Drawer, fmtDate, Notice, type Tone } from "../components/ui";
 import { showValue } from "../lib/rules";
 import { navigate } from "../router";
 
-const OUTCOME: Record<Outcome, { label: string; tone: Tone }> = {
+export const OUTCOME: Record<Outcome, { label: string; tone: Tone }> = {
   executed: { label: "ejecutó", tone: "accent" },
   blocked: { label: "bloqueado", tone: "warn" },
   runtime_error: { label: "error en ejecución", tone: "bad" },
   timeout: { label: "timeout", tone: "bad" },
   llm_error: { label: "error del LLM", tone: "neutral" },
 };
-const GROUP: Record<string, string> = { treatment: "Tratamiento", baseline1: "Baseline 1", baseline2: "Baseline 2" };
+export const GROUP: Record<string, string> = { treatment: "Tratamiento", baseline1: "Baseline 1", baseline2: "Baseline 2" };
 const FILTERS = [
   ["case_id", "Regla"],
   ["group", "Grupo"],

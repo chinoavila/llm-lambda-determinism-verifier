@@ -58,7 +58,7 @@ flowchart LR
 | 1. Base | Servidor, `GET /api/health`, navegación y barra de estado | hecha |
 | 2. Corpus | Crear, editar y eliminar reglas de `corpus/`, con `check-case` al guardar | hecha |
 | 3. Corridas y registros | Lanzar `run` con confirmación de cuota, log en vivo, cancelar y explorar los registros | hecha |
-| 4. Estadísticas | Resumen de una corrida calculado en el navegador | en curso |
+| 4. Estadísticas | Resumen de una corrida calculado en el navegador | hecha |
 
 ## Cómo se cuentan las estadísticas
 

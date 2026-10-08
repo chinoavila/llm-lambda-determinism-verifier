@@ -226,6 +226,11 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                         Ver registros
                       </Button>
                     )}
+                    {r.records > 0 && (
+                      <Button variant="link" onClick={() => navigate(`/estadisticas/${r.run_id}`)}>
+                        Ver estadísticas
+                      </Button>
+                    )}
                     {r.records > 0 && <ExportMenu runId={r.run_id} onError={setError} />}
                   </td>
                 </tr>

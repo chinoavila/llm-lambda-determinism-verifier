@@ -62,7 +62,7 @@ Extensión decidida por el equipo el 2026-09-26. Reglas en [`ui.md`](./ui.md).
 - [x] Etapa 1: servidor (`python -m pipeline serve`), `GET /api/health`, SPA con navegación y barra de estado, servicio `ui` en compose.
 - [x] Etapa 2: CRUD de `corpus/` desde la UI, con `check-case` al guardar.
 - [x] Etapa 3: lanzar corridas con confirmación de cuota, log en vivo, cancelación y exploración de registros.
-- [ ] Etapa 4: pantalla de Estadísticas de una corrida, calculada en la SPA (decidida el 2026-10-07).
+- [x] Etapa 4: pantalla de Estadísticas de una corrida, calculada en la SPA (decidida el 2026-10-07).
 
 **Listo cuando:** desde `http://localhost:8000` se puede editar una regla, verificarla, correr el pipeline sobre el corpus, revisar sus registros y ver sus estadísticas sin usar la terminal.
 
