@@ -19,7 +19,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from pipeline.cli import new_run_id
+from pipeline.cli import new_run_id, read_run_file, run_file
 from pipeline.orchestrator import GROUPS, resolved_calls
 from pipeline.store import RuleStore, StoreError
 
@@ -31,11 +31,13 @@ PIPELINE_DIR = Path(__file__).resolve().parents[1]
 @dataclass(frozen=True)
 class Conditions:
     """Condiciones fijas de toda la corrida; None = las de llm.toml (balanceo, params).
-    `resume` = continúa la corrida de mismo run_id (`--resume`)."""
+    `resume` = continúa la corrida de mismo run_id (`--resume`); `wait_quota` = sin cuota,
+    espera en vez de cortar (`--wait-quota`)."""
 
     model: str | None = None
     temperature: float | None = None
     resume: bool = False
+    wait_quota: bool = False
 
 
 Command = Callable[[Sequence[Path], int, str, Path, Conditions], list[str]]
@@ -52,6 +54,8 @@ def pipeline_command(
         cmd += ["--model", conditions.model]
     if conditions.temperature is not None:
         cmd += ["--temperature", str(conditions.temperature)]
+    if conditions.wait_quota:
+        cmd += ["--wait-quota"]
     if conditions.resume:
         cmd += ["--resume"]
     return cmd
@@ -80,6 +84,7 @@ class Job:
             "model": self.conditions.model,
             "temperature": self.conditions.temperature,
             "resume": self.conditions.resume,
+            "wait_quota": self.conditions.wait_quota,
             "calls": self.calls,
             "started_at": self.started_at,
             "status": self.status,
@@ -109,8 +114,21 @@ class RunManager:
 
     def resolve(self, selection: Mapping[str, Any]) -> tuple[str, list[Path], int, Conditions]:
         """`{"source": "corpus" | "fixtures", "case_ids": [...]?, "repetitions": n,
-        "model": id | "auto"?, "temperature": t?, "resume": run_id?}`."""
+        "model": id | "auto"?, "temperature": t?, "resume": run_id?, "wait_quota": bool?}`.
+
+        Al reanudar, casos, repeticiones, modelo y temperatura salen de `out/<run_id>.run.json`
+        y la selección se ignora. Una corrida sin ese archivo se lanzó sin modelo ni
+        temperatura: se reanuda igual, con los casos y repeticiones de la selección."""
         conditions = self.conditions(selection)
+        resume = selection.get("resume")
+        if resume is not None:
+            if not isinstance(resume, str) or not (self.out / f"{self.check_id(resume)}.jsonl").exists():
+                raise StoreError(404, f"no hay registros de la corrida {resume} para reanudar")
+            conditions = Conditions(resume=True, wait_quota=conditions.wait_quota)
+            saved = read_run_file(run_file(self.out, resume))
+            if saved is not None:
+                conditions = replace(conditions, model=saved.model, temperature=saved.temperature)
+                return "guardada", list(saved.cases), saved.repetitions, conditions
         source = selection.get("source")
         repetitions = selection.get("repetitions", 1)
         if not isinstance(repetitions, int) or isinstance(repetitions, bool) or not 1 <= repetitions <= 20:
@@ -133,11 +151,6 @@ class RunManager:
             raise StoreError(400, 'source debe ser "corpus" o "fixtures"')
         if not files:
             raise StoreError(400, "no hay casos para correr")
-        if selection.get("resume") is not None:
-            resume = selection["resume"]
-            if not isinstance(resume, str) or not (self.out / f"{self.check_id(resume)}.jsonl").exists():
-                raise StoreError(404, f"no hay registros de la corrida {resume} para reanudar")
-            conditions = replace(conditions, resume=True)
         return source, files, repetitions, conditions
 
     def calls(self, selection: Mapping[str, Any], files: Sequence[Path], repetitions: int) -> int:
@@ -163,11 +176,22 @@ class RunManager:
             not isinstance(temperature, (int, float)) or isinstance(temperature, bool) or not 0 <= temperature <= 2
         ):
             raise StoreError(400, "temperature debe ser un número entre 0 y 2")
-        return Conditions(model, None if temperature is None else float(temperature))
+        wait_quota = selection.get("wait_quota", False)
+        if not isinstance(wait_quota, bool):
+            raise StoreError(400, "wait_quota debe ser true o false")
+        return Conditions(model, None if temperature is None else float(temperature), wait_quota=wait_quota)
 
     def estimate(self, selection: Mapping[str, Any]) -> dict[str, Any]:
-        _, files, repetitions, _ = self.resolve(selection)
-        return {"cases": len(files), "repetitions": repetitions, "calls": self.calls(selection, files, repetitions)}
+        """Con `saved`, casos y condiciones salen del archivo de la corrida que se reanuda."""
+        source, files, repetitions, conditions = self.resolve(selection)
+        return {
+            "cases": len(files),
+            "repetitions": repetitions,
+            "calls": self.calls(selection, files, repetitions),
+            "model": conditions.model,
+            "temperature": conditions.temperature,
+            "saved": source == "guardada",
+        }
 
     # --- Ciclo de vida -------------------------------------------------------------
 

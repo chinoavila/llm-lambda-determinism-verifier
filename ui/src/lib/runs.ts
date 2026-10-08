@@ -11,6 +11,7 @@ export type RunForm = {
   model: string;
   temperature: number;
   resume: string | null;
+  waitQuota: boolean;
 };
 
 /** Cuerpo de estimate/start: `case_ids` solo para el corpus elegido a mano y `resume` solo al reanudar. */
@@ -21,6 +22,7 @@ export const runSelection = (f: RunForm): Selection => ({
   temperature: f.temperature,
   ...(f.source === "corpus" && f.picked.length ? { case_ids: f.picked } : {}),
   ...(f.resume ? { resume: f.resume } : {}),
+  ...(f.waitQuota ? { wait_quota: true } : {}),
 });
 
 /** Reglas de la corrida cuyos expected todavía no aprobó una revisión manual. */

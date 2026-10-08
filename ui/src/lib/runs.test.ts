@@ -3,12 +3,12 @@ import type { Rule } from "../api";
 import { blankRule } from "./rules";
 import { runSelection, unreviewedRules, type RunForm } from "./runs";
 
-const form: RunForm = { source: "corpus", picked: [], repetitions: 5, model: "m", temperature: 0, resume: null };
+const form: RunForm = { source: "corpus", picked: [], repetitions: 5, model: "m", temperature: 0, resume: null, waitQuota: false };
 
 describe("runSelection", () => {
   it("manda modelo y temperatura siempre, case_ids y resume solo cuando corresponden", () => {
     expect(runSelection(form)).toEqual({ source: "corpus", repetitions: 5, model: "m", temperature: 0 });
-    expect(runSelection({ ...form, picked: ["a"], resume: "r1" })).toMatchObject({ case_ids: ["a"], resume: "r1" });
+    expect(runSelection({ ...form, picked: ["a"], resume: "r1", waitQuota: true })).toMatchObject({ case_ids: ["a"], resume: "r1", wait_quota: true });
     expect(runSelection({ ...form, source: "fixtures", picked: ["a"] })).not.toHaveProperty("case_ids");
   });
 });

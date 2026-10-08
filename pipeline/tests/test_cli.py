@@ -14,7 +14,19 @@ from typing import Any
 
 import pytest
 
-from pipeline.cli import DEFAULT_CASES, case_paths, main, new_run_id, prepare, run
+from pipeline.cli import (
+    DEFAULT_CASES,
+    RunSpec,
+    case_paths,
+    main,
+    new_run_id,
+    prepare,
+    read_run_file,
+    resume_spec,
+    run,
+    run_file,
+    write_run_file,
+)
 from pipeline.llm import Attempt, LLMCall
 from pipeline.orchestrator import (
     GROUPS,
@@ -224,3 +236,32 @@ def test_main_resume_needs_an_existing_run(tmp_path: Path) -> None:
         main(["run", "--resume"])
     with pytest.raises(SystemExit):
         main(["run", "--resume", "--run-id", "no-existe", "--out-dir", str(tmp_path)])
+
+
+def test_run_file_round_trip_and_resume_spec(tmp_path: Path) -> None:
+    case = DEFAULT_CASES / "rule-001.json"
+    spec = RunSpec((case,), 5, "m", 0.0)
+    path = run_file(tmp_path, "r")
+    write_run_file(path, spec)
+    assert json.loads(path.read_text(encoding="utf-8"))["cases"] == ["contracts/fixtures/rule-001.json"]  # relativa al repo
+    saved = read_run_file(path)
+    assert saved == spec and read_run_file(tmp_path / "otra.run.json") is None
+
+    assert resume_spec(saved, None, None, None, None) == spec
+    assert resume_spec(saved, [case], 5, "m", 0) == spec  # repetir lo mismo está bien
+    for bad in ({"temperature": 0.7}, {"model": "otro"}, {"repetitions": 1}, {"cases": [DEFAULT_CASES]}):
+        args: dict[str, Any] = {"cases": None, "repetitions": None, "model": None, "temperature": None, **bad}
+        with pytest.raises(ValueError):
+            resume_spec(saved, **args)
+
+    legacy = resume_spec(None, [case], 3, None, None)  # corrida sin archivo: sin modelo ni temperatura
+    assert legacy == RunSpec((case,), 3, None, None)
+    with pytest.raises(ValueError, match="sin --model ni --temperature"):
+        resume_spec(None, [case], 3, None, 0.0)
+
+
+def test_main_resume_rejects_changing_the_conditions(tmp_path: Path) -> None:
+    (tmp_path / "r.jsonl").write_text("", encoding="utf-8")
+    write_run_file(run_file(tmp_path, "r"), RunSpec((DEFAULT_CASES / "rule-001.json",), 1, None, 0.0))
+    with pytest.raises(SystemExit):
+        main(["run", "--resume", "--run-id", "r", "--out-dir", str(tmp_path), "--temperature", "1"])

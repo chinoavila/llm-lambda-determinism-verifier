@@ -60,9 +60,19 @@ export type Selection = {
   model?: string;
   temperature?: number;
   resume?: string;
+  /** Sin cuota, espera lo que pida el proveedor en vez de cortar la corrida. */
+  wait_quota?: boolean;
 };
 /** Estimación de volumen; `calls` es casos × grupos × repeticiones. */
-export type Estimate = { cases: number; repetitions: number; calls: number };
+export type Estimate = {
+  cases: number;
+  repetitions: number;
+  calls: number;
+  /** Condiciones que va a usar la corrida; al reanudar, las guardadas (`saved`) o ninguna si la corrida no las guardó. */
+  model: string | null;
+  temperature: number | null;
+  saved: boolean;
+};
 /** Estados terminales y activo del proceso de corrida. */
 export type JobStatus = "running" | "finished" | "failed" | "cancelled";
 /** Estado público del proceso de corrida administrado por la API. */
@@ -75,6 +85,7 @@ export type Job = {
   model: string | null;
   temperature: number | null;
   resume: boolean;
+  wait_quota: boolean;
   calls: number;
   started_at: string;
   status: JobStatus;

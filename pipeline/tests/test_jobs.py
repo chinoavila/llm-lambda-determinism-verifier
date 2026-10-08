@@ -64,7 +64,9 @@ def wait_for(job: Job, timeout: float = 10) -> None:
 
 def test_estimate_counts_three_calls_per_case_and_repetition(tmp_path: Path, corpus: RuleStore) -> None:
     runs = manager(tmp_path, corpus)
-    assert runs.estimate({"source": "corpus", "repetitions": 2}) == {"cases": 3, "repetitions": 2, "calls": 18}
+    assert runs.estimate({"source": "corpus", "repetitions": 2}) == {
+        "cases": 3, "repetitions": 2, "calls": 18, "model": None, "temperature": None, "saved": False,
+    }  # fmt: skip
     assert runs.estimate({"source": "corpus", "case_ids": ["EJ-CAT1-RIESGO"]})["calls"] == 3
     assert runs.estimate({"source": "fixtures"})["cases"] == 1
 
@@ -189,3 +191,34 @@ def test_resume_estimates_only_pending_calls_and_appends_the_log(tmp_path: Path,
     wait_for(job)
     assert job.run_id == "r1" and job.summary()["resume"] is True
     assert runs.log("r1")["text"].startswith("primera parte\n")
+
+
+def test_resume_takes_cases_and_conditions_from_the_run_file(tmp_path: Path, corpus: RuleStore) -> None:
+    from pipeline.cli import RunSpec, run_file, write_run_file
+
+    seen: list[tuple[list[str], int, Conditions]] = []
+
+    def command(cases: Sequence[Path], repetitions: int, run_id: str, out: Path, c: Conditions) -> list[str]:
+        seen.append(([p.name for p in cases], repetitions, c))
+        return [sys.executable, "-c", "pass"]
+
+    runs = manager(tmp_path, corpus)
+    runs.command = command
+    runs.out.mkdir()
+    (runs.out / "r2.jsonl").write_text("", encoding="utf-8")
+    rule = corpus.paths()["EJ-CAT3-CUOTA"]
+    write_run_file(run_file(runs.out, "r2"), RunSpec((rule,), 2, "m-fijo", 0.0))
+    # La selección del formulario (otro modelo, otra temperatura, todo el corpus) no cuenta al reanudar.
+    selection = {"source": "corpus", "repetitions": 5, "model": "otro", "temperature": 1, "resume": "r2", "wait_quota": True}
+
+    assert runs.estimate(selection) == {"cases": 1, "repetitions": 2, "calls": 6, "model": "m-fijo", "temperature": 0.0, "saved": True}
+    wait_for(runs.start(selection, confirm_calls=6))
+    assert seen == [([rule.name], 2, Conditions("m-fijo", 0.0, resume=True, wait_quota=True))]
+
+
+def test_resume_without_run_file_drops_model_and_temperature(tmp_path: Path, corpus: RuleStore) -> None:
+    runs = manager(tmp_path, corpus)
+    runs.out.mkdir()
+    (runs.out / "r3.jsonl").write_text("", encoding="utf-8")
+    estimate = runs.estimate({"source": "corpus", "repetitions": 1, "model": "m", "temperature": 0, "resume": "r3"})
+    assert estimate["saved"] is False and estimate["model"] is None and estimate["temperature"] is None

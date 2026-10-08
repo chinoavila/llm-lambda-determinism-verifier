@@ -297,3 +297,11 @@ def test_health_check_excludes_endpoint_with_bad_key() -> None:
 def test_health_check_excludes_unreachable_endpoint() -> None:
     with pytest.raises(NoModelAvailable):
         build_balancer(config(), FakeTransport(lambda _: TransportError("refused")))
+
+
+def test_wait_for_quota_waits_instead_of_giving_up() -> None:
+    t, transport = FakeTime(), FakeTransport([status(429, {"retry-after": "3600"}), ok()])
+    cfg = with_run_params(config(), model="m-big", wait_for_quota=True)
+    with balancer(cfg, transport, t).acquire() as assignment:
+        call = assignment.complete(MESSAGES)
+    assert call.outcome == "ok" and t.sleeps == [3600.0]

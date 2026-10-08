@@ -28,6 +28,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   const [model, setModel] = useState(AUTO_MODEL);
   const [temperature, setTemperature] = useState(0);
   const [resume, setResume] = useState<string | null>(null);
+  const [waitQuota, setWaitQuota] = useState(false);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [estimateError, setEstimateError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<{ error: string | null; busy: boolean } | null>(null);
@@ -35,7 +36,11 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   const [logFor, setLogFor] = useState<string | null>(null);
   const [reporting, setReporting] = useState<{ run: RunInfo; busy: boolean; error: string | null } | null>(null);
 
-  const selection = runSelection({ source, picked, repetitions, model, temperature, resume });
+  const selection = runSelection({ source, picked, repetitions, model, temperature, resume, waitQuota });
+  // Al reanudar, las condiciones las decide el servidor (las guardadas de la corrida, o ninguna).
+  const runModel = resume ? (estimate?.model ?? AUTO_MODEL) : model;
+  const runTemperature = resume ? (estimate?.temperature ?? null) : temperature;
+  const formLocked = !!resume && !!estimate?.saved;
   const unreviewed = unreviewedRules(rules, { source, picked });
 
   // Tokens por llamada de la corrida más reciente que los registra (registro 2.1), para estimar el gasto.
@@ -167,13 +172,16 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
         {resume && (
           <Notice>
             Reanudando <code className="font-mono">{resume}</code>: se saltean las llamadas ya resueltas y se reintentan las cortadas por cuota o
-            red. Elegí los mismos casos y repeticiones que la corrida original.{" "}
+            red.{" "}
+            {estimate?.saved
+              ? `Usa las condiciones guardadas de la corrida: ${estimate.cases} casos, ${estimate.repetitions} repeticiones, modelo ${estimate.model ?? "automático"}, temperatura ${estimate.temperature ?? "del proveedor"}.`
+              : "Esta corrida no guardó sus condiciones: se reanuda sin modelo fijo ni temperatura, como se lanzó. Elegí los mismos casos y repeticiones que la original."}{" "}
             <Button variant="link" onClick={() => setResume(null)}>
               Volver a una corrida nueva
             </Button>
           </Notice>
         )}
-        <div className="flex flex-wrap gap-6">
+        <fieldset disabled={formLocked} className="flex flex-wrap gap-6 disabled:opacity-60">
           <fieldset className="grid gap-1.5">
             <legend className="mb-1.5 text-[12.5px] font-medium text-muted">Casos</legend>
             {(
@@ -207,6 +215,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                 modelTouched.current = true;
                 setModel(e.target.value);
               }}
+              disabled={!!resume}
               className={`${inputClass} w-64`}
             >
               {health?.llm.models.map((m) => (
@@ -226,11 +235,22 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
               step={0.1}
               value={temperature}
               onChange={(e) => setTemperature(Math.max(0, Math.min(2, Number(e.target.value) || 0)))}
+              disabled={!!resume}
               className={`${inputClass} w-28 tabular-nums`}
             />
           </label>
-        </div>
-        {model === AUTO_MODEL && (
+        </fieldset>
+        <label className="flex items-start gap-2">
+          <input type="checkbox" className="mt-[3px] accent-accent" checked={waitQuota} onChange={(e) => setWaitQuota(e.target.checked)} />
+          <span>
+            Esperar a que se libere la cuota
+            <span className="block text-[12.5px] text-muted">
+              Sin cuota, la corrida espera lo que pida el proveedor (con la cuota diaria, horas) en vez de cortarse. Sirve para dejar una corrida
+              larga desatendida; se puede cancelar en cualquier momento.
+            </span>
+          </span>
+        </label>
+        {runModel === AUTO_MODEL && (
           <Notice>
             Con el modelo automático, cada caso puede ir a un modelo distinto según la cuota, y el modelo queda mezclado con la categoría. Para
             el experimento, fijá un modelo.
@@ -346,9 +366,6 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                           if (r.job) {
                             setSource(r.job.source === "fixtures" ? "fixtures" : "corpus");
                             setRepetitions(r.job.repetitions);
-                            modelTouched.current = true;
-                            setModel(r.job.model ?? AUTO_MODEL);
-                            if (r.job.temperature !== null) setTemperature(r.job.temperature);
                           }
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
@@ -385,8 +402,8 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
           onCancel={() => setConfirming(null)}
         >
           Hace <b className="text-ink">{estimate.calls} llamadas</b> al LLM con{" "}
-          <b className="text-ink">{model === AUTO_MODEL ? `balanceo entre ${health?.llm.models.join(", ")}` : model}</b> a temperatura{" "}
-          <b className="text-ink">{temperature}</b>, y consume cuota del proveedor.
+          <b className="text-ink">{runModel === AUTO_MODEL ? `balanceo entre ${health?.llm.models.join(", ")}` : runModel}</b> a temperatura{" "}
+          <b className="text-ink">{runTemperature ?? "del proveedor"}</b>, y consume cuota del proveedor.{waitQuota && " Sin cuota, espera a que el proveedor la libere (puede quedar horas en curso)."}
           Los registros se agregan a <code className="font-mono">out/</code> a medida que termina cada caso.
         </Confirm>
       )}
