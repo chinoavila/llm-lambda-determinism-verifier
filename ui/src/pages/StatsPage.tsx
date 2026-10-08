@@ -97,7 +97,7 @@ function CountTable({ first, rows }: { first: string; rows: CountRow[] }) {
 
 export function StatsPage({ runId }: { runId: string | null }) {
   const [runs, setRuns] = useState<RunInfo[] | null>(null);
-  const [rows, setRows] = useState<RecordRow[] | null>(null);
+  const [all, setRows] = useState<RecordRow[] | null>(null);
   const [rules, setRules] = useState<ReadonlyMap<string, Rule>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [breakdown, setBreakdown] = useState<BreakdownKey>("rule");
@@ -123,8 +123,11 @@ export function StatsPage({ runId }: { runId: string | null }) {
       .catch((e: unknown) => setError(errorText(e)));
   }, [runId]);
 
+  const [approvedOnly, setApprovedOnly] = useState(false);
   const stats = useMemo(() => {
-    if (!rows) return null;
+    if (!all) return null;
+    // Con el filtro, solo las reglas cuyos expected aprobó una revisión manual.
+    const rows = approvedOnly ? all.filter((r) => rules.get(r.case_id)?.review?.status === "aprobada") : all;
     const gens = generations(rows);
     return {
       gens,
@@ -135,8 +138,9 @@ export function StatsPage({ runId }: { runId: string | null }) {
       errors: errorsByGroup(rows),
       duration: durationByGroup(rows),
       consistency: consistency(gens),
+      rows: rows.length,
     };
-  }, [rows]);
+  }, [all, approvedOnly, rules]);
   const passK = useMemo(() => (stats ? passAtK(stats.gens, kValues(stats.conditions.repetitions)) : []), [stats]);
   const breakdownRows = useMemo(() => (stats ? passBy(stats.gens, breakdown, rules) : []), [stats, breakdown, rules]);
 
@@ -160,8 +164,14 @@ export function StatsPage({ runId }: { runId: string | null }) {
         </select>
         {stats && (
           <span className="text-[13px] text-muted">
-            {rows?.length} renglones · {stats.gens.length} generaciones
+            {stats.rows} renglones · {stats.gens.length} generaciones
           </span>
+        )}
+        {all && (
+          <label className="flex items-center gap-2 text-[13px]">
+            <input type="checkbox" className="accent-accent" checked={approvedOnly} onChange={(e) => setApprovedOnly(e.target.checked)} />
+            Solo reglas con revisión aprobada
+          </label>
         )}
         {runId && (
           <Button variant="link" className="ml-auto" onClick={() => navigate(`/registros/${runId}`)}>
@@ -170,6 +180,7 @@ export function StatsPage({ runId }: { runId: string | null }) {
         )}
       </Card>
 
+      {approvedOnly && stats?.rows === 0 && <Notice>Ninguna regla de esta corrida tiene la revisión aprobada todavía.</Notice>}
       {!runId && <p className="px-4 py-10 text-center text-muted">Elegí una corrida para ver sus estadísticas.</p>}
       {runId && !stats && !error && <p className="px-4 py-10 text-center text-muted">Cargando registros…</p>}
 

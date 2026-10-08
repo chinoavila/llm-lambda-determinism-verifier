@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { api, ApiError, errorText, type BaseType, type CheckReport, type ReviewStatus, type Rule } from "../api";
 import { AstPreview, Badge, Button, Confirm, Drawer, Errors, Field, fmtDate, inputClass, Notice, Tab } from "../components/ui";
 import { blankRule, defaultValue, parseCell, parseExpected, TYPES, validate, valueFits, type Errors as ErrorMap, type Tab as TabKey } from "../lib/rules";
+import { BlindReview } from "./BlindReview";
 
 /** Dominios admitidos por el formulario y el contrato del corpus. */
 export const DOMAINS = ["fiscal", "salud", "credito", "seguros", "laboral"];
@@ -389,6 +390,14 @@ export function RuleEditor({
 
     revision: (
       <>
+        <BlindReview
+          key={draft.case_id}
+          rule={draft}
+          reviewer={reviewer}
+          onComment={(text) =>
+            edit((r) => void (r.review = { ...review, comments: [...review.comments, { author: reviewer.trim(), text, at: new Date().toISOString() }] }))
+          }
+        />
         <Field label="Estado de revisión" help="Aprobada: el AST es la única lectura del enunciado, el Python coincide, los escenarios prueban los bordes y los parámetros coinciden con la fuente.">
           {(id) => (
             <select id={id} className={inputClass} value={review.status} onChange={(e) => edit((r) => void (r.review = { ...review, status: e.target.value as ReviewStatus }))}>

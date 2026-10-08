@@ -120,7 +120,7 @@ export function CorpusPage({ onChanged }: { onChanged: () => void }) {
             ))}
           </select>
           <span className="ml-auto text-[13px] text-muted tabular-nums">
-            {visible.length} de {sorted.length} reglas
+            {visible.length} de {sorted.length} reglas · {sorted.filter((r) => statusOf(r) === "aprobada").length} aprobadas
           </span>
           <Button disabled={checking || !sorted.length} onClick={checkAll}>
             {checking ? "Verificando…" : "Verificar todas"}
