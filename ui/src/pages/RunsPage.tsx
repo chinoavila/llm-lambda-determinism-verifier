@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText, type Estimate, type Health, type Job, type JobStatus, type Rule, type RunInfo, type Runs, type Selection } from "../api";
 import { Badge, Button, Card, Confirm, fmtDate, inputClass, Notice, type Tone } from "../components/ui";
+import { TablePagination, usePagination } from "../components/pagination";
 import { EXPORT_FORMATS, exportRecords, type ExportFormat } from "../lib/export";
 import { buildReportData } from "../lib/report";
 import { downloadReportPdf, reportDocDefinition } from "../lib/reportPdf";
@@ -102,6 +103,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   }, [selectionKey]);
 
   const active = runs?.active ?? null;
+  const runPagination = usePagination(runs?.runs ?? []);
   useEffect(() => {
     if (!active) return;
     const t = setInterval(loadRuns, 2000);
@@ -336,7 +338,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                   </td>
                 </tr>
               )}
-              {runs?.runs.map((r) => (
+              {runPagination.items.map((r) => (
                 <tr key={r.run_id} className="border-b border-line last:border-b-0">
                   <td className="px-4 py-3 font-mono text-[12.5px] font-medium whitespace-nowrap">{r.run_id}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-muted">{fmtDate(r.modified)}</td>
@@ -390,6 +392,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
             </tbody>
           </table>
         </div>
+        <TablePagination pagination={runPagination} label="corridas" />
       </Card>
 
       {confirming && estimate && (

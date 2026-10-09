@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { Rule } from "../api";
 import { Badge, Button, inputClass } from "../components/ui";
+import { TablePagination, usePagination } from "../components/pagination";
 import { blindCompare, blindSummary } from "../lib/review";
 import { showValue } from "../lib/rules";
 
@@ -33,6 +34,7 @@ export function BlindReview({ rule, reviewer, onComment }: { rule: Rule; reviewe
     );
 
   const rows = blindCompare(rule, answers);
+  const scenarios = usePagination(rule.scenarios.map((scenario, index) => ({ scenario, index })), rule.case_id);
   const matched = rows.filter((r) => r.match).length;
   return (
     <div className="grid gap-3 rounded-lg border border-line px-3.5 py-3">
@@ -50,7 +52,7 @@ export function BlindReview({ rule, reviewer, onComment }: { rule: Rule; reviewe
             </tr>
           </thead>
           <tbody>
-            {rule.scenarios.map((s, i) => {
+            {scenarios.items.map(({ scenario: s, index: i }) => {
               const row = rows[i]!;
               return (
                 <tr key={s.scenario_id} className="border-b border-line align-top last:border-b-0">
@@ -80,6 +82,7 @@ export function BlindReview({ rule, reviewer, onComment }: { rule: Rule; reviewe
           </tbody>
         </table>
       </div>
+      <TablePagination pagination={scenarios} label="escenarios de revisión" />
       <div className="flex flex-wrap items-center gap-2.5">
         {!compared ? (
           <Button small variant="primary" onClick={() => setCompared(true)}>

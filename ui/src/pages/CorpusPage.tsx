@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, errorText, type CheckReport, type Rule } from "../api";
 import { Badge, Button, Card, Confirm, Notice } from "../components/ui";
+import { TablePagination, usePagination } from "../components/pagination";
 import { CheckResult, REVIEW, RuleEditor } from "./RuleEditor";
 
 const statusOf = (r: Rule) => r.review?.status ?? "pendiente";
@@ -40,6 +41,7 @@ export function CorpusPage({ onChanged }: { onChanged: () => void }) {
       (!status || statusOf(r) === status) &&
       (!query || `${r.case_id} ${r.domain} ${r.description}`.toLowerCase().includes(query.toLowerCase())),
   );
+  const pagination = usePagination(visible, `${query}|${cat}|${status}`);
   const ids = useMemo(() => new Set((rules ?? []).map((r) => r.case_id)), [rules]);
 
   function saved(rule: Rule) {
@@ -155,7 +157,7 @@ export function CorpusPage({ onChanged }: { onChanged: () => void }) {
                   </td>
                 </tr>
               )}
-              {visible.map((r) => {
+              {pagination.items.map((r) => {
                 const review = REVIEW[statusOf(r)];
                 return (
                   <tr
@@ -192,6 +194,7 @@ export function CorpusPage({ onChanged }: { onChanged: () => void }) {
             </tbody>
           </table>
         </div>
+        <TablePagination pagination={pagination} label="reglas del corpus" />
       </Card>
 
       {open && (
