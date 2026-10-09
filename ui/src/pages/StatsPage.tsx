@@ -1,8 +1,9 @@
 // Estadísticas de una corrida, calculadas en el navegador con lib/stats.ts
 // a partir de sus registros (specs/ui.md §Estadísticas).
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Children, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, errorText, type RecordRow, type Rule, type RunInfo } from "../api";
 import { Button, Card, Notice, Tab, type Tone } from "../components/ui";
+import { TablePagination, usePagination } from "../components/pagination";
 import {
   blockedStages,
   consistency,
@@ -55,21 +56,26 @@ function Meter({ share, tone = "accent" }: { share: number; tone?: Tone }) {
 }
 
 function Table({ head, children }: { head: ReactNode[]; children: ReactNode }) {
+  const rows = useMemo(() => Children.toArray(children), [children]);
+  const pagination = usePagination(rows, head.join("|"));
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[13px]">
-        <thead>
-          <tr className="text-left text-xs text-muted">
-            {head.map((h, i) => (
-              <th key={i} className={`${th} ${i ? "text-right" : ""}`}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
-    </div>
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-[13px]">
+          <thead>
+            <tr className="text-left text-xs text-muted">
+              {head.map((h, i) => (
+                <th key={i} className={`${th} ${i ? "text-right" : ""}`}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>{pagination.items}</tbody>
+        </table>
+      </div>
+      <TablePagination pagination={pagination} label={typeof head[0] === "string" ? head[0] : "estadísticas"} />
+    </>
   );
 }
 

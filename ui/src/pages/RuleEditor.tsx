@@ -5,6 +5,7 @@ import { AstPreview, Badge, Button, Confirm, Drawer, Errors, Field, fmtDate, inp
 import { blankRule, defaultValue, parseCell, parseExpected, TYPES, validate, valueFits, type Errors as ErrorMap, type Tab as TabKey } from "../lib/rules";
 import { scenarioCoverage } from "../lib/review";
 import { BlindReview } from "./BlindReview";
+import { TablePagination, usePagination } from "../components/pagination";
 
 /** Dominios admitidos por el formulario y el contrato del corpus. */
 export const DOMAINS = ["fiscal", "salud", "credito", "seguros", "laboral"];
@@ -68,6 +69,8 @@ export function RuleEditor({
       return next;
     });
   const vars = Object.keys(draft.gamma);
+  const pagedVars = usePagination(vars, vars.join("|"));
+  const pagedScenarios = usePagination(draft.scenarios, rowKeys.join("|"));
   const review = draft.review ?? { status: "pendiente" as const, comments: [] };
   const coverage = useMemo(() => scenarioCoverage(draft), [draft]);
 
@@ -191,7 +194,7 @@ export function RuleEditor({
               </tr>
             </thead>
             <tbody>
-              {vars.map((name) => (
+              {pagedVars.items.map((name) => (
                 <tr key={name}>
                   <td className="border-b border-line p-1">
                     <input
@@ -234,6 +237,7 @@ export function RuleEditor({
             </tbody>
           </table>
         </div>
+        <TablePagination pagination={pagedVars} label="variables" />
         <div>
           <Button
             small
@@ -270,7 +274,8 @@ export function RuleEditor({
               </tr>
             </thead>
             <tbody>
-              {draft.scenarios.map((s, idx) => {
+              {pagedScenarios.items.map((s, pageIdx) => {
+                const idx = (pagedScenarios.start - 1) + pageIdx;
                 const key = rowKeys[idx] ?? idx;
                 return (
                   <tr key={key}>
@@ -333,6 +338,7 @@ export function RuleEditor({
             </tbody>
           </table>
         </div>
+        <TablePagination pagination={pagedScenarios} label="escenarios de la regla" />
         <div>
           <Button
             small

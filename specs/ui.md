@@ -66,6 +66,7 @@
 - La etapa `ui-build` del `Dockerfile` corre `npm ci`, `npm run check` (`tsc -p .` + `vitest run`) y `npm run build`. Si algo falla, la imagen `ui` no se construye.
 - Gates: `docker compose build ui` (SPA) y `docker compose run --rm pipeline sh -c "mypy . && pytest"` (API, en `tests/test_server.py`).
 - TypeScript en modo estricto (`strict`, `noUncheckedIndexedAccess`). La lógica que no es de presentación (formatos, validaciones, transformaciones) va en módulos `.ts` con tests de vitest.
+- Las tablas de datos de las vistas en `ui/src/pages/` usan paginación client-side común (`ui/src/components/pagination.tsx`): 25 filas por defecto, opciones 25/50/100/Todos y controles consistentes.
 
 ## Diseño
 

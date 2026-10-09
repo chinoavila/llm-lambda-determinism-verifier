@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, errorText, type Outcome, type RecordRow, type Result, type RunInfo } from "../api";
 import { Badge, Card, Drawer, fmtDate, Notice, type Tone } from "../components/ui";
+import { TablePagination, usePagination } from "../components/pagination";
 import { showValue } from "../lib/rules";
 import { navigate } from "../router";
 
@@ -54,6 +55,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
     return out;
   }, [rows]);
   const visible = (rows ?? []).filter((r) => FILTERS.every(([k]) => !filters[k] || String(r[k]) === filters[k]));
+  const pagination = usePagination(visible, Object.values(filters).join("|") + (runId ?? ""));
 
   return (
     <div className="grid gap-4">
@@ -106,7 +108,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((r, i) => (
+                {pagination.items.map((r, i) => (
                   <tr
                     key={i}
                     tabIndex={0}
@@ -134,6 +136,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
             </table>
           </div>
         )}
+        {rows && <TablePagination pagination={pagination} label="registros de corrida" />}
       </Card>
 
       {detail && (
