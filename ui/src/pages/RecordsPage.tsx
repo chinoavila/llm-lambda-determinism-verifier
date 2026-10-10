@@ -18,9 +18,12 @@ const FILTERS = [
   ["case_id", "Regla"],
   ["group", "Grupo"],
   ["outcome", "Desenlace"],
+  ["stage", "Etapa"],
+  ["repetition", "Repetición"],
   ["model", "Modelo"],
 ] as const;
 type FilterKey = (typeof FILTERS)[number][0];
+const NO_FILTERS = Object.fromEntries(FILTERS.map(([k]) => [k, ""])) as Record<FilterKey, string>;
 
 const result = (r: Result | null | undefined) => (r ? showValue(r.value) : "—");
 
@@ -29,7 +32,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
   const [runs, setRuns] = useState<RunInfo[] | null>(null);
   const [rows, setRows] = useState<RecordRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<Record<FilterKey, string>>({ case_id: "", group: "", outcome: "", model: "" });
+  const [filters, setFilters] = useState<Record<FilterKey, string>>(NO_FILTERS);
   const [detail, setDetail] = useState<RecordRow | null>(null);
 
   useEffect(() => {
@@ -43,6 +46,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
     if (!runId) return;
     setRows(null);
     setError(null);
+    setFilters(NO_FILTERS);
     api
       .records(runId, {})
       .then(setRows)
@@ -51,7 +55,8 @@ export function RecordsPage({ runId }: { runId: string | null }) {
 
   const options = useMemo(() => {
     const out = {} as Record<FilterKey, string[]>;
-    for (const [key] of FILTERS) out[key] = [...new Set((rows ?? []).map((r) => String(r[key])))].sort();
+    for (const [key] of FILTERS)
+      out[key] = [...new Set((rows ?? []).map((r) => String(r[key])))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     return out;
   }, [rows]);
   const visible = (rows ?? []).filter((r) => FILTERS.every(([k]) => !filters[k] || String(r[k]) === filters[k]));
