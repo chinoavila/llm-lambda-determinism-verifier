@@ -256,7 +256,12 @@ def make_handler(
                 self.send_json(status, body)
 
         def read_body(self) -> Json:
-            length = int(self.headers.get("Content-Length") or 0)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                raise StoreError(400, "Content-Length no es un entero") from None
+            if length < 0:
+                raise StoreError(400, "Content-Length no puede ser negativo")
             if length == 0:
                 return None
             if length > MAX_BODY:
