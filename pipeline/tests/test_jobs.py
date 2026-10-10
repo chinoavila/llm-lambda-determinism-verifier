@@ -139,6 +139,15 @@ def test_run_ids_cannot_escape_out(tmp_path: Path, corpus: RuleStore) -> None:
         assert exc.value.status == 400
 
 
+def test_records_survive_a_line_cut_by_cancel(tmp_path: Path, corpus: RuleStore) -> None:
+    runs = manager(tmp_path, corpus)
+    runs.out.mkdir()
+    (runs.out / "r1.jsonl").write_text('{"case_id":"A","scenario_id":"s"}\n{"case_id":"B","sce', encoding="utf-8")
+
+    assert [r["case_id"] for r in runs.records("r1", {})] == ["A"]
+    assert runs.list_runs()[0]["records"] == 1
+
+
 def test_records_of_unknown_run(tmp_path: Path, corpus: RuleStore) -> None:
     with pytest.raises(StoreError) as exc:
         manager(tmp_path, corpus).records("20260101T000000Z-abcdef", {})

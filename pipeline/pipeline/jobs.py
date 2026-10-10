@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pipeline.cli import new_run_id, read_run_file, run_file
-from pipeline.orchestrator import GROUPS, resolved_calls
+from pipeline.orchestrator import GROUPS, read_jsonl, resolved_calls
 from pipeline.store import RuleStore, StoreError
 
 RUN_ID = re.compile(r"[0-9A-Za-z_\-]{1,80}")
@@ -279,7 +279,7 @@ class RunManager:
             job = self.jobs.get(run_id)
             runs.append({
                 "run_id": run_id,
-                "records": sum(1 for _ in records.open("rb")) if records.exists() else 0,
+                "records": records.read_bytes().count(b"\n") if records.exists() else 0,
                 "has_log": log.exists(),
                 "modified": datetime.fromtimestamp(newest, UTC).isoformat(timespec="seconds"),
                 "job": job.summary() if job else None,
@@ -294,10 +294,7 @@ class RunManager:
             raise StoreError(404, f"la corrida {run_id} no tiene registros")
         expected = self._expected_index()
         rows = []
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            record = json.loads(line)
+        for record in read_jsonl(path):
             if any(str(record.get(k)) != v for k, v in filters.items()):
                 continue
             record["expected"] = expected.get((str(record.get("case_id")), str(record.get("scenario_id"))))
