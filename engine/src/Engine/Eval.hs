@@ -23,6 +23,18 @@ import Engine.Env (Env, extend, lookupVar)
 import Engine.Number (decimalInRange, intInRange)
 import Engine.Types
 
+
+-- Qué hace este módulo (etapa 4 del motor, "execution"):
+-- recibe el Program que ya pasó TypeCheck.hs y los valores del caso
+-- (Env LiteralValue) y calcula el resultado de la regla.
+--   eval: recorre la expresión y calcula su valor. Ej.: con credit_score = 750,
+--     credit_score > 700 da true.
+--   evalProgram: arma el entorno de valores, llama a eval y devuelve el resultado.
+--   applyOp: hace la cuenta de cada operador (+, -, *, /, %, >, ==, ...).
+-- Las cuentas son exactas: Int y Rational, sin Double (ver Number.hs).
+-- Errores posibles (runtime_error): DIVISION_BY_ZERO y NUMERIC_OVERFLOW.
+-- Los errores "Stuck..." no deberían ocurrir nunca: si aparecen, es un bug del motor.
+
 -- FP[Tipos algebraicos] FP[Funciones lambda]
 -- | v ::= literal | ⟨λx. e, ρ⟩. Una clausura guarda el entorno donde se
 -- definió la lambda (alcance léxico).
@@ -77,6 +89,15 @@ eval env (BinaryOp op l r)
   where
     bool (VBase (VBool b)) = Right b
     bool _ = Left (StuckOp op)
+
+    -- SUGERENCIA: la condición "a == (op == Or)" del cortocircuito es correcta pero
+    -- difícil de leer. Una alternativa (no probada) que dice lo mismo de forma
+    -- explícita:
+    --   case (op, a) of
+    --     (And, False) -> Right (VBase (VBool False))  -- AND con false: ya es false
+    --     (Or, True) -> Right (VBase (VBool True))     -- OR con true: ya es true
+    --     _ -> VBase . VBool <$> (bool =<< eval env r) -- si no, decide el lado derecho
+
 eval env (In v opts) = do
   a <- base =<< eval env v
   anyEqual a opts
@@ -134,6 +155,13 @@ applyOp op x y = case (x, y) of
     compareWith _ = (<=)
     intResult n = if intInRange n then Right (VInt (fromInteger n)) else runtime NumericOverflow
     decimalResult q = if decimalInRange q then Right (VDecimal q) else runtime NumericOverflow
+
+-- OBSERVACIÓN: intArith, ratArith y compareWith terminan con un caso "_" que
+-- atrapa cualquier operador (por ejemplo, intArith _ = (*) multiplica con
+-- cualquier operador que no sea + o -). Hoy es seguro porque las guardas de
+-- arriba solo les pasan los operadores correctos, pero si alguien cambia esas
+-- guardas, un operador equivocado haría una cuenta equivocada sin dar error.
+-- Escribir el último caso explícito (Mul, Div, Lte) lo haría más seguro.
 
 -- | Eleva un error runtime al tipo común de errores del evaluador.
 runtime :: RuntimeError -> Either EvalError a

@@ -10,6 +10,10 @@ module Engine.Env
 
 import Engine.Types (Name)
 
+-- Un entorno es una lista de pares (nombre de variable, dato). Se usa de dos formas:
+--   Env Type:         nombre -> tipo.  Ej.: [("credit_score", TInt)].     Lo usa TypeCheck.hs.
+--   Env LiteralValue: nombre -> valor. Ej.: [("credit_score", VInt 750)]. Lo usa Eval.hs.
+-- Los dos salen del "env" de cada caso (por ejemplo, contracts/fixtures/rule-001.json).
 -- FP[Polimorfismo] FP[Tuplas]
 -- | Asociación nombre → dato. El binding más reciente queda al frente.
 type Env a = [(Name, a)]

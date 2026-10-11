@@ -13,6 +13,16 @@ module Engine.Number
 import Data.Ratio (denominator, numerator, (%))
 import Data.Scientific (Scientific, base10Exponent, coefficient, normalize)
 
+-- Este módulo hace tres cosas con los números del DSL:
+--   1. Controla los límites: Int de 64 bits y Decimal de hasta 28 dígitos
+--      (intInRange, decimalInRange).
+--   2. Lee los números del JSON en forma exacta (isIntegral, scientificInt,
+--      scientificDecimal).
+--   3. Escribe un Decimal como texto (renderDecimal).
+-- Alternativa descartada: usar Double (punto flotante) para los decimales.
+-- Es más simple, pero aproxima: con Double, 0.1 + 0.2 da 0.30000000000000004.
+-- En reglas de negocio con montos eso no es aceptable; por eso se usa
+-- Rational (fracción exacta): 0.1 se guarda como 1/10.
 -- | 10^28: tope de valor absoluto y de denominador de un 'Decimal'.
 decimalLimit :: Integer
 decimalLimit = 10 ^ (28 :: Int)
@@ -81,6 +91,13 @@ terminatingPlaces d = if rest == 1 then Just (max twos fives) else Nothing
   where
     (twos, afterTwos) = strip 2 d
     (fives, rest) = strip 5 afterTwos
+    -- strip cuenta cuántas veces se puede dividir n por p, y devuelve esa cantidad
+    -- junto con lo que queda. Ej.: strip 2 40 = (3, 5), porque 40 = 2*2*2*5.
+    -- Alternativa equivalente sin recursión explícita, NO probada con los tests:
+    --   strip p n = (k, n `div` p ^ k)
+    --     where k = length (takeWhile (\m -> m `mod` p == 0) (iterate (`div` p) n))
+    -- iterate genera n, n/p, n/p², ...; takeWhile se queda con los divisibles por p;
+    -- length cuenta cuántos hay.
     strip p n = go 0 n
       where
         go k m
