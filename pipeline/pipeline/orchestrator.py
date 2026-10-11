@@ -497,10 +497,29 @@ def call_key(record: Mapping[str, Any]) -> CallKey:
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Registros del JSONL. Se separa solo por `\\n`: `llm_raw` puede traer U+2028 u otros
+    saltos de línea que `splitlines` cortaría. Un último renglón sin `\\n` que no es JSON
+    es una escritura que cortó la cancelación: se ignora, y `drop_pending` lo saca."""
     if not path.exists():
         return []
-    lines = path.read_text(encoding="utf-8").splitlines()
-    return [json.loads(line) for line in lines if line.strip()]
+    *lines, last = path.read_bytes().split(b"\n")
+    records = [json.loads(line) for line in lines if line.strip()]
+    if last.strip():
+        try:
+            records.append(json.loads(last))
+        except ValueError:
+            pass
+    return records
+
+
+def has_partial_line(path: Path) -> bool:
+    if not path.exists():
+        return False
+    with path.open("rb") as f:
+        if f.seek(0, os.SEEK_END) == 0:
+            return False
+        f.seek(-1, os.SEEK_END)
+        return f.read(1) != b"\n"
 
 
 def resolved_calls(path: Path) -> set[CallKey]:
@@ -511,12 +530,14 @@ def resolved_calls(path: Path) -> set[CallKey]:
 
 
 def drop_pending(path: Path) -> int:
-    """Reescribe el JSONL sin los registros de llamadas pendientes; devuelve cuántos sacó.
-    Se reemplaza de una vez (archivo temporal + rename) para no dejarlo a medias."""
+    """Reescribe el JSONL sin los registros de llamadas pendientes ni un último renglón
+    cortado (lo próximo que se agregue tiene que empezar en un renglón propio); devuelve
+    cuántos registros sacó. Se reemplaza de una vez (archivo temporal + rename) para no
+    dejarlo a medias."""
     records = read_jsonl(path)
     pending = {call_key(r) for r in records if is_pending(r)}
     kept = [r for r in records if call_key(r) not in pending]
-    if len(kept) == len(records):
+    if len(kept) == len(records) and not has_partial_line(path):
         return 0
     tmp = path.with_suffix(".jsonl.tmp")
     with tmp.open("w", encoding="utf-8", newline="\n") as f:

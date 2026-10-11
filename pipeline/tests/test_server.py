@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import shutil
 import threading
@@ -200,6 +201,19 @@ def test_http_rejects_bad_bodies(api: str) -> None:
         assert e.code == 400 and "JSON" in as_json(e.read())["error"]
     status, _, _ = request(f"{api}/api/rules", "POST", ["lista"])
     assert status == 400
+
+
+@pytest.mark.parametrize("length", ["abc", "-1"])
+def test_http_rejects_bad_content_length(api: str, length: str) -> None:
+    conn = http.client.HTTPConnection(api.removeprefix("http://"), timeout=5)
+    try:
+        conn.putrequest("POST", "/api/rules")
+        conn.putheader("Content-Length", length)
+        conn.endheaders()
+        resp = conn.getresponse()
+        assert resp.status == 400 and "Content-Length" in as_json(resp.read())["error"]
+    finally:
+        conn.close()
 
 
 def test_http_run_estimate_and_start_guard(api: str, monkeypatch: pytest.MonkeyPatch) -> None:

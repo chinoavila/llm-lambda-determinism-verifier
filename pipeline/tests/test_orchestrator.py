@@ -25,8 +25,10 @@ from pipeline.orchestrator import (
     Verdict,
     append_jsonl,
     case_gamma,
+    drop_pending,
     load_case,
     read_case,
+    read_jsonl,
     build_messages,
     per_scenario,
     print_gamma,
@@ -427,6 +429,30 @@ def test_append_jsonl_writes_one_line_per_record_and_appends(tmp_path: Path) -> 
     assert "ñ" in lines[2]
     for line in lines[:4]:
         assert_record_shape(json.loads(line))
+
+
+def test_read_jsonl_skips_a_line_cut_by_cancel_and_keeps_unicode_breaks(tmp_path: Path) -> None:
+    out = tmp_path / "records.jsonl"
+    records = route(llm_call(content="a\u2028b\x85c"), fixed_runner(json.loads(EXECUTED), []))
+    append_jsonl(out, records)
+    with out.open("ab") as f:
+        f.write('{"case_id":"c3","llm_raw":"ñ'.encode("utf-8")[:-1])  # cortado a mitad de la ñ
+
+    assert read_jsonl(out) == records
+
+
+def test_drop_pending_removes_a_cut_line_so_the_next_record_starts_clean(tmp_path: Path) -> None:
+    out = tmp_path / "records.jsonl"
+    first = route(llm_call(), fixed_runner(json.loads(EXECUTED), []), case_id="c1")
+    second = route(llm_call(), fixed_runner(json.loads(EXECUTED), []), case_id="c2")
+    append_jsonl(out, first)
+    with out.open("ab") as f:
+        f.write(b'{"case_id":"c9","llm')
+
+    assert drop_pending(out) == 0
+    append_jsonl(out, second)
+    assert read_jsonl(out) == [*first, *second]
+    assert drop_pending(out) == 0 and out.read_bytes().endswith(b"\n")
 
 
 # --- Decimales exactos del corpus ---------------------------------------------
