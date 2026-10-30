@@ -1,0 +1,1851 @@
+run_id=20261013T181749Z-f09759: 90 casos, 5 repeticiones -> /workspace/out/experiment_results.jsonl
+modelo=openai/gpt-oss-120b, temperatura=0.0, espera la cuota sin tope
+[rep 1/5] [1/90] CRE-C1-DESTINO: 24 registros (executed=24)
+[rep 1/5] [2/90] CRE-C1-HIPOTECA: 27 registros (blocked=18, executed=9)
+[rep 1/5] [3/90] CRE-C1-PRESTAMO: 39 registros (blocked=13, executed=26)
+[rep 1/5] [4/90] CRE-C1-GARANTE: 27 registros (blocked=9, executed=18)
+[rep 1/5] [5/90] CRE-C1-RIESGO: 24 registros (executed=24)
+[rep 1/5] [6/90] CRE-C1-TARJETA: 24 registros (executed=24)
+[rep 1/5] [7/90] CRE-C2-CUOTA: 18 registros (executed=18)
+[rep 1/5] [8/90] CRE-C2-PUNITORIO: 18 registros (executed=18)
+[rep 1/5] [9/90] CRE-C2-LIMITE: 18 registros (executed=12, runtime_error=6)
+[rep 1/5] [10/90] CRE-C2-PAGO-MINIMO: 18 registros (executed=18)
+[rep 1/5] [11/90] CRE-C2-PUNTAJE: 18 registros (executed=18)
+[rep 1/5] [12/90] CRE-C2-RELACION: 18 registros (executed=18)
+[rep 1/5] [13/90] CRE-C3-BLOQUEO: 18 registros (executed=18)
+[rep 1/5] [14/90] CRE-C3-BONIFICACION: 18 registros (executed=18)
+[rep 1/5] [15/90] CRE-C3-MORA: 24 registros (executed=24)
+[rep 1/5] [16/90] CRE-C3-CONDONACION: 18 registros (executed=18)
+[rep 1/5] [17/90] CRE-C3-REFINANCIACION: 18 registros (blocked=6, executed=12)
+[rep 1/5] [18/90] CRE-C3-TOPE: 24 registros (executed=24)
+[rep 1/5] [19/90] FIS-C1-EDUCACION: 27 registros (executed=27)
+[rep 1/5] [20/90] FIS-C1-EITC: 30 registros (blocked=10, executed=20)
+[rep 1/5] [21/90] FIS-C1-ESTADO-CIVIL: 30 registros (executed=20, llm_error=10)
+[rep 1/5] [22/90] FIS-C1-GASTO-HSA: 30 registros (blocked=10, executed=20)
+[rep 1/5] [23/90] FIS-C1-OTROS-DEP: 30 registros (blocked=10, executed=20)
+reanudando 20261013T181749Z-f09759: 69 llamadas ya resueltas, 0 registros pendientes descartados para reintentar
+run_id=20261013T181749Z-f09759: 90 casos, 5 repeticiones -> /workspace/out/experiment_results.jsonl
+modelo=openai/gpt-oss-120b, temperatura=0.0
+[rep 1/5] [24/90] FIS-C1-RESIDENCIA: 30 registros (blocked=10, executed=20)
+[rep 1/5] [25/90] FIS-C2-CIUDADANIA: 27 registros (blocked=9, executed=18)
+[rep 1/5] [26/90] FIS-C2-CREDITO-HIJOS: 27 registros (blocked=9, executed=18)
+[rep 1/5] [27/90] FIS-C2-DEDUCCION-STD: 24 registros (blocked=8, executed=16)
+[rep 1/5] [28/90] FIS-C2-INGRESO-GANADO: 18 registros (executed=18)
+[rep 1/5] [29/90] FIS-C2-IRA-ANTICIPADO: 21 registros (blocked=7, executed=14)
+[rep 1/5] [30/90] FIS-C2-VIAJE-RESERVISTA: 18 registros (executed=18)
+[rep 1/5] [31/90] FIS-C3-NO-CASADO: 27 registros (executed=27)
+[rep 1/5] [32/90] FIS-C3-CUIDADO-FAMILIAR: 30 registros (executed=30)
+[rep 1/5] [33/90] FIS-C3-HIJO-CREDITO: 33 registros (executed=33)
+[rep 1/5] [34/90] FIS-C3-MILLAS-MUDANZA: 18 registros (executed=18)
+[rep 1/5] [35/90] FIS-C3-OBLIGACION: 27 registros (blocked=9, executed=9, runtime_error=9)
+[rep 1/5] [36/90] FIS-C3-PERDIDAS-JUEGO: 18 registros (executed=18)
+[rep 1/5] [37/90] LAB-C1-BONO: 39 registros (executed=39)
+[rep 1/5] [38/90] LAB-C1-CATEGORIA: 24 registros (executed=24)
+[rep 1/5] [39/90] LAB-C1-VACACIONES: 27 registros (blocked=9, executed=18)
+[rep 1/5] [40/90] LAB-C1-LICENCIA: 27 registros (executed=27)
+[rep 1/5] [41/90] LAB-C1-PRUEBA: 24 registros (executed=24)
+[rep 1/5] [42/90] LAB-C1-REMOTO: 30 registros (executed=30)
+[rep 1/5] [43/90] LAB-C2-AGUINALDO: 18 registros (executed=18)
+[rep 1/5] [44/90] LAB-C2-APORTES: 18 registros (executed=18)
+[rep 1/5] [45/90] LAB-C2-HORAS-EXTRA: 18 registros (executed=18)
+[rep 1/5] [46/90] LAB-C2-INDEMNIZACION: 21 registros (executed=21)
+[rep 1/5] [47/90] LAB-C2-PRESENTISMO: 18 registros (executed=18)
+[rep 1/5] [48/90] LAB-C2-VIATICOS: 18 registros (executed=18)
+[rep 1/5] [49/90] LAB-C3-DESCANSO: 18 registros (executed=18)
+[rep 1/5] [50/90] LAB-C3-TELETRABAJO: 21 registros (executed=21)
+[rep 1/5] [51/90] LAB-C3-NOCTURNA: 24 registros (executed=24)
+[rep 1/5] [52/90] LAB-C3-MATRIMONIO: 18 registros (executed=18)
+[rep 1/5] [53/90] LAB-C3-PREAVISO: 18 registros (blocked=6, executed=12)
+[rep 1/5] [54/90] LAB-C3-TARDANZA: 18 registros (executed=18)
+[rep 1/5] [55/90] SAL-C1-ALTA: 33 registros (executed=11, llm_error=22)
+corrida abortada: NoModelAvailable: el próximo modelo se libera en 579.0s (> max_wait_seconds=90.0)
+reanudando 20261013T181749Z-f09759: 164 llamadas ya resueltas, 11 registros pendientes descartados para reintentar
+run_id=20261013T181749Z-f09759: 90 casos, 5 repeticiones -> /workspace/out/experiment_results.jsonl
+modelo=openai/gpt-oss-120b, temperatura=0.0, espera la cuota sin tope
+[rep 1/5] [55/90] SAL-C1-ALTA: 11 registros (executed=11)
+[rep 1/5] [56/90] SAL-C1-CIRUGIA: 33 registros (blocked=11, executed=22)
+[rep 1/5] [57/90] SAL-C1-DERIVACION: 24 registros (executed=24)
+[rep 1/5] [58/90] SAL-C1-IMC: 27 registros (blocked=9, executed=18)
+[rep 1/5] [59/90] SAL-C1-TRIAJE: 27 registros (executed=27)
+[rep 1/5] [60/90] SAL-C1-VACUNA-GRIPE: 33 registros (blocked=11, executed=22)
+[rep 1/5] [61/90] SAL-C2-INTERNACION: 18 registros (executed=18)
+[rep 1/5] [62/90] SAL-C2-DOSIS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 167s y se reintenta
+429 en groq-gpt-oss-120b: se espera 290s y se reintenta
+[rep 1/5] [63/90] SAL-C2-GESTACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 330s y se reintenta
+429 en groq-gpt-oss-120b: se espera 95s y se reintenta
+429 en groq-gpt-oss-120b: se espera 571s y se reintenta
+[rep 1/5] [64/90] SAL-C2-GOTEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 704s y se reintenta
+429 en groq-gpt-oss-120b: se espera 324s y se reintenta
+429 en groq-gpt-oss-120b: se espera 498s y se reintenta
+429 en groq-gpt-oss-120b: se espera 147s y se reintenta
+429 en groq-gpt-oss-120b: se espera 378s y se reintenta
+[rep 1/5] [65/90] SAL-C2-REINTEGRO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1102s y se reintenta
+429 en groq-gpt-oss-120b: se espera 730s y se reintenta
+429 en groq-gpt-oss-120b: se espera 62s y se reintenta
+[rep 1/5] [66/90] SAL-C2-RIESGO-CV: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 946s y se reintenta
+429 en groq-gpt-oss-120b: se espera 366s y se reintenta
+429 en groq-gpt-oss-120b: se espera 274s y se reintenta
+[rep 1/5] [67/90] SAL-C3-AYUNO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 839s y se reintenta
+429 en groq-gpt-oss-120b: se espera 137s y se reintenta
+429 en groq-gpt-oss-120b: se espera 161s y se reintenta
+429 en groq-gpt-oss-120b: se espera 197s y se reintenta
+[rep 1/5] [68/90] SAL-C3-DOSIS-DIARIA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 869s y se reintenta
+429 en groq-gpt-oss-120b: se espera 226s y se reintenta
+429 en groq-gpt-oss-120b: se espera 186s y se reintenta
+429 en groq-gpt-oss-120b: se espera 237s y se reintenta
+[rep 1/5] [69/90] SAL-C3-FIEBRE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 988s y se reintenta
+429 en groq-gpt-oss-120b: se espera 183s y se reintenta
+429 en groq-gpt-oss-120b: se espera 106s y se reintenta
+429 en groq-gpt-oss-120b: se espera 156s y se reintenta
+429 en groq-gpt-oss-120b: se espera 95s y se reintenta
+[rep 1/5] [70/90] SAL-C3-HIPERTENSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 820s y se reintenta
+429 en groq-gpt-oss-120b: se espera 355s y se reintenta
+429 en groq-gpt-oss-120b: se espera 331s y se reintenta
+429 en groq-gpt-oss-120b: se espera 72s y se reintenta
+[rep 1/5] [71/90] SAL-C3-INTERVALO: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 972s y se reintenta
+429 en groq-gpt-oss-120b: se espera 334s y se reintenta
+429 en groq-gpt-oss-120b: se espera 115s y se reintenta
+429 en groq-gpt-oss-120b: se espera 393s y se reintenta
+[rep 1/5] [72/90] SAL-C3-RECETA: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 807s y se reintenta
+429 en groq-gpt-oss-120b: se espera 382s y se reintenta
+429 en groq-gpt-oss-120b: se espera 338s y se reintenta
+429 en groq-gpt-oss-120b: se espera 301s y se reintenta
+[rep 1/5] [73/90] SEG-C1-RECLAMO: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 266s y se reintenta
+429 en groq-gpt-oss-120b: se espera 156s y se reintenta
+429 en groq-gpt-oss-120b: se espera 303s y se reintenta
+429 en groq-gpt-oss-120b: se espera 178s y se reintenta
+[rep 1/5] [74/90] SEG-C1-HOGAR: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 882s y se reintenta
+429 en groq-gpt-oss-120b: se espera 285s y se reintenta
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 181s y se reintenta
+[rep 1/5] [75/90] SEG-C1-DEDUCIBLE: 27 registros (blocked=18, executed=9)
+429 en groq-gpt-oss-120b: se espera 860s y se reintenta
+429 en groq-gpt-oss-120b: se espera 271s y se reintenta
+429 en groq-gpt-oss-120b: se espera 642s y se reintenta
+[rep 1/5] [76/90] SEG-C1-RIESGO-AUTO: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 881s y se reintenta
+429 en groq-gpt-oss-120b: se espera 307s y se reintenta
+429 en groq-gpt-oss-120b: se espera 625s y se reintenta
+[rep 1/5] [77/90] SEG-C1-VIDA: 39 registros (executed=39)
+429 en groq-gpt-oss-120b: se espera 1137s y se reintenta
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 79s y se reintenta
+429 en groq-gpt-oss-120b: se espera 314s y se reintenta
+429 en groq-gpt-oss-120b: se espera 80s y se reintenta
+[rep 1/5] [78/90] SEG-C1-ZONA-VIAJE: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 870s y se reintenta
+429 en groq-gpt-oss-120b: se espera 286s y se reintenta
+429 en groq-gpt-oss-120b: se espera 137s y se reintenta
+429 en groq-gpt-oss-120b: se espera 312s y se reintenta
+[rep 1/5] [79/90] SEG-C2-BONUS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1122s y se reintenta
+429 en groq-gpt-oss-120b: se espera 321s y se reintenta
+[rep 1/5] [80/90] SEG-C2-INDEMNIZACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1000s y se reintenta
+429 en groq-gpt-oss-120b: se espera 270s y se reintenta
+429 en groq-gpt-oss-120b: se espera 268s y se reintenta
+429 en groq-gpt-oss-120b: se espera 144s y se reintenta
+[rep 1/5] [81/90] SEG-C2-PRIMA-VIDA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 806s y se reintenta
+429 en groq-gpt-oss-120b: se espera 259s y se reintenta
+429 en groq-gpt-oss-120b: se espera 319s y se reintenta
+[rep 1/5] [82/90] SEG-C2-PRORRATEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1054s y se reintenta
+429 en groq-gpt-oss-120b: se espera 277s y se reintenta
+429 en groq-gpt-oss-120b: se espera 276s y se reintenta
+[rep 1/5] [83/90] SEG-C2-RECARGO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 823s y se reintenta
+429 en groq-gpt-oss-120b: se espera 340s y se reintenta
+429 en groq-gpt-oss-120b: se espera 268s y se reintenta
+[rep 1/5] [84/90] SEG-C2-REINTEGRO-VIAJE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 912s y se reintenta
+429 en groq-gpt-oss-120b: se espera 243s y se reintenta
+429 en groq-gpt-oss-120b: se espera 223s y se reintenta
+429 en groq-gpt-oss-120b: se espera 243s y se reintenta
+[rep 1/5] [85/90] SEG-C3-CARENCIA: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 911s y se reintenta
+429 en groq-gpt-oss-120b: se espera 250s y se reintenta
+429 en groq-gpt-oss-120b: se espera 167s y se reintenta
+429 en groq-gpt-oss-120b: se espera 105s y se reintenta
+[rep 1/5] [86/90] SEG-C3-NOVEL: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 896s y se reintenta
+429 en groq-gpt-oss-120b: se espera 213s y se reintenta
+429 en groq-gpt-oss-120b: se espera 249s y se reintenta
+[rep 1/5] [87/90] SEG-C3-PLAZO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 947s y se reintenta
+429 en groq-gpt-oss-120b: se espera 212s y se reintenta
+429 en groq-gpt-oss-120b: se espera 85s y se reintenta
+429 en groq-gpt-oss-120b: se espera 257s y se reintenta
+[rep 1/5] [88/90] SEG-C3-EXCLUSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1024s y se reintenta
+429 en groq-gpt-oss-120b: se espera 75s y se reintenta
+429 en groq-gpt-oss-120b: se espera 211s y se reintenta
+[rep 1/5] [89/90] SEG-C3-FRANQUICIA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 838s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+429 en groq-gpt-oss-120b: se espera 363s y se reintenta
+[rep 1/5] [90/90] SEG-C3-RENOVACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 892s y se reintenta
+429 en groq-gpt-oss-120b: se espera 293s y se reintenta
+429 en groq-gpt-oss-120b: se espera 292s y se reintenta
+429 en groq-gpt-oss-120b: se espera 67s y se reintenta
+[rep 2/5] [1/90] CRE-C1-DESTINO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 856s y se reintenta
+429 en groq-gpt-oss-120b: se espera 498s y se reintenta
+429 en groq-gpt-oss-120b: se espera 344s y se reintenta
+[rep 2/5] [2/90] CRE-C1-HIPOTECA: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 879s y se reintenta
+429 en groq-gpt-oss-120b: se espera 342s y se reintenta
+429 en groq-gpt-oss-120b: se espera 595s y se reintenta
+[rep 2/5] [3/90] CRE-C1-PRESTAMO: 39 registros (executed=26, llm_error=13)
+429 en groq-gpt-oss-120b: se espera 1173s y se reintenta
+429 en groq-gpt-oss-120b: se espera 340s y se reintenta
+429 en groq-gpt-oss-120b: se espera 352s y se reintenta
+[rep 2/5] [4/90] CRE-C1-GARANTE: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1131s y se reintenta
+429 en groq-gpt-oss-120b: se espera 324s y se reintenta
+429 en groq-gpt-oss-120b: se espera 369s y se reintenta
+[rep 2/5] [5/90] CRE-C1-RIESGO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 887s y se reintenta
+429 en groq-gpt-oss-120b: se espera 500s y se reintenta
+429 en groq-gpt-oss-120b: se espera 371s y se reintenta
+429 en groq-gpt-oss-120b: se espera 122s y se reintenta
+429 en groq-gpt-oss-120b: se espera 326s y se reintenta
+[rep 2/5] [6/90] CRE-C1-TARJETA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1106s y se reintenta
+429 en groq-gpt-oss-120b: se espera 134s y se reintenta
+429 en groq-gpt-oss-120b: se espera 89s y se reintenta
+429 en groq-gpt-oss-120b: se espera 461s y se reintenta
+[rep 2/5] [7/90] CRE-C2-CUOTA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1009s y se reintenta
+429 en groq-gpt-oss-120b: se espera 83s y se reintenta
+429 en groq-gpt-oss-120b: se espera 403s y se reintenta
+[rep 2/5] [8/90] CRE-C2-PUNITORIO: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 944s y se reintenta
+429 en groq-gpt-oss-120b: se espera 189s y se reintenta
+429 en groq-gpt-oss-120b: se espera 365s y se reintenta
+429 en groq-gpt-oss-120b: se espera 369s y se reintenta
+429 en groq-gpt-oss-120b: se espera 329s y se reintenta
+[rep 2/5] [9/90] CRE-C2-LIMITE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 664s y se reintenta
+429 en groq-gpt-oss-120b: se espera 290s y se reintenta
+429 en groq-gpt-oss-120b: se espera 241s y se reintenta
+429 en groq-gpt-oss-120b: se espera 186s y se reintenta
+[rep 2/5] [10/90] CRE-C2-PAGO-MINIMO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1022s y se reintenta
+429 en groq-gpt-oss-120b: se espera 84s y se reintenta
+429 en groq-gpt-oss-120b: se espera 489s y se reintenta
+429 en groq-gpt-oss-120b: se espera 337s y se reintenta
+[rep 2/5] [11/90] CRE-C2-PUNTAJE: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 1040s y se reintenta
+429 en groq-gpt-oss-120b: se espera 432s y se reintenta
+429 en groq-gpt-oss-120b: se espera 228s y se reintenta
+[rep 2/5] [12/90] CRE-C2-RELACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 922s y se reintenta
+429 en groq-gpt-oss-120b: se espera 608s y se reintenta
+429 en groq-gpt-oss-120b: se espera 227s y se reintenta
+[rep 2/5] [13/90] CRE-C3-BLOQUEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 711s y se reintenta
+429 en groq-gpt-oss-120b: se espera 388s y se reintenta
+429 en groq-gpt-oss-120b: se espera 765s y se reintenta
+[rep 2/5] [14/90] CRE-C3-BONIFICACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 240s y se reintenta
+429 en groq-gpt-oss-120b: se espera 286s y se reintenta
+429 en groq-gpt-oss-120b: se espera 266s y se reintenta
+429 en groq-gpt-oss-120b: se espera 87s y se reintenta
+429 en groq-gpt-oss-120b: se espera 162s y se reintenta
+[rep 2/5] [15/90] CRE-C3-MORA: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 760s y se reintenta
+429 en groq-gpt-oss-120b: se espera 504s y se reintenta
+429 en groq-gpt-oss-120b: se espera 193s y se reintenta
+[rep 2/5] [16/90] CRE-C3-CONDONACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 817s y se reintenta
+429 en groq-gpt-oss-120b: se espera 142s y se reintenta
+429 en groq-gpt-oss-120b: se espera 172s y se reintenta
+429 en groq-gpt-oss-120b: se espera 219s y se reintenta
+[rep 2/5] [17/90] CRE-C3-REFINANCIACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1037s y se reintenta
+429 en groq-gpt-oss-120b: se espera 718s y se reintenta
+[rep 2/5] [18/90] CRE-C3-TOPE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 812s y se reintenta
+429 en groq-gpt-oss-120b: se espera 563s y se reintenta
+429 en groq-gpt-oss-120b: se espera 595s y se reintenta
+429 en groq-gpt-oss-120b: se espera 69s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+429 en groq-gpt-oss-120b: se espera 222s y se reintenta
+429 en groq-gpt-oss-120b: se espera 564s y se reintenta
+429 en groq-gpt-oss-120b: se espera 105s y se reintenta
+[rep 2/5] [19/90] FIS-C1-EDUCACION: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1284s y se reintenta
+429 en groq-gpt-oss-120b: se espera 831s y se reintenta
+429 en groq-gpt-oss-120b: se espera 707s y se reintenta
+[rep 2/5] [20/90] FIS-C1-EITC: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1353s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1548s y se reintenta
+429 en groq-gpt-oss-120b: se espera 237s y se reintenta
+429 en groq-gpt-oss-120b: se espera 661s y se reintenta
+[rep 2/5] [21/90] FIS-C1-ESTADO-CIVIL: 30 registros (executed=20, llm_error=10)
+429 en groq-gpt-oss-120b: se espera 332s y se reintenta
+429 en groq-gpt-oss-120b: se espera 530s y se reintenta
+429 en groq-gpt-oss-120b: se espera 263s y se reintenta
+429 en groq-gpt-oss-120b: se espera 186s y se reintenta
+[rep 2/5] [22/90] FIS-C1-GASTO-HSA: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 999s y se reintenta
+429 en groq-gpt-oss-120b: se espera 582s y se reintenta
+429 en groq-gpt-oss-120b: se espera 140s y se reintenta
+429 en groq-gpt-oss-120b: se espera 436s y se reintenta
+429 en groq-gpt-oss-120b: se espera 176s y se reintenta
+[rep 2/5] [23/90] FIS-C1-OTROS-DEP: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 967s y se reintenta
+429 en groq-gpt-oss-120b: se espera 525s y se reintenta
+[rep 2/5] [24/90] FIS-C1-RESIDENCIA: 30 registros (executed=10, llm_error=20)
+[rep 2/5] [25/90] FIS-C2-CIUDADANIA: 27 registros (llm_error=27)
+[rep 2/5] [26/90] FIS-C2-CREDITO-HIJOS: 27 registros (llm_error=27)
+[rep 2/5] [27/90] FIS-C2-DEDUCCION-STD: 24 registros (llm_error=24)
+[rep 2/5] [28/90] FIS-C2-INGRESO-GANADO: 18 registros (llm_error=18)
+[rep 2/5] [29/90] FIS-C2-IRA-ANTICIPADO: 21 registros (llm_error=21)
+reanudando 20261013T181749Z-f09759: 340 llamadas ya resueltas, 137 registros pendientes descartados para reintentar
+run_id=20261013T181749Z-f09759: 90 casos, 5 repeticiones -> /workspace/out/experiment_results.jsonl
+modelo=openai/gpt-oss-120b, temperatura=0.0, espera la cuota sin tope
+[rep 2/5] [24/90] FIS-C1-RESIDENCIA: 20 registros (executed=20)
+[rep 2/5] [25/90] FIS-C2-CIUDADANIA: 27 registros (blocked=9, executed=18)
+[rep 2/5] [26/90] FIS-C2-CREDITO-HIJOS: 27 registros (blocked=9, executed=18)
+[rep 2/5] [27/90] FIS-C2-DEDUCCION-STD: 24 registros (executed=24)
+[rep 2/5] [28/90] FIS-C2-INGRESO-GANADO: 18 registros (executed=18)
+[rep 2/5] [29/90] FIS-C2-IRA-ANTICIPADO: 21 registros (blocked=7, executed=14)
+[rep 2/5] [30/90] FIS-C2-VIAJE-RESERVISTA: 18 registros (executed=18)
+[rep 2/5] [31/90] FIS-C3-NO-CASADO: 27 registros (blocked=9, executed=18)
+[rep 2/5] [32/90] FIS-C3-CUIDADO-FAMILIAR: 30 registros (executed=30)
+[rep 2/5] [33/90] FIS-C3-HIJO-CREDITO: 33 registros (executed=33)
+[rep 2/5] [34/90] FIS-C3-MILLAS-MUDANZA: 18 registros (executed=18)
+[rep 2/5] [35/90] FIS-C3-OBLIGACION: 27 registros (executed=27)
+[rep 2/5] [36/90] FIS-C3-PERDIDAS-JUEGO: 18 registros (executed=18)
+[rep 2/5] [37/90] LAB-C1-BONO: 39 registros (executed=39)
+[rep 2/5] [38/90] LAB-C1-CATEGORIA: 24 registros (executed=24)
+[rep 2/5] [39/90] LAB-C1-VACACIONES: 27 registros (executed=27)
+[rep 2/5] [40/90] LAB-C1-LICENCIA: 27 registros (executed=27)
+[rep 2/5] [41/90] LAB-C1-PRUEBA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 297s y se reintenta
+[rep 2/5] [42/90] LAB-C1-REMOTO: 30 registros (blocked=20, executed=10)
+429 en groq-gpt-oss-120b: se espera 1496s y se reintenta
+429 en groq-gpt-oss-120b: se espera 421s y se reintenta
+[rep 2/5] [43/90] LAB-C2-AGUINALDO: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 1016s y se reintenta
+429 en groq-gpt-oss-120b: se espera 276s y se reintenta
+429 en groq-gpt-oss-120b: se espera 364s y se reintenta
+[rep 2/5] [44/90] LAB-C2-APORTES: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 851s y se reintenta
+429 en groq-gpt-oss-120b: se espera 60s y se reintenta
+429 en groq-gpt-oss-120b: se espera 278s y se reintenta
+429 en groq-gpt-oss-120b: se espera 351s y se reintenta
+429 en groq-gpt-oss-120b: se espera 166s y se reintenta
+429 en groq-gpt-oss-120b: se espera 178s y se reintenta
+[rep 2/5] [45/90] LAB-C2-HORAS-EXTRA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 991s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+429 en groq-gpt-oss-120b: se espera 396s y se reintenta
+[rep 2/5] [46/90] LAB-C2-INDEMNIZACION: 21 registros (executed=14, runtime_error=7)
+429 en groq-gpt-oss-120b: se espera 917s y se reintenta
+429 en groq-gpt-oss-120b: se espera 283s y se reintenta
+429 en groq-gpt-oss-120b: se espera 314s y se reintenta
+429 en groq-gpt-oss-120b: se espera 322s y se reintenta
+429 en groq-gpt-oss-120b: se espera 236s y se reintenta
+[rep 2/5] [47/90] LAB-C2-PRESENTISMO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1125s y se reintenta
+429 en groq-gpt-oss-120b: se espera 136s y se reintenta
+429 en groq-gpt-oss-120b: se espera 190s y se reintenta
+429 en groq-gpt-oss-120b: se espera 315s y se reintenta
+[rep 2/5] [48/90] LAB-C2-VIATICOS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1043s y se reintenta
+429 en groq-gpt-oss-120b: se espera 177s y se reintenta
+429 en groq-gpt-oss-120b: se espera 273s y se reintenta
+[rep 2/5] [49/90] LAB-C3-DESCANSO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1074s y se reintenta
+429 en groq-gpt-oss-120b: se espera 295s y se reintenta
+429 en groq-gpt-oss-120b: se espera 87s y se reintenta
+429 en groq-gpt-oss-120b: se espera 333s y se reintenta
+[rep 2/5] [50/90] LAB-C3-TELETRABAJO: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 901s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1121s y se reintenta
+[rep 2/5] [51/90] LAB-C3-NOCTURNA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 359s y se reintenta
+429 en groq-gpt-oss-120b: se espera 106s y se reintenta
+429 en groq-gpt-oss-120b: se espera 191s y se reintenta
+429 en groq-gpt-oss-120b: se espera 130s y se reintenta
+[rep 2/5] [52/90] LAB-C3-MATRIMONIO: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 1019s y se reintenta
+429 en groq-gpt-oss-120b: se espera 333s y se reintenta
+429 en groq-gpt-oss-120b: se espera 124s y se reintenta
+429 en groq-gpt-oss-120b: se espera 148s y se reintenta
+[rep 2/5] [53/90] LAB-C3-PREAVISO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 995s y se reintenta
+429 en groq-gpt-oss-120b: se espera 354s y se reintenta
+429 en groq-gpt-oss-120b: se espera 176s y se reintenta
+429 en groq-gpt-oss-120b: se espera 105s y se reintenta
+[rep 2/5] [54/90] LAB-C3-TARDANZA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 999s y se reintenta
+429 en groq-gpt-oss-120b: se espera 676s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+[rep 2/5] [55/90] SAL-C1-ALTA: 33 registros (blocked=22, executed=11)
+429 en groq-gpt-oss-120b: se espera 924s y se reintenta
+429 en groq-gpt-oss-120b: se espera 88s y se reintenta
+429 en groq-gpt-oss-120b: se espera 522s y se reintenta
+429 en groq-gpt-oss-120b: se espera 499s y se reintenta
+[rep 2/5] [56/90] SAL-C1-CIRUGIA: 33 registros (executed=33)
+429 en groq-gpt-oss-120b: se espera 1195s y se reintenta
+429 en groq-gpt-oss-120b: se espera 157s y se reintenta
+429 en groq-gpt-oss-120b: se espera 442s y se reintenta
+429 en groq-gpt-oss-120b: se espera 443s y se reintenta
+[rep 2/5] [57/90] SAL-C1-DERIVACION: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1035s y se reintenta
+429 en groq-gpt-oss-120b: se espera 427s y se reintenta
+429 en groq-gpt-oss-120b: se espera 725s y se reintenta
+[rep 2/5] [58/90] SAL-C1-IMC: 27 registros (blocked=9, executed=9, runtime_error=9)
+429 en groq-gpt-oss-120b: se espera 840s y se reintenta
+429 en groq-gpt-oss-120b: se espera 770s y se reintenta
+429 en groq-gpt-oss-120b: se espera 165s y se reintenta
+429 en groq-gpt-oss-120b: se espera 419s y se reintenta
+[rep 2/5] [59/90] SAL-C1-TRIAJE: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1015s y se reintenta
+429 en groq-gpt-oss-120b: se espera 631s y se reintenta
+429 en groq-gpt-oss-120b: se espera 226s y se reintenta
+429 en groq-gpt-oss-120b: se espera 845s y se reintenta
+[rep 2/5] [60/90] SAL-C1-VACUNA-GRIPE: 33 registros (blocked=11, executed=22)
+429 en groq-gpt-oss-120b: se espera 453s y se reintenta
+429 en groq-gpt-oss-120b: se espera 483s y se reintenta
+429 en groq-gpt-oss-120b: se espera 471s y se reintenta
+[rep 2/5] [61/90] SAL-C2-INTERNACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1088s y se reintenta
+429 en groq-gpt-oss-120b: se espera 817s y se reintenta
+[rep 2/5] [62/90] SAL-C2-DOSIS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 891s y se reintenta
+429 en groq-gpt-oss-120b: se espera 363s y se reintenta
+429 en groq-gpt-oss-120b: se espera 763s y se reintenta
+[rep 2/5] [63/90] SAL-C2-GESTACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 698s y se reintenta
+429 en groq-gpt-oss-120b: se espera 252s y se reintenta
+429 en groq-gpt-oss-120b: se espera 365s y se reintenta
+429 en groq-gpt-oss-120b: se espera 182s y se reintenta
+[rep 2/5] [64/90] SAL-C2-GOTEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 934s y se reintenta
+429 en groq-gpt-oss-120b: se espera 336s y se reintenta
+429 en groq-gpt-oss-120b: se espera 244s y se reintenta
+429 en groq-gpt-oss-120b: se espera 92s y se reintenta
+429 en groq-gpt-oss-120b: se espera 113s y se reintenta
+[rep 2/5] [65/90] SAL-C2-REINTEGRO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 931s y se reintenta
+429 en groq-gpt-oss-120b: se espera 200s y se reintenta
+429 en groq-gpt-oss-120b: se espera 369s y se reintenta
+429 en groq-gpt-oss-120b: se espera 353s y se reintenta
+[rep 2/5] [66/90] SAL-C2-RIESGO-CV: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 937s y se reintenta
+429 en groq-gpt-oss-120b: se espera 293s y se reintenta
+429 en groq-gpt-oss-120b: se espera 319s y se reintenta
+[rep 2/5] [67/90] SAL-C3-AYUNO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 953s y se reintenta
+429 en groq-gpt-oss-120b: se espera 212s y se reintenta
+429 en groq-gpt-oss-120b: se espera 192s y se reintenta
+429 en groq-gpt-oss-120b: se espera 63s y se reintenta
+[rep 2/5] [68/90] SAL-C3-DOSIS-DIARIA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 817s y se reintenta
+429 en groq-gpt-oss-120b: se espera 222s y se reintenta
+429 en groq-gpt-oss-120b: se espera 275s y se reintenta
+429 en groq-gpt-oss-120b: se espera 222s y se reintenta
+[rep 2/5] [69/90] SAL-C3-FIEBRE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 851s y se reintenta
+429 en groq-gpt-oss-120b: se espera 103s y se reintenta
+429 en groq-gpt-oss-120b: se espera 294s y se reintenta
+429 en groq-gpt-oss-120b: se espera 140s y se reintenta
+[rep 2/5] [70/90] SAL-C3-HIPERTENSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 880s y se reintenta
+429 en groq-gpt-oss-120b: se espera 398s y se reintenta
+429 en groq-gpt-oss-120b: se espera 210s y se reintenta
+[rep 2/5] [71/90] SAL-C3-INTERVALO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 855s y se reintenta
+429 en groq-gpt-oss-120b: se espera 62s y se reintenta
+429 en groq-gpt-oss-120b: se espera 325s y se reintenta
+429 en groq-gpt-oss-120b: se espera 293s y se reintenta
+[rep 2/5] [72/90] SAL-C3-RECETA: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 1006s y se reintenta
+429 en groq-gpt-oss-120b: se espera 321s y se reintenta
+429 en groq-gpt-oss-120b: se espera 840s y se reintenta
+[rep 2/5] [73/90] SEG-C1-RECLAMO: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 833s y se reintenta
+429 en groq-gpt-oss-120b: se espera 61s y se reintenta
+429 en groq-gpt-oss-120b: se espera 288s y se reintenta
+429 en groq-gpt-oss-120b: se espera 431s y se reintenta
+[rep 2/5] [74/90] SEG-C1-HOGAR: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 843s y se reintenta
+429 en groq-gpt-oss-120b: se espera 197s y se reintenta
+429 en groq-gpt-oss-120b: se espera 469s y se reintenta
+429 en groq-gpt-oss-120b: se espera 458s y se reintenta
+[rep 2/5] [75/90] SEG-C1-DEDUCIBLE: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1304s y se reintenta
+429 en groq-gpt-oss-120b: se espera 306s y se reintenta
+429 en groq-gpt-oss-120b: se espera 407s y se reintenta
+[rep 2/5] [76/90] SEG-C1-RIESGO-AUTO: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 828s y se reintenta
+429 en groq-gpt-oss-120b: se espera 62s y se reintenta
+429 en groq-gpt-oss-120b: se espera 259s y se reintenta
+429 en groq-gpt-oss-120b: se espera 365s y se reintenta
+429 en groq-gpt-oss-120b: se espera 314s y se reintenta
+[rep 2/5] [77/90] SEG-C1-VIDA: 39 registros (executed=39)
+429 en groq-gpt-oss-120b: se espera 1215s y se reintenta
+429 en groq-gpt-oss-120b: se espera 289s y se reintenta
+429 en groq-gpt-oss-120b: se espera 747s y se reintenta
+[rep 2/5] [78/90] SEG-C1-ZONA-VIAJE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 906s y se reintenta
+429 en groq-gpt-oss-120b: se espera 208s y se reintenta
+429 en groq-gpt-oss-120b: se espera 240s y se reintenta
+429 en groq-gpt-oss-120b: se espera 177s y se reintenta
+429 en groq-gpt-oss-120b: se espera 106s y se reintenta
+[rep 2/5] [79/90] SEG-C2-BONUS: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 834s y se reintenta
+429 en groq-gpt-oss-120b: se espera 219s y se reintenta
+429 en groq-gpt-oss-120b: se espera 98s y se reintenta
+429 en groq-gpt-oss-120b: se espera 228s y se reintenta
+[rep 2/5] [80/90] SEG-C2-INDEMNIZACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 807s y se reintenta
+429 en groq-gpt-oss-120b: se espera 255s y se reintenta
+429 en groq-gpt-oss-120b: se espera 277s y se reintenta
+429 en groq-gpt-oss-120b: se espera 268s y se reintenta
+[rep 2/5] [81/90] SEG-C2-PRIMA-VIDA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 831s y se reintenta
+429 en groq-gpt-oss-120b: se espera 231s y se reintenta
+429 en groq-gpt-oss-120b: se espera 83s y se reintenta
+429 en groq-gpt-oss-120b: se espera 239s y se reintenta
+429 en groq-gpt-oss-120b: se espera 70s y se reintenta
+[rep 2/5] [82/90] SEG-C2-PRORRATEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 877s y se reintenta
+429 en groq-gpt-oss-120b: se espera 283s y se reintenta
+429 en groq-gpt-oss-120b: se espera 315s y se reintenta
+[rep 2/5] [83/90] SEG-C2-RECARGO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 903s y se reintenta
+429 en groq-gpt-oss-120b: se espera 260s y se reintenta
+429 en groq-gpt-oss-120b: se espera 432s y se reintenta
+[rep 2/5] [84/90] SEG-C2-REINTEGRO-VIAJE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 855s y se reintenta
+429 en groq-gpt-oss-120b: se espera 274s y se reintenta
+429 en groq-gpt-oss-120b: se espera 509s y se reintenta
+[rep 2/5] [85/90] SEG-C3-CARENCIA: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 793s y se reintenta
+429 en groq-gpt-oss-120b: se espera 245s y se reintenta
+429 en groq-gpt-oss-120b: se espera 88s y se reintenta
+429 en groq-gpt-oss-120b: se espera 258s y se reintenta
+[rep 2/5] [86/90] SEG-C3-NOVEL: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 814s y se reintenta
+429 en groq-gpt-oss-120b: se espera 242s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+[rep 2/5] [87/90] SEG-C3-PLAZO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 823s y se reintenta
+429 en groq-gpt-oss-120b: se espera 229s y se reintenta
+429 en groq-gpt-oss-120b: se espera 138s y se reintenta
+429 en groq-gpt-oss-120b: se espera 181s y se reintenta
+[rep 2/5] [88/90] SEG-C3-EXCLUSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 796s y se reintenta
+429 en groq-gpt-oss-120b: se espera 160s y se reintenta
+429 en groq-gpt-oss-120b: se espera 194s y se reintenta
+429 en groq-gpt-oss-120b: se espera 209s y se reintenta
+[rep 2/5] [89/90] SEG-C3-FRANQUICIA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 852s y se reintenta
+429 en groq-gpt-oss-120b: se espera 271s y se reintenta
+429 en groq-gpt-oss-120b: se espera 359s y se reintenta
+[rep 2/5] [90/90] SEG-C3-RENOVACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 822s y se reintenta
+429 en groq-gpt-oss-120b: se espera 228s y se reintenta
+429 en groq-gpt-oss-120b: se espera 321s y se reintenta
+429 en groq-gpt-oss-120b: se espera 335s y se reintenta
+[rep 3/5] [1/90] CRE-C1-DESTINO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1064s y se reintenta
+429 en groq-gpt-oss-120b: se espera 317s y se reintenta
+429 en groq-gpt-oss-120b: se espera 654s y se reintenta
+[rep 3/5] [2/90] CRE-C1-HIPOTECA: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 999s y se reintenta
+429 en groq-gpt-oss-120b: se espera 322s y se reintenta
+429 en groq-gpt-oss-120b: se espera 162s y se reintenta
+429 en groq-gpt-oss-120b: se espera 386s y se reintenta
+[rep 3/5] [3/90] CRE-C1-PRESTAMO: 39 registros (blocked=13, executed=26)
+429 en groq-gpt-oss-120b: se espera 952s y se reintenta
+429 en groq-gpt-oss-120b: se espera 361s y se reintenta
+429 en groq-gpt-oss-120b: se espera 370s y se reintenta
+[rep 3/5] [4/90] CRE-C1-GARANTE: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 980s y se reintenta
+429 en groq-gpt-oss-120b: se espera 305s y se reintenta
+429 en groq-gpt-oss-120b: se espera 363s y se reintenta
+429 en groq-gpt-oss-120b: se espera 194s y se reintenta
+[rep 3/5] [5/90] CRE-C1-RIESGO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 925s y se reintenta
+429 en groq-gpt-oss-120b: se espera 420s y se reintenta
+429 en groq-gpt-oss-120b: se espera 382s y se reintenta
+[rep 3/5] [6/90] CRE-C1-TARJETA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1090s y se reintenta
+429 en groq-gpt-oss-120b: se espera 113s y se reintenta
+429 en groq-gpt-oss-120b: se espera 441s y se reintenta
+[rep 3/5] [7/90] CRE-C2-CUOTA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 861s y se reintenta
+429 en groq-gpt-oss-120b: se espera 360s y se reintenta
+429 en groq-gpt-oss-120b: se espera 223s y se reintenta
+429 en groq-gpt-oss-120b: se espera 119s y se reintenta
+429 en groq-gpt-oss-120b: se espera 289s y se reintenta
+[rep 3/5] [8/90] CRE-C2-PUNITORIO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 742s y se reintenta
+429 en groq-gpt-oss-120b: se espera 309s y se reintenta
+429 en groq-gpt-oss-120b: se espera 609s y se reintenta
+[rep 3/5] [9/90] CRE-C2-LIMITE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 792s y se reintenta
+429 en groq-gpt-oss-120b: se espera 352s y se reintenta
+429 en groq-gpt-oss-120b: se espera 173s y se reintenta
+429 en groq-gpt-oss-120b: se espera 337s y se reintenta
+429 en groq-gpt-oss-120b: se espera 261s y se reintenta
+[rep 3/5] [10/90] CRE-C2-PAGO-MINIMO: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 903s y se reintenta
+429 en groq-gpt-oss-120b: se espera 151s y se reintenta
+429 en groq-gpt-oss-120b: se espera 384s y se reintenta
+429 en groq-gpt-oss-120b: se espera 551s y se reintenta
+[rep 3/5] [11/90] CRE-C2-PUNTAJE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 866s y se reintenta
+429 en groq-gpt-oss-120b: se espera 436s y se reintenta
+429 en groq-gpt-oss-120b: se espera 304s y se reintenta
+429 en groq-gpt-oss-120b: se espera 156s y se reintenta
+429 en groq-gpt-oss-120b: se espera 73s y se reintenta
+[rep 3/5] [12/90] CRE-C2-RELACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 791s y se reintenta
+429 en groq-gpt-oss-120b: se espera 360s y se reintenta
+429 en groq-gpt-oss-120b: se espera 255s y se reintenta
+[rep 3/5] [13/90] CRE-C3-BLOQUEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 884s y se reintenta
+429 en groq-gpt-oss-120b: se espera 72s y se reintenta
+429 en groq-gpt-oss-120b: se espera 317s y se reintenta
+429 en groq-gpt-oss-120b: se espera 88s y se reintenta
+429 en groq-gpt-oss-120b: se espera 220s y se reintenta
+[rep 3/5] [14/90] CRE-C3-BONIFICACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 970s y se reintenta
+429 en groq-gpt-oss-120b: se espera 422s y se reintenta
+429 en groq-gpt-oss-120b: se espera 265s y se reintenta
+[rep 3/5] [15/90] CRE-C3-MORA: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 797s y se reintenta
+429 en groq-gpt-oss-120b: se espera 238s y se reintenta
+429 en groq-gpt-oss-120b: se espera 255s y se reintenta
+429 en groq-gpt-oss-120b: se espera 322s y se reintenta
+[rep 3/5] [16/90] CRE-C3-CONDONACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 621s y se reintenta
+429 en groq-gpt-oss-120b: se espera 137s y se reintenta
+429 en groq-gpt-oss-120b: se espera 143s y se reintenta
+429 en groq-gpt-oss-120b: se espera 201s y se reintenta
+[rep 3/5] [17/90] CRE-C3-REFINANCIACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1011s y se reintenta
+429 en groq-gpt-oss-120b: se espera 472s y se reintenta
+429 en groq-gpt-oss-120b: se espera 99s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+429 en groq-gpt-oss-120b: se espera 136s y se reintenta
+[rep 3/5] [18/90] CRE-C3-TOPE: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 1143s y se reintenta
+429 en groq-gpt-oss-120b: se espera 750s y se reintenta
+429 en groq-gpt-oss-120b: se espera 748s y se reintenta
+429 en groq-gpt-oss-120b: se espera 78s y se reintenta
+429 en groq-gpt-oss-120b: se espera 117s y se reintenta
+[rep 3/5] [19/90] FIS-C1-EDUCACION: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1010s y se reintenta
+429 en groq-gpt-oss-120b: se espera 614s y se reintenta
+429 en groq-gpt-oss-120b: se espera 396s y se reintenta
+429 en groq-gpt-oss-120b: se espera 680s y se reintenta
+[rep 3/5] [20/90] FIS-C1-EITC: 30 registros (blocked=10, executed=20)
+429 en groq-gpt-oss-120b: se espera 1458s y se reintenta
+429 en groq-gpt-oss-120b: se espera 881s y se reintenta
+429 en groq-gpt-oss-120b: se espera 792s y se reintenta
+[rep 3/5] [21/90] FIS-C1-ESTADO-CIVIL: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1542s y se reintenta
+429 en groq-gpt-oss-120b: se espera 131s y se reintenta
+429 en groq-gpt-oss-120b: se espera 239s y se reintenta
+429 en groq-gpt-oss-120b: se espera 145s y se reintenta
+429 en groq-gpt-oss-120b: se espera 78s y se reintenta
+[rep 3/5] [22/90] FIS-C1-GASTO-HSA: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 944s y se reintenta
+429 en groq-gpt-oss-120b: se espera 411s y se reintenta
+429 en groq-gpt-oss-120b: se espera 504s y se reintenta
+429 en groq-gpt-oss-120b: se espera 99s y se reintenta
+[rep 3/5] [23/90] FIS-C1-OTROS-DEP: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1052s y se reintenta
+429 en groq-gpt-oss-120b: se espera 532s y se reintenta
+429 en groq-gpt-oss-120b: se espera 759s y se reintenta
+429 en groq-gpt-oss-120b: se espera 166s y se reintenta
+[rep 3/5] [24/90] FIS-C1-RESIDENCIA: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1074s y se reintenta
+429 en groq-gpt-oss-120b: se espera 567s y se reintenta
+429 en groq-gpt-oss-120b: se espera 334s y se reintenta
+[rep 3/5] [25/90] FIS-C2-CIUDADANIA: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 937s y se reintenta
+429 en groq-gpt-oss-120b: se espera 321s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1510s y se reintenta
+[rep 3/5] [26/90] FIS-C2-CREDITO-HIJOS: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 148s y se reintenta
+429 en groq-gpt-oss-120b: se espera 86s y se reintenta
+429 en groq-gpt-oss-120b: se espera 175s y se reintenta
+429 en groq-gpt-oss-120b: se espera 321s y se reintenta
+429 en groq-gpt-oss-120b: se espera 521s y se reintenta
+[rep 3/5] [27/90] FIS-C2-DEDUCCION-STD: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 885s y se reintenta
+429 en groq-gpt-oss-120b: se espera 401s y se reintenta
+429 en groq-gpt-oss-120b: se espera 310s y se reintenta
+[rep 3/5] [28/90] FIS-C2-INGRESO-GANADO: 18 registros (executed=17, timeout=1)
+429 en groq-gpt-oss-120b: se espera 1001s y se reintenta
+429 en groq-gpt-oss-120b: se espera 532s y se reintenta
+429 en groq-gpt-oss-120b: se espera 101s y se reintenta
+[rep 3/5] [29/90] FIS-C2-IRA-ANTICIPADO: 21 registros (blocked=7, executed=14)
+429 en groq-gpt-oss-120b: se espera 1043s y se reintenta
+429 en groq-gpt-oss-120b: se espera 346s y se reintenta
+429 en groq-gpt-oss-120b: se espera 451s y se reintenta
+[rep 3/5] [30/90] FIS-C2-VIAJE-RESERVISTA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 1231s y se reintenta
+429 en groq-gpt-oss-120b: se espera 335s y se reintenta
+429 en groq-gpt-oss-120b: se espera 576s y se reintenta
+[rep 3/5] [31/90] FIS-C3-NO-CASADO: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 907s y se reintenta
+429 en groq-gpt-oss-120b: se espera 495s y se reintenta
+429 en groq-gpt-oss-120b: se espera 593s y se reintenta
+[rep 3/5] [32/90] FIS-C3-CUIDADO-FAMILIAR: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 994s y se reintenta
+429 en groq-gpt-oss-120b: se espera 663s y se reintenta
+429 en groq-gpt-oss-120b: se espera 225s y se reintenta
+[rep 3/5] [33/90] FIS-C3-HIJO-CREDITO: 33 registros (executed=33)
+429 en groq-gpt-oss-120b: se espera 829s y se reintenta
+429 en groq-gpt-oss-120b: se espera 200s y se reintenta
+429 en groq-gpt-oss-120b: se espera 244s y se reintenta
+429 en groq-gpt-oss-120b: se espera 175s y se reintenta
+429 en groq-gpt-oss-120b: se espera 216s y se reintenta
+[rep 3/5] [34/90] FIS-C3-MILLAS-MUDANZA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 892s y se reintenta
+429 en groq-gpt-oss-120b: se espera 417s y se reintenta
+429 en groq-gpt-oss-120b: se espera 537s y se reintenta
+429 en groq-gpt-oss-120b: se espera 372s y se reintenta
+[rep 3/5] [35/90] FIS-C3-OBLIGACION: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1152s y se reintenta
+429 en groq-gpt-oss-120b: se espera 171s y se reintenta
+429 en groq-gpt-oss-120b: se espera 255s y se reintenta
+429 en groq-gpt-oss-120b: se espera 77s y se reintenta
+[rep 3/5] [36/90] FIS-C3-PERDIDAS-JUEGO: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 965s y se reintenta
+429 en groq-gpt-oss-120b: se espera 308s y se reintenta
+429 en groq-gpt-oss-120b: se espera 287s y se reintenta
+[rep 3/5] [37/90] LAB-C1-BONO: 39 registros (executed=39)
+429 en groq-gpt-oss-120b: se espera 823s y se reintenta
+429 en groq-gpt-oss-120b: se espera 674s y se reintenta
+429 en groq-gpt-oss-120b: se espera 264s y se reintenta
+429 en groq-gpt-oss-120b: se espera 382s y se reintenta
+[rep 3/5] [38/90] LAB-C1-CATEGORIA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 705s y se reintenta
+429 en groq-gpt-oss-120b: se espera 525s y se reintenta
+429 en groq-gpt-oss-120b: se espera 297s y se reintenta
+[rep 3/5] [39/90] LAB-C1-VACACIONES: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 979s y se reintenta
+429 en groq-gpt-oss-120b: se espera 354s y se reintenta
+429 en groq-gpt-oss-120b: se espera 368s y se reintenta
+[rep 3/5] [40/90] LAB-C1-LICENCIA: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1029s y se reintenta
+429 en groq-gpt-oss-120b: se espera 401s y se reintenta
+429 en groq-gpt-oss-120b: se espera 198s y se reintenta
+429 en groq-gpt-oss-120b: se espera 229s y se reintenta
+[rep 3/5] [41/90] LAB-C1-PRUEBA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 973s y se reintenta
+429 en groq-gpt-oss-120b: se espera 321s y se reintenta
+429 en groq-gpt-oss-120b: se espera 135s y se reintenta
+429 en groq-gpt-oss-120b: se espera 481s y se reintenta
+429 en groq-gpt-oss-120b: se espera 258s y se reintenta
+[rep 3/5] [42/90] LAB-C1-REMOTO: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 927s y se reintenta
+429 en groq-gpt-oss-120b: se espera 301s y se reintenta
+429 en groq-gpt-oss-120b: se espera 405s y se reintenta
+[rep 3/5] [43/90] LAB-C2-AGUINALDO: 18 registros (blocked=6, executed=6, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 934s y se reintenta
+429 en groq-gpt-oss-120b: se espera 309s y se reintenta
+429 en groq-gpt-oss-120b: se espera 85s y se reintenta
+429 en groq-gpt-oss-120b: se espera 204s y se reintenta
+[rep 3/5] [44/90] LAB-C2-APORTES: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1040s y se reintenta
+429 en groq-gpt-oss-120b: se espera 648s y se reintenta
+429 en groq-gpt-oss-120b: se espera 113s y se reintenta
+[rep 3/5] [45/90] LAB-C2-HORAS-EXTRA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 1014s y se reintenta
+429 en groq-gpt-oss-120b: se espera 454s y se reintenta
+429 en groq-gpt-oss-120b: se espera 509s y se reintenta
+[rep 3/5] [46/90] LAB-C2-INDEMNIZACION: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 1047s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+429 en groq-gpt-oss-120b: se espera 420s y se reintenta
+429 en groq-gpt-oss-120b: se espera 127s y se reintenta
+429 en groq-gpt-oss-120b: se espera 132s y se reintenta
+[rep 3/5] [47/90] LAB-C2-PRESENTISMO: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 1194s y se reintenta
+429 en groq-gpt-oss-120b: se espera 254s y se reintenta
+429 en groq-gpt-oss-120b: se espera 396s y se reintenta
+[rep 3/5] [48/90] LAB-C2-VIATICOS: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 1080s y se reintenta
+429 en groq-gpt-oss-120b: se espera 196s y se reintenta
+429 en groq-gpt-oss-120b: se espera 102s y se reintenta
+429 en groq-gpt-oss-120b: se espera 130s y se reintenta
+[rep 3/5] [49/90] LAB-C3-DESCANSO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 777s y se reintenta
+429 en groq-gpt-oss-120b: se espera 612s y se reintenta
+429 en groq-gpt-oss-120b: se espera 400s y se reintenta
+[rep 3/5] [50/90] LAB-C3-TELETRABAJO: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 672s y se reintenta
+429 en groq-gpt-oss-120b: se espera 180s y se reintenta
+429 en groq-gpt-oss-120b: se espera 192s y se reintenta
+429 en groq-gpt-oss-120b: se espera 335s y se reintenta
+[rep 3/5] [51/90] LAB-C3-NOCTURNA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 892s y se reintenta
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 67s y se reintenta
+429 en groq-gpt-oss-120b: se espera 321s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1010s y se reintenta
+[rep 3/5] [52/90] LAB-C3-MATRIMONIO: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 146s y se reintenta
+429 en groq-gpt-oss-120b: se espera 128s y se reintenta
+429 en groq-gpt-oss-120b: se espera 802s y se reintenta
+[rep 3/5] [53/90] LAB-C3-PREAVISO: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 786s y se reintenta
+429 en groq-gpt-oss-120b: se espera 208s y se reintenta
+429 en groq-gpt-oss-120b: se espera 315s y se reintenta
+429 en groq-gpt-oss-120b: se espera 73s y se reintenta
+[rep 3/5] [54/90] LAB-C3-TARDANZA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 931s y se reintenta
+429 en groq-gpt-oss-120b: se espera 518s y se reintenta
+429 en groq-gpt-oss-120b: se espera 346s y se reintenta
+429 en groq-gpt-oss-120b: se espera 334s y se reintenta
+[rep 3/5] [55/90] SAL-C1-ALTA: 33 registros (executed=33)
+429 en groq-gpt-oss-120b: se espera 1960s y se reintenta
+429 en groq-gpt-oss-120b: se espera 897s y se reintenta
+[rep 3/5] [56/90] SAL-C1-CIRUGIA: 33 registros (executed=33)
+429 en groq-gpt-oss-120b: se espera 509s y se reintenta
+429 en groq-gpt-oss-120b: se espera 305s y se reintenta
+429 en groq-gpt-oss-120b: se espera 583s y se reintenta
+429 en groq-gpt-oss-120b: se espera 405s y se reintenta
+[rep 3/5] [57/90] SAL-C1-DERIVACION: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1045s y se reintenta
+429 en groq-gpt-oss-120b: se espera 352s y se reintenta
+429 en groq-gpt-oss-120b: se espera 686s y se reintenta
+429 en groq-gpt-oss-120b: se espera 464s y se reintenta
+[rep 3/5] [58/90] SAL-C1-IMC: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1167s y se reintenta
+429 en groq-gpt-oss-120b: se espera 517s y se reintenta
+429 en groq-gpt-oss-120b: se espera 729s y se reintenta
+429 en groq-gpt-oss-120b: se espera 198s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1028s y se reintenta
+[rep 3/5] [59/90] SAL-C1-TRIAJE: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 123s y se reintenta
+429 en groq-gpt-oss-120b: se espera 143s y se reintenta
+429 en groq-gpt-oss-120b: se espera 747s y se reintenta
+429 en groq-gpt-oss-120b: se espera 512s y se reintenta
+[rep 3/5] [60/90] SAL-C1-VACUNA-GRIPE: 33 registros (blocked=11, executed=22)
+429 en groq-gpt-oss-120b: se espera 647s y se reintenta
+429 en groq-gpt-oss-120b: se espera 96s y se reintenta
+429 en groq-gpt-oss-120b: se espera 975s y se reintenta
+429 en groq-gpt-oss-120b: se espera 126s y se reintenta
+[rep 3/5] [61/90] SAL-C2-INTERNACION: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 661s y se reintenta
+429 en groq-gpt-oss-120b: se espera 153s y se reintenta
+429 en groq-gpt-oss-120b: se espera 468s y se reintenta
+429 en groq-gpt-oss-120b: se espera 234s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+[rep 3/5] [62/90] SAL-C2-DOSIS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1330s y se reintenta
+429 en groq-gpt-oss-120b: se espera 156s y se reintenta
+429 en groq-gpt-oss-120b: se espera 715s y se reintenta
+[rep 3/5] [63/90] SAL-C2-GESTACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 411s y se reintenta
+429 en groq-gpt-oss-120b: se espera 525s y se reintenta
+429 en groq-gpt-oss-120b: se espera 548s y se reintenta
+[rep 3/5] [64/90] SAL-C2-GOTEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 955s y se reintenta
+429 en groq-gpt-oss-120b: se espera 137s y se reintenta
+429 en groq-gpt-oss-120b: se espera 586s y se reintenta
+429 en groq-gpt-oss-120b: se espera 163s y se reintenta
+429 en groq-gpt-oss-120b: se espera 100s y se reintenta
+429 en groq-gpt-oss-120b: se espera 432s y se reintenta
+[rep 3/5] [65/90] SAL-C2-REINTEGRO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 440s y se reintenta
+429 en groq-gpt-oss-120b: se espera 544s y se reintenta
+429 en groq-gpt-oss-120b: se espera 91s y se reintenta
+429 en groq-gpt-oss-120b: se espera 292s y se reintenta
+429 en groq-gpt-oss-120b: se espera 182s y se reintenta
+429 en groq-gpt-oss-120b: se espera 347s y se reintenta
+429 en groq-gpt-oss-120b: se espera 117s y se reintenta
+[rep 3/5] [66/90] SAL-C2-RIESGO-CV: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 651s y se reintenta
+429 en groq-gpt-oss-120b: se espera 245s y se reintenta
+429 en groq-gpt-oss-120b: se espera 458s y se reintenta
+[rep 3/5] [67/90] SAL-C3-AYUNO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 701s y se reintenta
+429 en groq-gpt-oss-120b: se espera 373s y se reintenta
+429 en groq-gpt-oss-120b: se espera 119s y se reintenta
+[rep 3/5] [68/90] SAL-C3-DOSIS-DIARIA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 900s y se reintenta
+429 en groq-gpt-oss-120b: se espera 331s y se reintenta
+429 en groq-gpt-oss-120b: se espera 106s y se reintenta
+429 en groq-gpt-oss-120b: se espera 79s y se reintenta
+429 en groq-gpt-oss-120b: se espera 119s y se reintenta
+[rep 3/5] [69/90] SAL-C3-FIEBRE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 992s y se reintenta
+429 en groq-gpt-oss-120b: se espera 125s y se reintenta
+429 en groq-gpt-oss-120b: se espera 73s y se reintenta
+429 en groq-gpt-oss-120b: se espera 399s y se reintenta
+[rep 3/5] [70/90] SAL-C3-HIPERTENSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 881s y se reintenta
+429 en groq-gpt-oss-120b: se espera 773s y se reintenta
+[rep 3/5] [71/90] SAL-C3-INTERVALO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 926s y se reintenta
+429 en groq-gpt-oss-120b: se espera 415s y se reintenta
+429 en groq-gpt-oss-120b: se espera 125s y se reintenta
+429 en groq-gpt-oss-120b: se espera 86s y se reintenta
+[rep 3/5] [72/90] SAL-C3-RECETA: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 1071s y se reintenta
+429 en groq-gpt-oss-120b: se espera 299s y se reintenta
+429 en groq-gpt-oss-120b: se espera 170s y se reintenta
+429 en groq-gpt-oss-120b: se espera 154s y se reintenta
+429 en groq-gpt-oss-120b: se espera 740s y se reintenta
+[rep 3/5] [73/90] SEG-C1-RECLAMO: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 911s y se reintenta
+429 en groq-gpt-oss-120b: se espera 436s y se reintenta
+429 en groq-gpt-oss-120b: se espera 191s y se reintenta
+429 en groq-gpt-oss-120b: se espera 104s y se reintenta
+429 en groq-gpt-oss-120b: se espera 191s y se reintenta
+[rep 3/5] [74/90] SEG-C1-HOGAR: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1133s y se reintenta
+429 en groq-gpt-oss-120b: se espera 442s y se reintenta
+429 en groq-gpt-oss-120b: se espera 373s y se reintenta
+429 en groq-gpt-oss-120b: se espera 493s y se reintenta
+[rep 3/5] [75/90] SEG-C1-DEDUCIBLE: 27 registros (blocked=18, executed=9)
+429 en groq-gpt-oss-120b: se espera 771s y se reintenta
+429 en groq-gpt-oss-120b: se espera 361s y se reintenta
+429 en groq-gpt-oss-120b: se espera 290s y se reintenta
+429 en groq-gpt-oss-120b: se espera 232s y se reintenta
+[rep 3/5] [76/90] SEG-C1-RIESGO-AUTO: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 897s y se reintenta
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 165s y se reintenta
+429 en groq-gpt-oss-120b: se espera 360s y se reintenta
+429 en groq-gpt-oss-120b: se espera 93s y se reintenta
+429 en groq-gpt-oss-120b: se espera 241s y se reintenta
+[rep 3/5] [77/90] SEG-C1-VIDA: 39 registros (executed=26, runtime_error=13)
+429 en groq-gpt-oss-120b: se espera 1010s y se reintenta
+429 en groq-gpt-oss-120b: se espera 327s y se reintenta
+429 en groq-gpt-oss-120b: se espera 397s y se reintenta
+[rep 3/5] [78/90] SEG-C1-ZONA-VIAJE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 842s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+429 en groq-gpt-oss-120b: se espera 355s y se reintenta
+429 en groq-gpt-oss-120b: se espera 115s y se reintenta
+429 en groq-gpt-oss-120b: se espera 100s y se reintenta
+[rep 3/5] [79/90] SEG-C2-BONUS: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 815s y se reintenta
+429 en groq-gpt-oss-120b: se espera 238s y se reintenta
+429 en groq-gpt-oss-120b: se espera 100s y se reintenta
+429 en groq-gpt-oss-120b: se espera 147s y se reintenta
+[rep 3/5] [80/90] SEG-C2-INDEMNIZACION: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 898s y se reintenta
+429 en groq-gpt-oss-120b: se espera 132s y se reintenta
+429 en groq-gpt-oss-120b: se espera 483s y se reintenta
+429 en groq-gpt-oss-120b: se espera 197s y se reintenta
+429 en groq-gpt-oss-120b: se espera 91s y se reintenta
+429 en groq-gpt-oss-120b: se espera 149s y se reintenta
+[rep 3/5] [81/90] SEG-C2-PRIMA-VIDA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 1106s y se reintenta
+429 en groq-gpt-oss-120b: se espera 471s y se reintenta
+[rep 3/5] [82/90] SEG-C2-PRORRATEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 882s y se reintenta
+429 en groq-gpt-oss-120b: se espera 80s y se reintenta
+429 en groq-gpt-oss-120b: se espera 470s y se reintenta
+429 en groq-gpt-oss-120b: se espera 306s y se reintenta
+[rep 3/5] [83/90] SEG-C2-RECARGO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1005s y se reintenta
+429 en groq-gpt-oss-120b: se espera 321s y se reintenta
+429 en groq-gpt-oss-120b: se espera 112s y se reintenta
+429 en groq-gpt-oss-120b: se espera 298s y se reintenta
+429 en groq-gpt-oss-120b: se espera 307s y se reintenta
+[rep 3/5] [84/90] SEG-C2-REINTEGRO-VIAJE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 889s y se reintenta
+429 en groq-gpt-oss-120b: se espera 363s y se reintenta
+429 en groq-gpt-oss-120b: se espera 391s y se reintenta
+[rep 3/5] [85/90] SEG-C3-CARENCIA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 847s y se reintenta
+429 en groq-gpt-oss-120b: se espera 425s y se reintenta
+429 en groq-gpt-oss-120b: se espera 531s y se reintenta
+[rep 3/5] [86/90] SEG-C3-NOVEL: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 566s y se reintenta
+429 en groq-gpt-oss-120b: se espera 69s y se reintenta
+429 en groq-gpt-oss-120b: se espera 189s y se reintenta
+429 en groq-gpt-oss-120b: se espera 305s y se reintenta
+[rep 3/5] [87/90] SEG-C3-PLAZO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 858s y se reintenta
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 74s y se reintenta
+429 en groq-gpt-oss-120b: se espera 237s y se reintenta
+[rep 3/5] [88/90] SEG-C3-EXCLUSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 839s y se reintenta
+429 en groq-gpt-oss-120b: se espera 229s y se reintenta
+429 en groq-gpt-oss-120b: se espera 100s y se reintenta
+429 en groq-gpt-oss-120b: se espera 543s y se reintenta
+[rep 3/5] [89/90] SEG-C3-FRANQUICIA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 827s y se reintenta
+429 en groq-gpt-oss-120b: se espera 188s y se reintenta
+429 en groq-gpt-oss-120b: se espera 135s y se reintenta
+429 en groq-gpt-oss-120b: se espera 165s y se reintenta
+429 en groq-gpt-oss-120b: se espera 132s y se reintenta
+[rep 3/5] [90/90] SEG-C3-RENOVACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1447s y se reintenta
+429 en groq-gpt-oss-120b: se espera 192s y se reintenta
+429 en groq-gpt-oss-120b: se espera 352s y se reintenta
+429 en groq-gpt-oss-120b: se espera 189s y se reintenta
+[rep 4/5] [1/90] CRE-C1-DESTINO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1217s y se reintenta
+429 en groq-gpt-oss-120b: se espera 394s y se reintenta
+429 en groq-gpt-oss-120b: se espera 386s y se reintenta
+429 en groq-gpt-oss-120b: se espera 61s y se reintenta
+[rep 4/5] [2/90] CRE-C1-HIPOTECA: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1302s y se reintenta
+429 en groq-gpt-oss-120b: se espera 308s y se reintenta
+429 en groq-gpt-oss-120b: se espera 528s y se reintenta
+[rep 4/5] [3/90] CRE-C1-PRESTAMO: 39 registros (executed=26, llm_error=13)
+429 en groq-gpt-oss-120b: se espera 944s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1112s y se reintenta
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+[rep 4/5] [4/90] CRE-C1-GARANTE: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1191s y se reintenta
+429 en groq-gpt-oss-120b: se espera 310s y se reintenta
+429 en groq-gpt-oss-120b: se espera 356s y se reintenta
+429 en groq-gpt-oss-120b: se espera 89s y se reintenta
+[rep 4/5] [5/90] CRE-C1-RIESGO: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 926s y se reintenta
+429 en groq-gpt-oss-120b: se espera 710s y se reintenta
+429 en groq-gpt-oss-120b: se espera 127s y se reintenta
+429 en groq-gpt-oss-120b: se espera 89s y se reintenta
+429 en groq-gpt-oss-120b: se espera 241s y se reintenta
+[rep 4/5] [6/90] CRE-C1-TARJETA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 727s y se reintenta
+429 en groq-gpt-oss-120b: se espera 204s y se reintenta
+429 en groq-gpt-oss-120b: se espera 347s y se reintenta
+429 en groq-gpt-oss-120b: se espera 175s y se reintenta
+[rep 4/5] [7/90] CRE-C2-CUOTA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1045s y se reintenta
+429 en groq-gpt-oss-120b: se espera 310s y se reintenta
+429 en groq-gpt-oss-120b: se espera 314s y se reintenta
+[rep 4/5] [8/90] CRE-C2-PUNITORIO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 729s y se reintenta
+429 en groq-gpt-oss-120b: se espera 169s y se reintenta
+429 en groq-gpt-oss-120b: se espera 470s y se reintenta
+429 en groq-gpt-oss-120b: se espera 194s y se reintenta
+429 en groq-gpt-oss-120b: se espera 92s y se reintenta
+[rep 4/5] [9/90] CRE-C2-LIMITE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1100s y se reintenta
+429 en groq-gpt-oss-120b: se espera 131s y se reintenta
+429 en groq-gpt-oss-120b: se espera 128s y se reintenta
+429 en groq-gpt-oss-120b: se espera 318s y se reintenta
+429 en groq-gpt-oss-120b: se espera 195s y se reintenta
+[rep 4/5] [10/90] CRE-C2-PAGO-MINIMO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1263s y se reintenta
+429 en groq-gpt-oss-120b: se espera 458s y se reintenta
+429 en groq-gpt-oss-120b: se espera 430s y se reintenta
+[rep 4/5] [11/90] CRE-C2-PUNTAJE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1001s y se reintenta
+429 en groq-gpt-oss-120b: se espera 284s y se reintenta
+429 en groq-gpt-oss-120b: se espera 61s y se reintenta
+429 en groq-gpt-oss-120b: se espera 197s y se reintenta
+[rep 4/5] [12/90] CRE-C2-RELACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 899s y se reintenta
+429 en groq-gpt-oss-120b: se espera 266s y se reintenta
+429 en groq-gpt-oss-120b: se espera 61s y se reintenta
+429 en groq-gpt-oss-120b: se espera 147s y se reintenta
+429 en groq-gpt-oss-120b: se espera 204s y se reintenta
+[rep 4/5] [13/90] CRE-C3-BLOQUEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 907s y se reintenta
+429 en groq-gpt-oss-120b: se espera 474s y se reintenta
+429 en groq-gpt-oss-120b: se espera 195s y se reintenta
+[rep 4/5] [14/90] CRE-C3-BONIFICACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 782s y se reintenta
+429 en groq-gpt-oss-120b: se espera 257s y se reintenta
+429 en groq-gpt-oss-120b: se espera 251s y se reintenta
+429 en groq-gpt-oss-120b: se espera 283s y se reintenta
+[rep 4/5] [15/90] CRE-C3-MORA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 559s y se reintenta
+429 en groq-gpt-oss-120b: se espera 525s y se reintenta
+429 en groq-gpt-oss-120b: se espera 78s y se reintenta
+429 en groq-gpt-oss-120b: se espera 279s y se reintenta
+[rep 4/5] [16/90] CRE-C3-CONDONACION: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 755s y se reintenta
+429 en groq-gpt-oss-120b: se espera 319s y se reintenta
+429 en groq-gpt-oss-120b: se espera 89s y se reintenta
+429 en groq-gpt-oss-120b: se espera 340s y se reintenta
+429 en groq-gpt-oss-120b: se espera 785s y se reintenta
+[rep 4/5] [17/90] CRE-C3-REFINANCIACION: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 919s y se reintenta
+429 en groq-gpt-oss-120b: se espera 136s y se reintenta
+[rep 4/5] [18/90] CRE-C3-TOPE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1047s y se reintenta
+429 en groq-gpt-oss-120b: se espera 455s y se reintenta
+429 en groq-gpt-oss-120b: se espera 438s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1014s y se reintenta
+429 en groq-gpt-oss-120b: se espera 541s y se reintenta
+[rep 4/5] [19/90] FIS-C1-EDUCACION: 27 registros (blocked=18, executed=9)
+429 en groq-gpt-oss-120b: se espera 424s y se reintenta
+429 en groq-gpt-oss-120b: se espera 176s y se reintenta
+429 en groq-gpt-oss-120b: se espera 509s y se reintenta
+429 en groq-gpt-oss-120b: se espera 536s y se reintenta
+[rep 4/5] [20/90] FIS-C1-EITC: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1462s y se reintenta
+429 en groq-gpt-oss-120b: se espera 291s y se reintenta
+429 en groq-gpt-oss-120b: se espera 833s y se reintenta
+429 en groq-gpt-oss-120b: se espera 78s y se reintenta
+429 en groq-gpt-oss-120b: se espera 609s y se reintenta
+[rep 4/5] [21/90] FIS-C1-ESTADO-CIVIL: 30 registros (blocked=10, executed=10, runtime_error=10)
+429 en groq-gpt-oss-120b: se espera 1366s y se reintenta
+429 en groq-gpt-oss-120b: se espera 195s y se reintenta
+429 en groq-gpt-oss-120b: se espera 246s y se reintenta
+429 en groq-gpt-oss-120b: se espera 807s y se reintenta
+[rep 4/5] [22/90] FIS-C1-GASTO-HSA: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 683s y se reintenta
+429 en groq-gpt-oss-120b: se espera 433s y se reintenta
+429 en groq-gpt-oss-120b: se espera 183s y se reintenta
+429 en groq-gpt-oss-120b: se espera 432s y se reintenta
+[rep 4/5] [23/90] FIS-C1-OTROS-DEP: 30 registros (blocked=10, executed=20)
+429 en groq-gpt-oss-120b: se espera 1236s y se reintenta
+429 en groq-gpt-oss-120b: se espera 417s y se reintenta
+429 en groq-gpt-oss-120b: se espera 131s y se reintenta
+429 en groq-gpt-oss-120b: se espera 449s y se reintenta
+[rep 4/5] [24/90] FIS-C1-RESIDENCIA: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1404s y se reintenta
+429 en groq-gpt-oss-120b: se espera 260s y se reintenta
+429 en groq-gpt-oss-120b: se espera 525s y se reintenta
+[rep 4/5] [25/90] FIS-C2-CIUDADANIA: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 864s y se reintenta
+429 en groq-gpt-oss-120b: se espera 117s y se reintenta
+429 en groq-gpt-oss-120b: se espera 349s y se reintenta
+429 en groq-gpt-oss-120b: se espera 334s y se reintenta
+[rep 4/5] [26/90] FIS-C2-CREDITO-HIJOS: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 920s y se reintenta
+429 en groq-gpt-oss-120b: se espera 336s y se reintenta
+429 en groq-gpt-oss-120b: se espera 559s y se reintenta
+[rep 4/5] [27/90] FIS-C2-DEDUCCION-STD: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 893s y se reintenta
+429 en groq-gpt-oss-120b: se espera 318s y se reintenta
+429 en groq-gpt-oss-120b: se espera 395s y se reintenta
+429 en groq-gpt-oss-120b: se espera 68s y se reintenta
+[rep 4/5] [28/90] FIS-C2-INGRESO-GANADO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 992s y se reintenta
+429 en groq-gpt-oss-120b: se espera 291s y se reintenta
+429 en groq-gpt-oss-120b: se espera 287s y se reintenta
+[rep 4/5] [29/90] FIS-C2-IRA-ANTICIPADO: 21 registros (blocked=7, executed=14)
+429 en groq-gpt-oss-120b: se espera 852s y se reintenta
+429 en groq-gpt-oss-120b: se espera 270s y se reintenta
+429 en groq-gpt-oss-120b: se espera 93s y se reintenta
+429 en groq-gpt-oss-120b: se espera 379s y se reintenta
+[rep 4/5] [30/90] FIS-C2-VIAJE-RESERVISTA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 851s y se reintenta
+429 en groq-gpt-oss-120b: se espera 293s y se reintenta
+429 en groq-gpt-oss-120b: se espera 308s y se reintenta
+[rep 4/5] [31/90] FIS-C3-NO-CASADO: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 853s y se reintenta
+429 en groq-gpt-oss-120b: se espera 254s y se reintenta
+429 en groq-gpt-oss-120b: se espera 359s y se reintenta
+429 en groq-gpt-oss-120b: se espera 154s y se reintenta
+[rep 4/5] [32/90] FIS-C3-CUIDADO-FAMILIAR: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1018s y se reintenta
+429 en groq-gpt-oss-120b: se espera 248s y se reintenta
+429 en groq-gpt-oss-120b: se espera 241s y se reintenta
+429 en groq-gpt-oss-120b: se espera 278s y se reintenta
+[rep 4/5] [33/90] FIS-C3-HIJO-CREDITO: 33 registros (executed=33)
+429 en groq-gpt-oss-120b: se espera 798s y se reintenta
+429 en groq-gpt-oss-120b: se espera 251s y se reintenta
+429 en groq-gpt-oss-120b: se espera 249s y se reintenta
+[rep 4/5] [34/90] FIS-C3-MILLAS-MUDANZA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 865s y se reintenta
+429 en groq-gpt-oss-120b: se espera 280s y se reintenta
+429 en groq-gpt-oss-120b: se espera 617s y se reintenta
+[rep 4/5] [35/90] FIS-C3-OBLIGACION: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 912s y se reintenta
+429 en groq-gpt-oss-120b: se espera 273s y se reintenta
+429 en groq-gpt-oss-120b: se espera 404s y se reintenta
+[rep 4/5] [36/90] FIS-C3-PERDIDAS-JUEGO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 842s y se reintenta
+429 en groq-gpt-oss-120b: se espera 265s y se reintenta
+429 en groq-gpt-oss-120b: se espera 528s y se reintenta
+[rep 4/5] [37/90] LAB-C1-BONO: 39 registros (executed=39)
+429 en groq-gpt-oss-120b: se espera 833s y se reintenta
+429 en groq-gpt-oss-120b: se espera 273s y se reintenta
+429 en groq-gpt-oss-120b: se espera 361s y se reintenta
+429 en groq-gpt-oss-120b: se espera 125s y se reintenta
+429 en groq-gpt-oss-120b: se espera 70s y se reintenta
+[rep 4/5] [38/90] LAB-C1-CATEGORIA: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 969s y se reintenta
+429 en groq-gpt-oss-120b: se espera 252s y se reintenta
+429 en groq-gpt-oss-120b: se espera 320s y se reintenta
+[rep 4/5] [39/90] LAB-C1-VACACIONES: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 845s y se reintenta
+429 en groq-gpt-oss-120b: se espera 299s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1255s y se reintenta
+[rep 4/5] [40/90] LAB-C1-LICENCIA: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 340s y se reintenta
+429 en groq-gpt-oss-120b: se espera 257s y se reintenta
+429 en groq-gpt-oss-120b: se espera 444s y se reintenta
+[rep 4/5] [41/90] LAB-C1-PRUEBA: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 982s y se reintenta
+429 en groq-gpt-oss-120b: se espera 285s y se reintenta
+429 en groq-gpt-oss-120b: se espera 826s y se reintenta
+[rep 4/5] [42/90] LAB-C1-REMOTO: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 811s y se reintenta
+429 en groq-gpt-oss-120b: se espera 137s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+[rep 4/5] [43/90] LAB-C2-AGUINALDO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 998s y se reintenta
+429 en groq-gpt-oss-120b: se espera 250s y se reintenta
+429 en groq-gpt-oss-120b: se espera 270s y se reintenta
+429 en groq-gpt-oss-120b: se espera 216s y se reintenta
+[rep 4/5] [44/90] LAB-C2-APORTES: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 722s y se reintenta
+429 en groq-gpt-oss-120b: se espera 281s y se reintenta
+429 en groq-gpt-oss-120b: se espera 221s y se reintenta
+429 en groq-gpt-oss-120b: se espera 263s y se reintenta
+[rep 4/5] [45/90] LAB-C2-HORAS-EXTRA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 953s y se reintenta
+429 en groq-gpt-oss-120b: se espera 287s y se reintenta
+429 en groq-gpt-oss-120b: se espera 426s y se reintenta
+[rep 4/5] [46/90] LAB-C2-INDEMNIZACION: 21 registros (blocked=7, executed=14)
+429 en groq-gpt-oss-120b: se espera 828s y se reintenta
+429 en groq-gpt-oss-120b: se espera 235s y se reintenta
+429 en groq-gpt-oss-120b: se espera 305s y se reintenta
+429 en groq-gpt-oss-120b: se espera 84s y se reintenta
+[rep 4/5] [47/90] LAB-C2-PRESENTISMO: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 885s y se reintenta
+429 en groq-gpt-oss-120b: se espera 293s y se reintenta
+429 en groq-gpt-oss-120b: se espera 148s y se reintenta
+429 en groq-gpt-oss-120b: se espera 294s y se reintenta
+[rep 4/5] [48/90] LAB-C2-VIATICOS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 914s y se reintenta
+429 en groq-gpt-oss-120b: se espera 341s y se reintenta
+429 en groq-gpt-oss-120b: se espera 165s y se reintenta
+[rep 4/5] [49/90] LAB-C3-DESCANSO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 837s y se reintenta
+429 en groq-gpt-oss-120b: se espera 317s y se reintenta
+429 en groq-gpt-oss-120b: se espera 318s y se reintenta
+429 en groq-gpt-oss-120b: se espera 156s y se reintenta
+[rep 4/5] [50/90] LAB-C3-TELETRABAJO: 21 registros (blocked=7, executed=14)
+429 en groq-gpt-oss-120b: se espera 949s y se reintenta
+429 en groq-gpt-oss-120b: se espera 100s y se reintenta
+429 en groq-gpt-oss-120b: se espera 139s y se reintenta
+429 en groq-gpt-oss-120b: se espera 263s y se reintenta
+[rep 4/5] [51/90] LAB-C3-NOCTURNA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 752s y se reintenta
+429 en groq-gpt-oss-120b: se espera 148s y se reintenta
+429 en groq-gpt-oss-120b: se espera 167s y se reintenta
+[rep 4/5] [52/90] LAB-C3-MATRIMONIO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 868s y se reintenta
+429 en groq-gpt-oss-120b: se espera 163s y se reintenta
+429 en groq-gpt-oss-120b: se espera 194s y se reintenta
+429 en groq-gpt-oss-120b: se espera 159s y se reintenta
+429 en groq-gpt-oss-120b: se espera 85s y se reintenta
+[rep 4/5] [53/90] LAB-C3-PREAVISO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 869s y se reintenta
+429 en groq-gpt-oss-120b: se espera 303s y se reintenta
+429 en groq-gpt-oss-120b: se espera 285s y se reintenta
+[rep 4/5] [54/90] LAB-C3-TARDANZA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 919s y se reintenta
+429 en groq-gpt-oss-120b: se espera 188s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1096s y se reintenta
+[rep 4/5] [55/90] SAL-C1-ALTA: 33 registros (executed=33)
+429 en groq-gpt-oss-120b: se espera 544s y se reintenta
+429 en groq-gpt-oss-120b: se espera 186s y se reintenta
+429 en groq-gpt-oss-120b: se espera 753s y se reintenta
+[rep 4/5] [56/90] SAL-C1-CIRUGIA: 33 registros (blocked=11, executed=22)
+429 en groq-gpt-oss-120b: se espera 541s y se reintenta
+429 en groq-gpt-oss-120b: se espera 181s y se reintenta
+429 en groq-gpt-oss-120b: se espera 603s y se reintenta
+[rep 4/5] [57/90] SAL-C1-DERIVACION: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1080s y se reintenta
+429 en groq-gpt-oss-120b: se espera 344s y se reintenta
+429 en groq-gpt-oss-120b: se espera 480s y se reintenta
+429 en groq-gpt-oss-120b: se espera 78s y se reintenta
+429 en groq-gpt-oss-120b: se espera 567s y se reintenta
+[rep 4/5] [58/90] SAL-C1-IMC: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1242s y se reintenta
+429 en groq-gpt-oss-120b: se espera 535s y se reintenta
+429 en groq-gpt-oss-120b: se espera 436s y se reintenta
+429 en groq-gpt-oss-120b: se espera 301s y se reintenta
+[rep 4/5] [59/90] SAL-C1-TRIAJE: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 900s y se reintenta
+429 en groq-gpt-oss-120b: se espera 560s y se reintenta
+429 en groq-gpt-oss-120b: se espera 443s y se reintenta
+[rep 4/5] [60/90] SAL-C1-VACUNA-GRIPE: 33 registros (executed=33)
+429 en groq-gpt-oss-120b: se espera 1129s y se reintenta
+429 en groq-gpt-oss-120b: se espera 708s y se reintenta
+429 en groq-gpt-oss-120b: se espera 79s y se reintenta
+429 en groq-gpt-oss-120b: se espera 178s y se reintenta
+[rep 4/5] [61/90] SAL-C2-INTERNACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 924s y se reintenta
+429 en groq-gpt-oss-120b: se espera 426s y se reintenta
+429 en groq-gpt-oss-120b: se espera 367s y se reintenta
+429 en groq-gpt-oss-120b: se espera 84s y se reintenta
+[rep 4/5] [62/90] SAL-C2-DOSIS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 741s y se reintenta
+429 en groq-gpt-oss-120b: se espera 61s y se reintenta
+429 en groq-gpt-oss-120b: se espera 402s y se reintenta
+429 en groq-gpt-oss-120b: se espera 475s y se reintenta
+[rep 4/5] [63/90] SAL-C2-GESTACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 695s y se reintenta
+429 en groq-gpt-oss-120b: se espera 402s y se reintenta
+429 en groq-gpt-oss-120b: se espera 185s y se reintenta
+[rep 4/5] [64/90] SAL-C2-GOTEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 991s y se reintenta
+429 en groq-gpt-oss-120b: se espera 362s y se reintenta
+429 en groq-gpt-oss-120b: se espera 555s y se reintenta
+429 en groq-gpt-oss-120b: se espera 164s y se reintenta
+429 en groq-gpt-oss-120b: se espera 113s y se reintenta
+429 en groq-gpt-oss-120b: se espera 77s y se reintenta
+[rep 4/5] [65/90] SAL-C2-REINTEGRO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1203s y se reintenta
+429 en groq-gpt-oss-120b: se espera 537s y se reintenta
+429 en groq-gpt-oss-120b: se espera 97s y se reintenta
+429 en groq-gpt-oss-120b: se espera 357s y se reintenta
+[rep 4/5] [66/90] SAL-C2-RIESGO-CV: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 874s y se reintenta
+429 en groq-gpt-oss-120b: se espera 99s y se reintenta
+429 en groq-gpt-oss-120b: se espera 607s y se reintenta
+[rep 4/5] [67/90] SAL-C3-AYUNO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 898s y se reintenta
+429 en groq-gpt-oss-120b: se espera 283s y se reintenta
+429 en groq-gpt-oss-120b: se espera 176s y se reintenta
+429 en groq-gpt-oss-120b: se espera 377s y se reintenta
+[rep 4/5] [68/90] SAL-C3-DOSIS-DIARIA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 982s y se reintenta
+429 en groq-gpt-oss-120b: se espera 130s y se reintenta
+429 en groq-gpt-oss-120b: se espera 305s y se reintenta
+[rep 4/5] [69/90] SAL-C3-FIEBRE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1024s y se reintenta
+429 en groq-gpt-oss-120b: se espera 309s y se reintenta
+429 en groq-gpt-oss-120b: se espera 239s y se reintenta
+[rep 4/5] [70/90] SAL-C3-HIPERTENSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 856s y se reintenta
+429 en groq-gpt-oss-120b: se espera 229s y se reintenta
+429 en groq-gpt-oss-120b: se espera 395s y se reintenta
+429 en groq-gpt-oss-120b: se espera 124s y se reintenta
+[rep 4/5] [71/90] SAL-C3-INTERVALO: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 1215s y se reintenta
+429 en groq-gpt-oss-120b: se espera 236s y se reintenta
+429 en groq-gpt-oss-120b: se espera 178s y se reintenta
+[rep 4/5] [72/90] SAL-C3-RECETA: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 1349s y se reintenta
+429 en groq-gpt-oss-120b: se espera 637s y se reintenta
+429 en groq-gpt-oss-120b: se espera 461s y se reintenta
+[rep 4/5] [73/90] SEG-C1-RECLAMO: 30 registros (blocked=10, executed=20)
+429 en groq-gpt-oss-120b: se espera 1060s y se reintenta
+429 en groq-gpt-oss-120b: se espera 634s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+[rep 4/5] [74/90] SEG-C1-HOGAR: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 938s y se reintenta
+429 en groq-gpt-oss-120b: se espera 268s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1004s y se reintenta
+[rep 4/5] [75/90] SEG-C1-DEDUCIBLE: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1089s y se reintenta
+429 en groq-gpt-oss-120b: se espera 299s y se reintenta
+429 en groq-gpt-oss-120b: se espera 505s y se reintenta
+[rep 4/5] [76/90] SEG-C1-RIESGO-AUTO: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1108s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1001s y se reintenta
+[rep 4/5] [77/90] SEG-C1-VIDA: 39 registros (executed=39)
+429 en groq-gpt-oss-120b: se espera 884s y se reintenta
+429 en groq-gpt-oss-120b: se espera 266s y se reintenta
+429 en groq-gpt-oss-120b: se espera 386s y se reintenta
+[rep 4/5] [78/90] SEG-C1-ZONA-VIAJE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1081s y se reintenta
+429 en groq-gpt-oss-120b: se espera 239s y se reintenta
+429 en groq-gpt-oss-120b: se espera 245s y se reintenta
+[rep 4/5] [79/90] SEG-C2-BONUS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 928s y se reintenta
+429 en groq-gpt-oss-120b: se espera 228s y se reintenta
+429 en groq-gpt-oss-120b: se espera 300s y se reintenta
+[rep 4/5] [80/90] SEG-C2-INDEMNIZACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 807s y se reintenta
+429 en groq-gpt-oss-120b: se espera 260s y se reintenta
+429 en groq-gpt-oss-120b: se espera 582s y se reintenta
+[rep 4/5] [81/90] SEG-C2-PRIMA-VIDA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 700s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+429 en groq-gpt-oss-120b: se espera 239s y se reintenta
+[rep 4/5] [82/90] SEG-C2-PRORRATEO: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 810s y se reintenta
+429 en groq-gpt-oss-120b: se espera 237s y se reintenta
+429 en groq-gpt-oss-120b: se espera 207s y se reintenta
+429 en groq-gpt-oss-120b: se espera 341s y se reintenta
+[rep 4/5] [83/90] SEG-C2-RECARGO: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 902s y se reintenta
+429 en groq-gpt-oss-120b: se espera 327s y se reintenta
+429 en groq-gpt-oss-120b: se espera 281s y se reintenta
+429 en groq-gpt-oss-120b: se espera 191s y se reintenta
+[rep 4/5] [84/90] SEG-C2-REINTEGRO-VIAJE: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 946s y se reintenta
+429 en groq-gpt-oss-120b: se espera 278s y se reintenta
+429 en groq-gpt-oss-120b: se espera 252s y se reintenta
+429 en groq-gpt-oss-120b: se espera 121s y se reintenta
+[rep 4/5] [85/90] SEG-C3-CARENCIA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1058s y se reintenta
+429 en groq-gpt-oss-120b: se espera 194s y se reintenta
+429 en groq-gpt-oss-120b: se espera 276s y se reintenta
+[rep 4/5] [86/90] SEG-C3-NOVEL: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 987s y se reintenta
+429 en groq-gpt-oss-120b: se espera 204s y se reintenta
+429 en groq-gpt-oss-120b: se espera 127s y se reintenta
+429 en groq-gpt-oss-120b: se espera 133s y se reintenta
+[rep 4/5] [87/90] SEG-C3-PLAZO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 837s y se reintenta
+429 en groq-gpt-oss-120b: se espera 274s y se reintenta
+429 en groq-gpt-oss-120b: se espera 94s y se reintenta
+429 en groq-gpt-oss-120b: se espera 326s y se reintenta
+[rep 4/5] [88/90] SEG-C3-EXCLUSION: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 810s y se reintenta
+429 en groq-gpt-oss-120b: se espera 227s y se reintenta
+429 en groq-gpt-oss-120b: se espera 214s y se reintenta
+[rep 4/5] [89/90] SEG-C3-FRANQUICIA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 960s y se reintenta
+429 en groq-gpt-oss-120b: se espera 133s y se reintenta
+429 en groq-gpt-oss-120b: se espera 65s y se reintenta
+429 en groq-gpt-oss-120b: se espera 312s y se reintenta
+[rep 4/5] [90/90] SEG-C3-RENOVACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 988s y se reintenta
+429 en groq-gpt-oss-120b: se espera 290s y se reintenta
+429 en groq-gpt-oss-120b: se espera 397s y se reintenta
+429 en groq-gpt-oss-120b: se espera 151s y se reintenta
+[rep 5/5] [1/90] CRE-C1-DESTINO: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 871s y se reintenta
+429 en groq-gpt-oss-120b: se espera 329s y se reintenta
+429 en groq-gpt-oss-120b: se espera 337s y se reintenta
+[rep 5/5] [2/90] CRE-C1-HIPOTECA: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 894s y se reintenta
+429 en groq-gpt-oss-120b: se espera 293s y se reintenta
+429 en groq-gpt-oss-120b: se espera 969s y se reintenta
+[rep 5/5] [3/90] CRE-C1-PRESTAMO: 39 registros (executed=39)
+429 en groq-gpt-oss-120b: se espera 949s y se reintenta
+429 en groq-gpt-oss-120b: se espera 288s y se reintenta
+429 en groq-gpt-oss-120b: se espera 545s y se reintenta
+[rep 5/5] [4/90] CRE-C1-GARANTE: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 945s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+429 en groq-gpt-oss-120b: se espera 493s y se reintenta
+[rep 5/5] [5/90] CRE-C1-RIESGO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1075s y se reintenta
+429 en groq-gpt-oss-120b: se espera 297s y se reintenta
+429 en groq-gpt-oss-120b: se espera 286s y se reintenta
+429 en groq-gpt-oss-120b: se espera 347s y se reintenta
+[rep 5/5] [6/90] CRE-C1-TARJETA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 995s y se reintenta
+429 en groq-gpt-oss-120b: se espera 150s y se reintenta
+429 en groq-gpt-oss-120b: se espera 318s y se reintenta
+[rep 5/5] [7/90] CRE-C2-CUOTA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 945s y se reintenta
+429 en groq-gpt-oss-120b: se espera 328s y se reintenta
+429 en groq-gpt-oss-120b: se espera 260s y se reintenta
+429 en groq-gpt-oss-120b: se espera 120s y se reintenta
+[rep 5/5] [8/90] CRE-C2-PUNITORIO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 796s y se reintenta
+429 en groq-gpt-oss-120b: se espera 232s y se reintenta
+429 en groq-gpt-oss-120b: se espera 262s y se reintenta
+[rep 5/5] [9/90] CRE-C2-LIMITE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 834s y se reintenta
+429 en groq-gpt-oss-120b: se espera 261s y se reintenta
+429 en groq-gpt-oss-120b: se espera 154s y se reintenta
+429 en groq-gpt-oss-120b: se espera 290s y se reintenta
+[rep 5/5] [10/90] CRE-C2-PAGO-MINIMO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1203s y se reintenta
+429 en groq-gpt-oss-120b: se espera 347s y se reintenta
+429 en groq-gpt-oss-120b: se espera 144s y se reintenta
+429 en groq-gpt-oss-120b: se espera 252s y se reintenta
+[rep 5/5] [11/90] CRE-C2-PUNTAJE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1046s y se reintenta
+429 en groq-gpt-oss-120b: se espera 303s y se reintenta
+429 en groq-gpt-oss-120b: se espera 175s y se reintenta
+[rep 5/5] [12/90] CRE-C2-RELACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 931s y se reintenta
+429 en groq-gpt-oss-120b: se espera 220s y se reintenta
+429 en groq-gpt-oss-120b: se espera 188s y se reintenta
+429 en groq-gpt-oss-120b: se espera 164s y se reintenta
+[rep 5/5] [13/90] CRE-C3-BLOQUEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 878s y se reintenta
+429 en groq-gpt-oss-120b: se espera 241s y se reintenta
+429 en groq-gpt-oss-120b: se espera 142s y se reintenta
+429 en groq-gpt-oss-120b: se espera 136s y se reintenta
+[rep 5/5] [14/90] CRE-C3-BONIFICACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 978s y se reintenta
+429 en groq-gpt-oss-120b: se espera 359s y se reintenta
+429 en groq-gpt-oss-120b: se espera 96s y se reintenta
+[rep 5/5] [15/90] CRE-C3-MORA: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 820s y se reintenta
+429 en groq-gpt-oss-120b: se espera 383s y se reintenta
+429 en groq-gpt-oss-120b: se espera 726s y se reintenta
+[rep 5/5] [16/90] CRE-C3-CONDONACION: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 549s y se reintenta
+429 en groq-gpt-oss-120b: se espera 164s y se reintenta
+429 en groq-gpt-oss-120b: se espera 350s y se reintenta
+429 en groq-gpt-oss-120b: se espera 107s y se reintenta
+429 en groq-gpt-oss-120b: se espera 89s y se reintenta
+[rep 5/5] [17/90] CRE-C3-REFINANCIACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 859s y se reintenta
+429 en groq-gpt-oss-120b: se espera 84s y se reintenta
+429 en groq-gpt-oss-120b: se espera 102s y se reintenta
+429 en groq-gpt-oss-120b: se espera 372s y se reintenta
+429 en groq-gpt-oss-120b: se espera 169s y se reintenta
+429 en groq-gpt-oss-120b: se espera 129s y se reintenta
+[rep 5/5] [18/90] CRE-C3-TOPE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 920s y se reintenta
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 563s y se reintenta
+429 en groq-gpt-oss-120b: se espera 638s y se reintenta
+429 en groq-gpt-oss-120b: se espera 90s y se reintenta
+[rep 5/5] [19/90] FIS-C1-EDUCACION: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1555s y se reintenta
+429 en groq-gpt-oss-120b: se espera 167s y se reintenta
+429 en groq-gpt-oss-120b: se espera 74s y se reintenta
+429 en groq-gpt-oss-120b: se espera 820s y se reintenta
+[rep 5/5] [20/90] FIS-C1-EITC: 30 registros (executed=20, llm_error=10)
+429 en groq-gpt-oss-120b: se espera 1385s y se reintenta
+429 en groq-gpt-oss-120b: se espera 836s y se reintenta
+429 en groq-gpt-oss-120b: se espera 566s y se reintenta
+[rep 5/5] [21/90] FIS-C1-ESTADO-CIVIL: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1478s y se reintenta
+429 en groq-gpt-oss-120b: se espera 515s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1114s y se reintenta
+[rep 5/5] [22/90] FIS-C1-GASTO-HSA: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 391s y se reintenta
+429 en groq-gpt-oss-120b: se espera 330s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+429 en groq-gpt-oss-120b: se espera 372s y se reintenta
+429 en groq-gpt-oss-120b: se espera 261s y se reintenta
+429 en groq-gpt-oss-120b: se espera 76s y se reintenta
+[rep 5/5] [23/90] FIS-C1-OTROS-DEP: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1171s y se reintenta
+429 en groq-gpt-oss-120b: se espera 421s y se reintenta
+429 en groq-gpt-oss-120b: se espera 508s y se reintenta
+429 en groq-gpt-oss-120b: se espera 435s y se reintenta
+[rep 5/5] [24/90] FIS-C1-RESIDENCIA: 30 registros (blocked=10, executed=20)
+429 en groq-gpt-oss-120b: se espera 1279s y se reintenta
+429 en groq-gpt-oss-120b: se espera 539s y se reintenta
+429 en groq-gpt-oss-120b: se espera 162s y se reintenta
+[rep 5/5] [25/90] FIS-C2-CIUDADANIA: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1487s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1080s y se reintenta
+[rep 5/5] [26/90] FIS-C2-CREDITO-HIJOS: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1553s y se reintenta
+429 en groq-gpt-oss-120b: se espera 438s y se reintenta
+429 en groq-gpt-oss-120b: se espera 165s y se reintenta
+429 en groq-gpt-oss-120b: se espera 294s y se reintenta
+[rep 5/5] [27/90] FIS-C2-DEDUCCION-STD: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 1125s y se reintenta
+429 en groq-gpt-oss-120b: se espera 101s y se reintenta
+429 en groq-gpt-oss-120b: se espera 120s y se reintenta
+429 en groq-gpt-oss-120b: se espera 371s y se reintenta
+[rep 5/5] [28/90] FIS-C2-INGRESO-GANADO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 995s y se reintenta
+429 en groq-gpt-oss-120b: se espera 589s y se reintenta
+429 en groq-gpt-oss-120b: se espera 115s y se reintenta
+429 en groq-gpt-oss-120b: se espera 239s y se reintenta
+429 en groq-gpt-oss-120b: se espera 531s y se reintenta
+[rep 5/5] [29/90] FIS-C2-IRA-ANTICIPADO: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 420s y se reintenta
+429 en groq-gpt-oss-120b: se espera 261s y se reintenta
+429 en groq-gpt-oss-120b: se espera 399s y se reintenta
+[rep 5/5] [30/90] FIS-C2-VIAJE-RESERVISTA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 998s y se reintenta
+429 en groq-gpt-oss-120b: se espera 299s y se reintenta
+429 en groq-gpt-oss-120b: se espera 198s y se reintenta
+429 en groq-gpt-oss-120b: se espera 425s y se reintenta
+[rep 5/5] [31/90] FIS-C3-NO-CASADO: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1371s y se reintenta
+429 en groq-gpt-oss-120b: se espera 131s y se reintenta
+429 en groq-gpt-oss-120b: se espera 180s y se reintenta
+429 en groq-gpt-oss-120b: se espera 296s y se reintenta
+[rep 5/5] [32/90] FIS-C3-CUIDADO-FAMILIAR: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 1055s y se reintenta
+429 en groq-gpt-oss-120b: se espera 309s y se reintenta
+429 en groq-gpt-oss-120b: se espera 368s y se reintenta
+[rep 5/5] [33/90] FIS-C3-HIJO-CREDITO: 33 registros (executed=33)
+429 en groq-gpt-oss-120b: se espera 1143s y se reintenta
+429 en groq-gpt-oss-120b: se espera 214s y se reintenta
+429 en groq-gpt-oss-120b: se espera 396s y se reintenta
+[rep 5/5] [34/90] FIS-C3-MILLAS-MUDANZA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1027s y se reintenta
+429 en groq-gpt-oss-120b: se espera 313s y se reintenta
+429 en groq-gpt-oss-120b: se espera 308s y se reintenta
+[rep 5/5] [35/90] FIS-C3-OBLIGACION: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 832s y se reintenta
+429 en groq-gpt-oss-120b: se espera 277s y se reintenta
+429 en groq-gpt-oss-120b: se espera 102s y se reintenta
+429 en groq-gpt-oss-120b: se espera 227s y se reintenta
+[rep 5/5] [36/90] FIS-C3-PERDIDAS-JUEGO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 839s y se reintenta
+429 en groq-gpt-oss-120b: se espera 67s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+429 en groq-gpt-oss-120b: se espera 282s y se reintenta
+429 en groq-gpt-oss-120b: se espera 174s y se reintenta
+[rep 5/5] [37/90] LAB-C1-BONO: 39 registros (executed=39)
+429 en groq-gpt-oss-120b: se espera 1375s y se reintenta
+429 en groq-gpt-oss-120b: se espera 259s y se reintenta
+429 en groq-gpt-oss-120b: se espera 397s y se reintenta
+[rep 5/5] [38/90] LAB-C1-CATEGORIA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1087s y se reintenta
+429 en groq-gpt-oss-120b: se espera 298s y se reintenta
+429 en groq-gpt-oss-120b: se espera 407s y se reintenta
+[rep 5/5] [39/90] LAB-C1-VACACIONES: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1093s y se reintenta
+429 en groq-gpt-oss-120b: se espera 302s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1193s y se reintenta
+[rep 5/5] [40/90] LAB-C1-LICENCIA: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 280s y se reintenta
+429 en groq-gpt-oss-120b: se espera 415s y se reintenta
+429 en groq-gpt-oss-120b: se espera 283s y se reintenta
+[rep 5/5] [41/90] LAB-C1-PRUEBA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1022s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+429 en groq-gpt-oss-120b: se espera 406s y se reintenta
+429 en groq-gpt-oss-120b: se espera 173s y se reintenta
+[rep 5/5] [42/90] LAB-C1-REMOTO: 30 registros (executed=30)
+429 en groq-gpt-oss-120b: se espera 859s y se reintenta
+429 en groq-gpt-oss-120b: se espera 277s y se reintenta
+429 en groq-gpt-oss-120b: se espera 143s y se reintenta
+429 en groq-gpt-oss-120b: se espera 276s y se reintenta
+429 en groq-gpt-oss-120b: se espera 139s y se reintenta
+[rep 5/5] [43/90] LAB-C2-AGUINALDO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 804s y se reintenta
+429 en groq-gpt-oss-120b: se espera 105s y se reintenta
+429 en groq-gpt-oss-120b: se espera 446s y se reintenta
+429 en groq-gpt-oss-120b: se espera 311s y se reintenta
+[rep 5/5] [44/90] LAB-C2-APORTES: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 986s y se reintenta
+429 en groq-gpt-oss-120b: se espera 244s y se reintenta
+429 en groq-gpt-oss-120b: se espera 197s y se reintenta
+429 en groq-gpt-oss-120b: se espera 246s y se reintenta
+[rep 5/5] [45/90] LAB-C2-HORAS-EXTRA: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 976s y se reintenta
+429 en groq-gpt-oss-120b: se espera 365s y se reintenta
+429 en groq-gpt-oss-120b: se espera 405s y se reintenta
+[rep 5/5] [46/90] LAB-C2-INDEMNIZACION: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 1080s y se reintenta
+429 en groq-gpt-oss-120b: se espera 251s y se reintenta
+429 en groq-gpt-oss-120b: se espera 351s y se reintenta
+[rep 5/5] [47/90] LAB-C2-PRESENTISMO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1159s y se reintenta
+429 en groq-gpt-oss-120b: se espera 77s y se reintenta
+429 en groq-gpt-oss-120b: se espera 394s y se reintenta
+[rep 5/5] [48/90] LAB-C2-VIATICOS: 18 registros (blocked=6, executed=6, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 814s y se reintenta
+429 en groq-gpt-oss-120b: se espera 290s y se reintenta
+429 en groq-gpt-oss-120b: se espera 177s y se reintenta
+[rep 5/5] [49/90] LAB-C3-DESCANSO: 18 registros (executed=12, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 804s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+429 en groq-gpt-oss-120b: se espera 196s y se reintenta
+429 en groq-gpt-oss-120b: se espera 154s y se reintenta
+429 en groq-gpt-oss-120b: se espera 72s y se reintenta
+[rep 5/5] [50/90] LAB-C3-TELETRABAJO: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 839s y se reintenta
+429 en groq-gpt-oss-120b: se espera 305s y se reintenta
+429 en groq-gpt-oss-120b: se espera 222s y se reintenta
+[rep 5/5] [51/90] LAB-C3-NOCTURNA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 885s y se reintenta
+429 en groq-gpt-oss-120b: se espera 247s y se reintenta
+429 en groq-gpt-oss-120b: se espera 264s y se reintenta
+[rep 5/5] [52/90] LAB-C3-MATRIMONIO: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 814s y se reintenta
+429 en groq-gpt-oss-120b: se espera 264s y se reintenta
+429 en groq-gpt-oss-120b: se espera 134s y se reintenta
+429 en groq-gpt-oss-120b: se espera 227s y se reintenta
+[rep 5/5] [53/90] LAB-C3-PREAVISO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 989s y se reintenta
+429 en groq-gpt-oss-120b: se espera 144s y se reintenta
+429 en groq-gpt-oss-120b: se espera 73s y se reintenta
+429 en groq-gpt-oss-120b: se espera 284s y se reintenta
+[rep 5/5] [54/90] LAB-C3-TARDANZA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 847s y se reintenta
+429 en groq-gpt-oss-120b: se espera 225s y se reintenta
+429 en groq-gpt-oss-120b: se espera 265s y se reintenta
+[rep 5/5] [55/90] SAL-C1-ALTA: 33 registros (executed=22, llm_error=11)
+429 en groq-gpt-oss-120b: se espera 1284s y se reintenta
+429 en groq-gpt-oss-120b: se espera 298s y se reintenta
+429 en groq-gpt-oss-120b: se espera 547s y se reintenta
+[rep 5/5] [56/90] SAL-C1-CIRUGIA: 33 registros (blocked=11, executed=22)
+429 en groq-gpt-oss-120b: se espera 866s y se reintenta
+429 en groq-gpt-oss-120b: se espera 294s y se reintenta
+429 en groq-gpt-oss-120b: se espera 339s y se reintenta
+429 en groq-gpt-oss-120b: se espera 246s y se reintenta
+429 en groq-gpt-oss-120b: se espera 301s y se reintenta
+[rep 5/5] [57/90] SAL-C1-DERIVACION: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1138s y se reintenta
+429 en groq-gpt-oss-120b: se espera 372s y se reintenta
+429 en groq-gpt-oss-120b: se espera 550s y se reintenta
+[rep 5/5] [58/90] SAL-C1-IMC: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1178s y se reintenta
+429 en groq-gpt-oss-120b: se espera 340s y se reintenta
+429 en groq-gpt-oss-120b: se espera 516s y se reintenta
+[rep 5/5] [59/90] SAL-C1-TRIAJE: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1126s y se reintenta
+429 en groq-gpt-oss-120b: se espera 359s y se reintenta
+429 en groq-gpt-oss-120b: se espera 421s y se reintenta
+[rep 5/5] [60/90] SAL-C1-VACUNA-GRIPE: 33 registros (blocked=11, executed=22)
+429 en groq-gpt-oss-120b: se espera 1162s y se reintenta
+429 en groq-gpt-oss-120b: se espera 199s y se reintenta
+429 en groq-gpt-oss-120b: se espera 261s y se reintenta
+429 en groq-gpt-oss-120b: se espera 211s y se reintenta
+[rep 5/5] [61/90] SAL-C2-INTERNACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1215s y se reintenta
+429 en groq-gpt-oss-120b: se espera 183s y se reintenta
+429 en groq-gpt-oss-120b: se espera 140s y se reintenta
+429 en groq-gpt-oss-120b: se espera 220s y se reintenta
+[rep 5/5] [62/90] SAL-C2-DOSIS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 928s y se reintenta
+429 en groq-gpt-oss-120b: se espera 418s y se reintenta
+429 en groq-gpt-oss-120b: se espera 204s y se reintenta
+[rep 5/5] [63/90] SAL-C2-GESTACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1001s y se reintenta
+429 en groq-gpt-oss-120b: se espera 264s y se reintenta
+429 en groq-gpt-oss-120b: se espera 300s y se reintenta
+[rep 5/5] [64/90] SAL-C2-GOTEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 954s y se reintenta
+429 en groq-gpt-oss-120b: se espera 475s y se reintenta
+429 en groq-gpt-oss-120b: se espera 203s y se reintenta
+429 en groq-gpt-oss-120b: se espera 143s y se reintenta
+429 en groq-gpt-oss-120b: se espera 173s y se reintenta
+[rep 5/5] [65/90] SAL-C2-REINTEGRO: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 894s y se reintenta
+429 en groq-gpt-oss-120b: se espera 297s y se reintenta
+429 en groq-gpt-oss-120b: se espera 351s y se reintenta
+429 en groq-gpt-oss-120b: se espera 208s y se reintenta
+[rep 5/5] [66/90] SAL-C2-RIESGO-CV: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 1009s y se reintenta
+429 en groq-gpt-oss-120b: se espera 322s y se reintenta
+429 en groq-gpt-oss-120b: se espera 288s y se reintenta
+[rep 5/5] [67/90] SAL-C3-AYUNO: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 976s y se reintenta
+429 en groq-gpt-oss-120b: se espera 235s y se reintenta
+429 en groq-gpt-oss-120b: se espera 220s y se reintenta
+[rep 5/5] [68/90] SAL-C3-DOSIS-DIARIA: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 931s y se reintenta
+429 en groq-gpt-oss-120b: se espera 229s y se reintenta
+429 en groq-gpt-oss-120b: se espera 74s y se reintenta
+429 en groq-gpt-oss-120b: se espera 267s y se reintenta
+[rep 5/5] [69/90] SAL-C3-FIEBRE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1015s y se reintenta
+429 en groq-gpt-oss-120b: se espera 268s y se reintenta
+429 en groq-gpt-oss-120b: se espera 155s y se reintenta
+429 en groq-gpt-oss-120b: se espera 228s y se reintenta
+[rep 5/5] [70/90] SAL-C3-HIPERTENSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 558s y se reintenta
+429 en groq-gpt-oss-120b: se espera 227s y se reintenta
+429 en groq-gpt-oss-120b: se espera 376s y se reintenta
+429 en groq-gpt-oss-120b: se espera 227s y se reintenta
+429 en groq-gpt-oss-120b: se espera 125s y se reintenta
+429 en groq-gpt-oss-120b: se espera 160s y se reintenta
+[rep 5/5] [71/90] SAL-C3-INTERVALO: 24 registros (blocked=8, executed=16)
+429 en groq-gpt-oss-120b: se espera 705s y se reintenta
+429 en groq-gpt-oss-120b: se espera 227s y se reintenta
+429 en groq-gpt-oss-120b: se espera 606s y se reintenta
+429 en groq-gpt-oss-120b: se espera 83s y se reintenta
+[rep 5/5] [72/90] SAL-C3-RECETA: 21 registros (executed=21)
+429 en groq-gpt-oss-120b: se espera 1062s y se reintenta
+429 en groq-gpt-oss-120b: se espera 1225s y se reintenta
+429 en groq-gpt-oss-120b: se espera 265s y se reintenta
+[rep 5/5] [73/90] SEG-C1-RECLAMO: 30 registros (blocked=10, executed=20)
+429 en groq-gpt-oss-120b: se espera 1296s y se reintenta
+429 en groq-gpt-oss-120b: se espera 379s y se reintenta
+429 en groq-gpt-oss-120b: se espera 161s y se reintenta
+429 en groq-gpt-oss-120b: se espera 82s y se reintenta
+429 en groq-gpt-oss-120b: se espera 161s y se reintenta
+429 en groq-gpt-oss-120b: se espera 202s y se reintenta
+429 en groq-gpt-oss-120b: se espera 64s y se reintenta
+[rep 5/5] [74/90] SEG-C1-HOGAR: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1046s y se reintenta
+429 en groq-gpt-oss-120b: se espera 810s y se reintenta
+429 en groq-gpt-oss-120b: se espera 384s y se reintenta
+[rep 5/5] [75/90] SEG-C1-DEDUCIBLE: 27 registros (blocked=9, executed=18)
+429 en groq-gpt-oss-120b: se espera 1011s y se reintenta
+429 en groq-gpt-oss-120b: se espera 65s y se reintenta
+429 en groq-gpt-oss-120b: se espera 547s y se reintenta
+429 en groq-gpt-oss-120b: se espera 94s y se reintenta
+429 en groq-gpt-oss-120b: se espera 334s y se reintenta
+[rep 5/5] [76/90] SEG-C1-RIESGO-AUTO: 27 registros (executed=27)
+429 en groq-gpt-oss-120b: se espera 1020s y se reintenta
+429 en groq-gpt-oss-120b: se espera 933s y se reintenta
+429 en groq-gpt-oss-120b: se espera 176s y se reintenta
+[rep 5/5] [77/90] SEG-C1-VIDA: 39 registros (blocked=26, executed=13)
+429 en groq-gpt-oss-120b: se espera 1073s y se reintenta
+429 en groq-gpt-oss-120b: se espera 311s y se reintenta
+429 en groq-gpt-oss-120b: se espera 264s y se reintenta
+429 en groq-gpt-oss-120b: se espera 202s y se reintenta
+[rep 5/5] [78/90] SEG-C1-ZONA-VIAJE: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 1099s y se reintenta
+429 en groq-gpt-oss-120b: se espera 191s y se reintenta
+429 en groq-gpt-oss-120b: se espera 217s y se reintenta
+429 en groq-gpt-oss-120b: se espera 210s y se reintenta
+[rep 5/5] [79/90] SEG-C2-BONUS: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 960s y se reintenta
+429 en groq-gpt-oss-120b: se espera 230s y se reintenta
+429 en groq-gpt-oss-120b: se espera 280s y se reintenta
+[rep 5/5] [80/90] SEG-C2-INDEMNIZACION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 992s y se reintenta
+429 en groq-gpt-oss-120b: se espera 292s y se reintenta
+429 en groq-gpt-oss-120b: se espera 370s y se reintenta
+429 en groq-gpt-oss-120b: se espera 166s y se reintenta
+429 en groq-gpt-oss-120b: se espera 175s y se reintenta
+[rep 5/5] [81/90] SEG-C2-PRIMA-VIDA: 18 registros (blocked=6, executed=6, runtime_error=6)
+429 en groq-gpt-oss-120b: se espera 1050s y se reintenta
+429 en groq-gpt-oss-120b: se espera 101s y se reintenta
+429 en groq-gpt-oss-120b: se espera 339s y se reintenta
+[rep 5/5] [82/90] SEG-C2-PRORRATEO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1073s y se reintenta
+429 en groq-gpt-oss-120b: se espera 206s y se reintenta
+429 en groq-gpt-oss-120b: se espera 194s y se reintenta
+429 en groq-gpt-oss-120b: se espera 166s y se reintenta
+[rep 5/5] [83/90] SEG-C2-RECARGO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 826s y se reintenta
+429 en groq-gpt-oss-120b: se espera 269s y se reintenta
+429 en groq-gpt-oss-120b: se espera 237s y se reintenta
+429 en groq-gpt-oss-120b: se espera 83s y se reintenta
+429 en groq-gpt-oss-120b: se espera 103s y se reintenta
+[rep 5/5] [84/90] SEG-C2-REINTEGRO-VIAJE: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1035s y se reintenta
+429 en groq-gpt-oss-120b: se espera 243s y se reintenta
+429 en groq-gpt-oss-120b: se espera 323s y se reintenta
+429 en groq-gpt-oss-120b: se espera 64s y se reintenta
+[rep 5/5] [85/90] SEG-C3-CARENCIA: 24 registros (executed=24)
+429 en groq-gpt-oss-120b: se espera 822s y se reintenta
+429 en groq-gpt-oss-120b: se espera 243s y se reintenta
+429 en groq-gpt-oss-120b: se espera 251s y se reintenta
+[rep 5/5] [86/90] SEG-C3-NOVEL: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 920s y se reintenta
+429 en groq-gpt-oss-120b: se espera 260s y se reintenta
+429 en groq-gpt-oss-120b: se espera 175s y se reintenta
+[rep 5/5] [87/90] SEG-C3-PLAZO: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 1078s y se reintenta
+429 en groq-gpt-oss-120b: se espera 92s y se reintenta
+429 en groq-gpt-oss-120b: se espera 372s y se reintenta
+[rep 5/5] [88/90] SEG-C3-EXCLUSION: 18 registros (executed=18)
+429 en groq-gpt-oss-120b: se espera 913s y se reintenta
+429 en groq-gpt-oss-120b: se espera 258s y se reintenta
+429 en groq-gpt-oss-120b: se espera 131s y se reintenta
+429 en groq-gpt-oss-120b: se espera 101s y se reintenta
+[rep 5/5] [89/90] SEG-C3-FRANQUICIA: 18 registros (blocked=6, executed=12)
+429 en groq-gpt-oss-120b: se espera 807s y se reintenta
+429 en groq-gpt-oss-120b: se espera 109s y se reintenta
+429 en groq-gpt-oss-120b: se espera 217s y se reintenta
+429 en groq-gpt-oss-120b: se espera 295s y se reintenta
+[rep 5/5] [90/90] SEG-C3-RENOVACION: 18 registros (blocked=6, executed=12)
+listo: 7718 registros en /workspace/out/experiment_results.jsonl
