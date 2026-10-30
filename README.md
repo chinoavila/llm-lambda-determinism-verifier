@@ -58,7 +58,7 @@ Los constructores del ADT son la frontera: lo que no se puede escribir en el DSL
 
 ## Alcance
 
-Este repositorio es **solo para construir el pipeline**: un MVP de laboratorio, pensado para armarse en aproximadamente una semana entre 3 desarrolladores en paralelo (ver [`specs/roadmap.md`](specs/roadmap.md)). No ejecuta experimentos, no recolecta datos, no calcula métricas, no produce análisis ni informes. Esas actividades son posteriores y viven fuera de acá. La UI permite lanzar corridas y mirar sus registros, pero tampoco calcula métricas.
+Este repositorio es **solo para construir el pipeline**: un MVP de laboratorio, pensado para armarse en aproximadamente una semana entre 3 desarrolladores en paralelo (ver [`specs/roadmap.md`](specs/roadmap.md)). No ejecuta experimentos, no recolecta datos, no calcula métricas, no produce análisis ni informes. Esas actividades son posteriores y viven fuera de acá. La UI permite lanzar corridas, mirar sus registros y ver un resumen de cada corrida (`pass@1` por grupo, desenlaces, duración y errores), calculado en el navegador; el análisis del experimento sigue siendo aparte.
 
 Está terminado cuando alguien puede clonar el repositorio, configurar credenciales de un LLM en `.env` y correr `docker compose up --build` para obtener el pipeline corriendo sobre los tres grupos — sin escribir código adicional.
 
@@ -130,7 +130,7 @@ docker compose up --build ui
 docker compose down
 ```
 
-Cada renglón del JSONL es un escenario de una generación ([`contracts/output-record-schema.json`](contracts/output-record-schema.json)). Calcular métricas a partir de ahí es trabajo del experimento, no de este repositorio. Cómo armar el corpus: [`docs/corpus.md`](docs/corpus.md).
+Cada renglón del JSONL es un escenario de una generación ([`contracts/output-record-schema.json`](contracts/output-record-schema.json)). El análisis a partir de ahí es trabajo del experimento; la UI solo muestra un resumen por corrida. Cómo armar el corpus: [`docs/corpus.md`](docs/corpus.md).
 
 No hace falta instalar GHC ni Python localmente: todo corre dentro de los contenedores. Ver [`specs/roadmap.md`](specs/roadmap.md) para el plan día a día.
 

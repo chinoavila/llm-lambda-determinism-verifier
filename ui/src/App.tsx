@@ -5,12 +5,14 @@ import { healthChecks } from "./health";
 import { CorpusPage } from "./pages/CorpusPage";
 import { RecordsPage } from "./pages/RecordsPage";
 import { RunsPage } from "./pages/RunsPage";
+import { StatsPage } from "./pages/StatsPage";
 import { navigate, usePath } from "./router";
 
 const SECTIONS = [
   { path: "/corpus", label: "Corpus", intro: "Las reglas del experimento: enunciado, variables, AST y Python canónicos, escenarios y revisión." },
   { path: "/corridas", label: "Corridas", intro: "Correr el pipeline con los tres grupos sobre el corpus o las fixtures." },
   { path: "/registros", label: "Registros", intro: "Los renglones de cada corrida, con la respuesta cruda del LLM y el expected de su escenario." },
+  { path: "/estadisticas", label: "Estadísticas", intro: "Resumen de una corrida: pass@1 por grupo y su desglose, desenlaces, duración y errores." },
 ] as const;
 
 /** Presenta estado/carga/error de los servicios y permite reintentar la consulta. */
@@ -50,7 +52,7 @@ export default function App() {
     if (path === "/") navigate("/corpus");
   }, [path]);
   const current = SECTIONS.find((s) => path.startsWith(s.path)) ?? SECTIONS[0];
-  const runId = path.startsWith("/registros/") ? decodeURIComponent(path.slice("/registros/".length)) || null : null;
+  const runId = path.startsWith(`${current.path}/`) ? decodeURIComponent(path.slice(current.path.length + 1)) || null : null;
 
   const [health, setHealth] = useState<Health | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +95,7 @@ export default function App() {
       {current.path === "/corpus" && <CorpusPage onChanged={loadHealth} />}
       {current.path === "/corridas" && <RunsPage health={health} onChanged={loadHealth} />}
       {current.path === "/registros" && <RecordsPage runId={runId} />}
+      {current.path === "/estadisticas" && <StatsPage runId={runId} />}
     </div>
   );
 }

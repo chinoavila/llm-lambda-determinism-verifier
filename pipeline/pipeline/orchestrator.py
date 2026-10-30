@@ -37,7 +37,7 @@ DEFAULT_ENGINE_CMD = (os.environ.get("ENGINE_BIN", "engine"),)
 GAMMA_TIMEOUT_SECONDS = 10.0
 ENGINE_TIMEOUT_SECONDS = 10.0
 
-SCHEMA_VERSION = "2.0"
+SCHEMA_VERSION = "2.1"
 # Escenario único con el que se lee una fixture como caso (ver `read_case`).
 FIXTURE_SCENARIO_ID = "S1"
 AST_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contracts" / "ast-schema.json"
@@ -82,6 +82,8 @@ class Record(TypedDict):
     result: dict[str, Any] | None
     error: dict[str, str] | None
     duration_ms: int | None
+    request_params: dict[str, Any]
+    usage: dict[str, Any] | None
 
 
 # Ejecuta la salida cruda del LLM con los datos de UN escenario (`env`) y Γ del caso.
@@ -394,6 +396,8 @@ def route_call(
             "llm_raw": llm_raw,
             **verdict,
             "duration_ms": duration_ms,
+            "request_params": dict(call.request_params),
+            "usage": dict(call.usage) if call.usage is not None else None,
         }
 
     if call.outcome != "ok" or call.content is None:
@@ -439,21 +443,108 @@ def run_case(
         raise ValueError("repetitions debe ser >= 1")
     records: list[Record] = []
     for repetition in range(1, repetitions + 1):
-        for group in GROUPS:
-            call = assignment.complete(build_messages(group, case.description, gamma))
-            records.extend(
-                route_call(
-                    call,
-                    runners[group],
-                    case.scenarios,
-                    gamma=gamma,
-                    run_id=run_id,
-                    case_id=case.case_id,
-                    group=group,
-                    repetition=repetition,
-                )
-            )
+        records.extend(
+            run_repetition(case, assignment, runners, gamma, run_id=run_id, repetition=repetition)
+        )
     return records
+
+
+def run_repetition(
+    case: Case,
+    assignment: Completer,
+    runners: Mapping[Group, Runner],
+    gamma: Mapping[str, str],
+    *,
+    run_id: str,
+    repetition: int,
+    groups: Sequence[Group] = GROUPS,
+) -> list[Record]:
+    """Una ronda del caso: una llamada por grupo de `groups`, todas al modelo de `assignment`."""
+    records: list[Record] = []
+    for group in groups:
+        call = assignment.complete(build_messages(group, case.description, gamma))
+        records.extend(
+            route_call(
+                call,
+                runners[group],
+                case.scenarios,
+                gamma=gamma,
+                run_id=run_id,
+                case_id=case.case_id,
+                group=group,
+                repetition=repetition,
+            )
+        )
+    return records
+
+
+# Fallas de infraestructura, no del modelo: la llamada queda pendiente y `--resume` la reintenta.
+PENDING_CODES = frozenset({"quota_exhausted", "transport_error"})
+CallKey = tuple[str, int, str]  # (case_id, repetition, group)
+
+
+def is_pending(record: Mapping[str, Any]) -> bool:
+    error = record.get("error")
+    return (
+        record.get("outcome") == "llm_error"
+        and isinstance(error, dict)
+        and error.get("code") in PENDING_CODES
+    )
+
+
+def call_key(record: Mapping[str, Any]) -> CallKey:
+    return (str(record.get("case_id")), int(record.get("repetition", 0)), str(record.get("group")))
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Registros del JSONL. Se separa solo por `\\n`: `llm_raw` puede traer U+2028 u otros
+    saltos de línea que `splitlines` cortaría. Un último renglón sin `\\n` que no es JSON
+    es una escritura que cortó la cancelación: se ignora, y `drop_pending` lo saca."""
+    if not path.exists():
+        return []
+    *lines, last = path.read_bytes().split(b"\n")
+    records = [json.loads(line) for line in lines if line.strip()]
+    if last.strip():
+        try:
+            records.append(json.loads(last))
+        except ValueError:
+            pass
+    return records
+
+
+def has_partial_line(path: Path) -> bool:
+    if not path.exists():
+        return False
+    with path.open("rb") as f:
+        if f.seek(0, os.SEEK_END) == 0:
+            return False
+        f.seek(-1, os.SEEK_END)
+        return f.read(1) != b"\n"
+
+
+def resolved_calls(path: Path) -> set[CallKey]:
+    """Llamadas ya resueltas de una corrida: las que tienen registros y no quedaron pendientes."""
+    records = read_jsonl(path)
+    pending = {call_key(r) for r in records if is_pending(r)}
+    return {call_key(r) for r in records} - pending
+
+
+def drop_pending(path: Path) -> int:
+    """Reescribe el JSONL sin los registros de llamadas pendientes ni un último renglón
+    cortado (lo próximo que se agregue tiene que empezar en un renglón propio); devuelve
+    cuántos registros sacó. Se reemplaza de una vez (archivo temporal + rename) para no
+    dejarlo a medias."""
+    records = read_jsonl(path)
+    pending = {call_key(r) for r in records if is_pending(r)}
+    kept = [r for r in records if call_key(r) not in pending]
+    if len(kept) == len(records) and not has_partial_line(path):
+        return 0
+    tmp = path.with_suffix(".jsonl.tmp")
+    with tmp.open("w", encoding="utf-8", newline="\n") as f:
+        for r in kept:
+            f.write(json.dumps(r, ensure_ascii=False, separators=(",", ":")) + "\n")
+    tmp.replace(path)
+    return len(records) - len(kept)
 
 
 def append_jsonl(path: Path, records: Iterable[Record]) -> None:

@@ -14,6 +14,17 @@ import System.IO (hPutStrLn, hSetEncoding, stderr)
 
 import Engine.Cli (Response (..), run)
 
+-- Qué hace este módulo: es la puerta de entrada del programa y el único lugar
+-- con efectos (leer y escribir). Lee los argumentos (--env, --print-gamma) y la
+-- respuesta del LLM por la entrada estándar, se los pasa a run (Cli.hs), y
+-- escribe lo que run devuelve: el veredicto JSON, los mensajes de error y el
+-- código de salida.
+-- Todo el resto del motor (Json, TypeCheck, Eval, Cli) son funciones puras:
+-- reciben datos y devuelven datos, sin leer ni escribir nada. Separar la parte
+-- pura de la parte con efectos es una idea central de la programación funcional.
+-- Si algo falla de forma inesperada, internalError sale con código 70.
+
+
 -- | IO alrededor de 'run' (contrato en @contracts/README.md@ §2). La salida
 -- se calcula entera antes de escribir: si algo falla, stdout queda vacío y
 -- se sale con 70, nunca con un código que el orquestador confunda con un

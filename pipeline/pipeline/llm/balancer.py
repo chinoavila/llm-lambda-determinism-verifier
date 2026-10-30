@@ -43,6 +43,7 @@ from pipeline.llm.ratelimit import RateLimitSnapshot, parse_headers
 from pipeline.llm.transport import Transport, TransportError, UrllibTransport
 
 log = logging.getLogger(__name__)
+LONG_WAIT_SECONDS = 60.0  # esperas que vale la pena avisar en el log de la corrida
 
 
 class NoModelAvailable(Exception):
@@ -140,6 +141,8 @@ class Balancer:
                         f"el próximo modelo se libera en {wait:.1f}s "
                         f"(> max_wait_seconds={self.settings.max_wait_seconds})"
                     )
+                if wait >= LONG_WAIT_SECONDS:
+                    log.warning("sin cuota en el pool: se espera %.0fs a que se libere un modelo", wait)
                 self._cond.wait(timeout=wait)
 
     def _ready_at(self, st: _ModelState, now: float) -> float:
@@ -269,6 +272,8 @@ class ModelAssignment:
                     attempts.append(Attempt(status, "429 rate limit", duration, 0.0))
                     return finish("quota_exhausted", raw)
                 attempts.append(Attempt(status, "429 rate limit", duration, wait))
+                if wait >= LONG_WAIT_SECONDS:
+                    log.warning("429 en %s: se espera %.0fs y se reintenta", ep.name, wait)
                 b.sleep(wait)
                 continue
 

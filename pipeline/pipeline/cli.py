@@ -16,11 +16,13 @@ agregan al JSONL apenas termina, así una corrida cortada conserva lo hecho.
 from __future__ import annotations
 
 import argparse
+import json
 import secrets
 import sys
 from collections import Counter
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Container, Mapping, Sequence
 from contextlib import AbstractContextManager
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
@@ -35,9 +37,12 @@ from pipeline.llm import (
     NoModelAvailable,
     build_balancer,
     load_config,
+    with_run_params,
 )
 from pipeline.orchestrator import (
     DEFAULT_ENGINE_CMD,
+    GROUPS,
+    CallKey,
     Case,
     CaseError,
     Completer,
@@ -46,9 +51,11 @@ from pipeline.orchestrator import (
     Runner,
     append_jsonl,
     case_gamma,
+    drop_pending,
     per_scenario,
     read_case,
-    run_case,
+    resolved_calls,
+    run_repetition,
     run_treatment,
 )
 
@@ -111,17 +118,30 @@ def run(
     repetitions: int,
     runners: Mapping[Group, Runner] = RUNNERS,
     log: Callable[[str], None] = lambda msg: print(msg, file=sys.stderr, flush=True),
+    resolved: Container[CallKey] = frozenset(),
 ) -> int:
-    """Corre los casos en orden y devuelve cuántos registros escribió."""
+    """Corre por rondas: la repetición 1 de todos los casos, después la 2, y así; si la
+    corrida se corta, lo hecho queda balanceado entre casos. Cada (caso, repetición) usa un
+    solo modelo para sus tres grupos. Saltea las llamadas de `resolved` (`--resume`).
+    Devuelve cuántos registros escribió."""
     written = 0
-    for i, (case, gamma) in enumerate(prepared, start=1):
-        with balancer.acquire() as assignment:
-            records = run_case(case, assignment, runners, gamma, run_id=run_id, repetitions=repetitions)
-        append_jsonl(out, records)
-        written += len(records)
-        outcomes = Counter(r["outcome"] for r in records)
-        summary = ", ".join(f"{o}={n}" for o, n in sorted(outcomes.items()))
-        log(f"[{i}/{len(prepared)}] {case.case_id}: {len(records)} registros ({summary})")
+    for repetition in range(1, repetitions + 1):
+        for i, (case, gamma) in enumerate(prepared, start=1):
+            groups = [g for g in GROUPS if (case.case_id, repetition, g) not in resolved]
+            if not groups:
+                continue
+            with balancer.acquire() as assignment:
+                records = run_repetition(
+                    case, assignment, runners, gamma, run_id=run_id, repetition=repetition, groups=groups
+                )
+            append_jsonl(out, records)
+            written += len(records)
+            outcomes = Counter(r["outcome"] for r in records)
+            summary = ", ".join(f"{o}={n}" for o, n in sorted(outcomes.items()))
+            log(
+                f"[rep {repetition}/{repetitions}] [{i}/{len(prepared)}] {case.case_id}: "
+                f"{len(records)} registros ({summary})"
+            )
     return written
 
 
@@ -154,17 +174,104 @@ def check_cases(
     return 1 if failed else 0
 
 
+@dataclass(frozen=True)
+class RunSpec:
+    """Condiciones de una corrida, guardadas en `out/<run_id>.run.json` para reanudarla igual."""
+
+    cases: tuple[Path, ...]
+    repetitions: int
+    model: str | None
+    temperature: float | None
+
+
+def run_file(out_dir: Path, run_id: str) -> Path:
+    return out_dir / f"{run_id}.run.json"
+
+
+def _repo_relative(p: Path) -> str:
+    try:
+        return p.resolve().relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(p.resolve())
+
+
+def write_run_file(path: Path, spec: RunSpec) -> None:
+    data = {
+        "cases": [_repo_relative(p) for p in spec.cases],
+        "repetitions": spec.repetitions,
+        "model": spec.model,
+        "temperature": spec.temperature,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def read_run_file(path: Path) -> RunSpec | None:
+    """None si la corrida es anterior a este archivo (no guardó sus condiciones)."""
+    if not path.exists():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return RunSpec(
+        cases=tuple(REPO_ROOT / c for c in data["cases"]),
+        repetitions=int(data["repetitions"]),
+        model=data.get("model"),
+        temperature=data.get("temperature"),
+    )
+
+
+def resume_spec(
+    saved: RunSpec | None,
+    cases: Sequence[Path] | None,
+    repetitions: int | None,
+    model: str | None,
+    temperature: float | None,
+) -> RunSpec:
+    """Condiciones para reanudar: las guardadas, sin dejar que se cambien a mitad de corrida.
+    Una corrida sin archivo de condiciones se lanzó sin modelo fijo ni temperatura: se
+    reanuda igual, con los casos y repeticiones que se indiquen."""
+    if saved is None:
+        if model is not None or temperature is not None:
+            raise ValueError(
+                "la corrida no guardó sus condiciones y se lanzó sin modelo fijo ni temperatura: "
+                "se reanuda así, sin --model ni --temperature"
+            )
+        return RunSpec(tuple(cases or [DEFAULT_CASES]), repetitions or 1, None, None)
+    if cases and {p.resolve() for p in case_paths(cases)} != {p.resolve() for p in saved.cases}:
+        raise ValueError("los casos no son los de la corrida original (se toman de su archivo .run.json)")
+    for name, given, kept in (("--repetitions", repetitions, saved.repetitions), ("--model", model, saved.model),
+                              ("--temperature", temperature, saved.temperature)):  # fmt: skip
+        if given is not None and given != kept:
+            raise ValueError(f"{name} {given} no coincide con la corrida original ({kept})")
+    return saved
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m pipeline")
     sub = parser.add_subparsers(dest="command", required=True)
     p_run = sub.add_parser("run", help="corre los casos con los tres grupos y escribe el JSONL")
     p_run.add_argument(
-        "cases", nargs="*", type=Path, default=[DEFAULT_CASES],
+        "cases", nargs="*", type=Path, default=None,
         help=f"archivos o directorios de casos (por defecto {DEFAULT_CASES.relative_to(REPO_ROOT)})",
     )  # fmt: skip
-    p_run.add_argument("--repetitions", type=int, default=1, help="rondas de triple llamada por caso")
+    p_run.add_argument("--repetitions", type=int, default=None, help="rondas de triple llamada por caso (por defecto 1)")
+    p_run.add_argument(
+        "--model", default=None,
+        help="id de modelo de llm.toml; toda la corrida usa solo ese modelo (por defecto, el balanceo por prioridad)",
+    )  # fmt: skip
+    p_run.add_argument(
+        "--temperature", type=float, default=None,
+        help="temperatura de todas las llamadas (por defecto, la de params o la del proveedor)",
+    )  # fmt: skip
     p_run.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     p_run.add_argument("--run-id", default=None, help="por defecto, fecha y hora UTC más un sufijo")
+    p_run.add_argument(
+        "--resume", action="store_true",
+        help="continúa la corrida --run-id con sus condiciones guardadas: saltea las llamadas resueltas y reintenta las cortadas por cuota o red",
+    )  # fmt: skip
+    p_run.add_argument(
+        "--wait-quota", action="store_true",
+        help="sin cuota, espera lo que pida el proveedor (incluso horas) en vez de cortar la corrida",
+    )  # fmt: skip
     p_check = sub.add_parser("check-case", help="verifica reglas del corpus (docs/corpus.md)")
     p_check.add_argument("cases", nargs="+", type=Path, help="archivos o directorios de reglas")
     p_check.add_argument(
@@ -186,14 +293,31 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         return serve(args.host, args.port)
 
-    if args.repetitions < 1:
+    if args.repetitions is not None and args.repetitions < 1:
         parser.error("--repetitions debe ser >= 1")
+    if args.temperature is not None and not 0 <= args.temperature <= 2:
+        parser.error("--temperature debe estar entre 0 y 2")
+    if args.resume and not args.run_id:
+        parser.error("--resume necesita --run-id")
     run_id = args.run_id or new_run_id()
     out = args.out_dir / f"{run_id}.jsonl"
+    if args.resume:
+        if not out.exists():
+            parser.error(f"--resume: no existe {out}")
+        try:
+            spec = resume_spec(
+                read_run_file(run_file(args.out_dir, run_id)), args.cases, args.repetitions, args.model, args.temperature
+            )
+        except (CaseError, ValueError) as e:
+            parser.error(f"--resume: {e}")
+    else:
+        spec = RunSpec(tuple(args.cases or [DEFAULT_CASES]), args.repetitions or 1, args.model, args.temperature)
 
     try:
-        prepared = prepare(args.cases)
-        config = load_config()
+        prepared = prepare(spec.cases)
+        config = with_run_params(
+            load_config(), model=spec.model, temperature=spec.temperature, wait_for_quota=args.wait_quota
+        )
     except MissingCredentials as e:
         print(
             f"sin credenciales del LLM ({e}): se omite la corrida. "
@@ -205,9 +329,28 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error antes de empezar: {e}", file=sys.stderr)
         return 1
 
-    print(f"run_id={run_id}: {len(prepared)} casos, {args.repetitions} repeticiones -> {out}", file=sys.stderr)
+    resolved: set[CallKey] = set()
+    if args.resume:
+        dropped = drop_pending(out)
+        resolved = resolved_calls(out)
+        print(
+            f"reanudando {run_id}: {len(resolved)} llamadas ya resueltas, "
+            f"{dropped} registros pendientes descartados para reintentar",
+            file=sys.stderr,
+        )
+    else:
+        write_run_file(run_file(args.out_dir, run_id), replace(spec, cases=tuple(case_paths(spec.cases))))
+    print(f"run_id={run_id}: {len(prepared)} casos, {spec.repetitions} repeticiones -> {out}", file=sys.stderr)
+    print(
+        f"modelo={spec.model or 'balanceo por prioridad'}, "
+        f"temperatura={'de params/proveedor' if spec.temperature is None else spec.temperature}"
+        f"{', espera la cuota sin tope' if args.wait_quota else ''}",
+        file=sys.stderr,
+    )
     try:
-        written = run(prepared, build_balancer(config), out, run_id=run_id, repetitions=args.repetitions)
+        written = run(
+            prepared, build_balancer(config), out, run_id=run_id, repetitions=spec.repetitions, resolved=resolved
+        )
     except (EngineError, SandboxError, StaticCheckError, NoModelAvailable) as e:
         # Fallas del sistema, no del modelo: se corta la corrida. Lo ya escrito queda.
         print(f"corrida abortada: {type(e).__name__}: {e}", file=sys.stderr)

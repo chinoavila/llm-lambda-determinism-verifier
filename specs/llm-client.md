@@ -32,8 +32,8 @@ Código: `pipeline/pipeline/llm/`. Config: `pipeline/llm.toml`. Explicación par
 
 ## Contrato de registro
 
-- `contracts/output-record-schema.json` no se toca hasta que lo acuerden los 3 devs.
-- Propuesta pendiente: un bloque `llm` por registro con los campos de `LLMCall` (`outcome`, `endpoint`, `base_url`, `model`, `request_params`, `content`, `finish_reason`, `usage`, `raw_response`, `attempts`, `duration_seconds`).
+- `contracts/output-record-schema.json` no se toca sin avisar a los 3 devs.
+- Desde la versión 2.1, cada registro lleva `request_params` y `usage` de su `LLMCall` (el resto del bloque `llm` propuesto —`endpoint`, `base_url`, `content`, `finish_reason`, `raw_response`, `attempts`, `duration_seconds`— sigue sin registrarse).
 
 ## Pool del experimento
 

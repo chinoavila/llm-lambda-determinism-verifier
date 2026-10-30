@@ -8,10 +8,11 @@ la contiene (`api_key_env`).
 
 from __future__ import annotations
 
+import math
 import os
 import tomllib
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -98,6 +99,32 @@ def parse_config(data: Mapping[str, Any], env: Mapping[str, str]) -> LLMConfig:
     if len(set(names)) != len(names):
         raise ConfigError("los `name` de [[endpoints]] deben ser únicos")
     return LLMConfig(balancer=settings, endpoints=tuple(endpoints))
+
+
+def with_run_params(
+    config: LLMConfig,
+    *,
+    model: str | None = None,
+    temperature: float | None = None,
+    wait_for_quota: bool = False,
+) -> LLMConfig:
+    """Condiciones de una corrida sobre la config: `model` deja en el pool solo los
+    endpoints de ese modelo (sin fallback a otros) y `temperature` pisa la de `params`.
+    `wait_for_quota` quita el tope de espera: ante un 429 o un pool sin cuota se espera
+    lo que pida el proveedor (horas, con la cuota diaria) en vez de cortar."""
+    if wait_for_quota:
+        config = replace(config, balancer=replace(config.balancer, max_wait_seconds=math.inf))
+    endpoints = config.endpoints
+    if model is not None:
+        endpoints = tuple(e for e in endpoints if e.model == model)
+        if not endpoints:
+            known = sorted({e.model for e in config.endpoints})
+            raise ConfigError(f"el modelo {model} no está en la config (hay: {known})")
+    if temperature is not None:
+        endpoints = tuple(
+            replace(e, params={**e.params, "temperature": temperature}) for e in endpoints
+        )
+    return replace(config, endpoints=endpoints)
 
 
 def _endpoint(raw: Mapping[str, Any], where: str, env: Mapping[str, str]) -> Endpoint:

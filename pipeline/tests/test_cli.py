@@ -7,15 +7,38 @@ import os
 import re
 import shutil
 from contextlib import nullcontext
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from pipeline.cli import DEFAULT_CASES, case_paths, main, new_run_id, prepare, run
+from pipeline.cli import (
+    DEFAULT_CASES,
+    RunSpec,
+    case_paths,
+    main,
+    new_run_id,
+    prepare,
+    read_run_file,
+    resume_spec,
+    run,
+    run_file,
+    write_run_file,
+)
 from pipeline.llm import Attempt, LLMCall
-from pipeline.orchestrator import GROUPS, Case, CaseError, Scenario, Verdict, per_scenario, read_case
+from pipeline.orchestrator import (
+    GROUPS,
+    Case,
+    CaseError,
+    Scenario,
+    Verdict,
+    drop_pending,
+    per_scenario,
+    read_case,
+    resolved_calls,
+)
 
 FIXTURES = sorted(DEFAULT_CASES.glob("rule-*.json"))
 REAL_STACK = pytest.mark.skipif(
@@ -57,6 +80,14 @@ class FixtureLLM:
         if "JSON Schema" in system:
             return llm_call(fixture["llm_raw"])
         return llm_call(json.dumps({"code": fixture["python_code"]}))
+
+
+class ScriptedLLM:
+    def __init__(self, replies: list[LLMCall]) -> None:
+        self.replies = replies
+
+    def complete(self, messages: Any) -> LLMCall:
+        return self.replies.pop(0)
 
 
 class FakeBalancer:
@@ -119,16 +150,51 @@ def test_run_writes_each_case_as_it_finishes(tmp_path: Path) -> None:
     written = run(cases, balancer, out, run_id="r", repetitions=2, runners=runners, log=logs.append)
 
     assert written == 2 * 2 * 3 * 2  # casos x repeticiones x grupos x escenarios
-    assert balancer.acquired == 2  # un modelo por caso
+    assert balancer.acquired == 4  # un modelo por (caso, repetición)
     lines = out.read_text(encoding="utf-8").splitlines()
     assert len(lines) == written
     assert {json.loads(line)["case_id"] for line in lines} == {"C0", "C1"}
-    assert logs == ["[1/2] C0: 12 registros (executed=12)", "[2/2] C1: 12 registros (executed=12)"]
+    assert logs == [  # por rondas: la repetición 1 de todos los casos antes que la 2
+        "[rep 1/2] [1/2] C0: 6 registros (executed=6)",
+        "[rep 1/2] [2/2] C1: 6 registros (executed=6)",
+        "[rep 2/2] [1/2] C0: 6 registros (executed=6)",
+        "[rep 2/2] [2/2] C1: 6 registros (executed=6)",
+    ]
+
+
+def test_resume_retries_only_calls_cut_by_quota(tmp_path: Path) -> None:
+    ok: Verdict = {"outcome": "executed", "stage": "execution", "result": {"type": "Bool", "value": True}, "error": None}
+    runners = {g: per_scenario(lambda raw, env, gamma: ok) for g in GROUPS}
+    cases: list[tuple[Case, dict[str, str]]] = [
+        (Case(f"C{i}", "regla", (Scenario("a", {}), Scenario("b", {}))), {}) for i in range(2)
+    ]
+    out = tmp_path / "r.jsonl"
+    quota = replace(llm_call("{}"), outcome="quota_exhausted", content=None)
+    first = ScriptedLLM([llm_call("{}")] * 4 + [quota, quota])  # C1 rep 1: baseline1 y baseline2 sin cuota
+    run(cases, FakeBalancer(first), out, run_id="r", repetitions=1, runners=runners, log=lambda _: None)
+    assert sum('"quota_exhausted"' in line for line in out.read_text(encoding="utf-8").splitlines()) == 4
+
+    assert drop_pending(out) == 4
+    resolved = resolved_calls(out)
+    assert ("C1", 1, "treatment") in resolved and ("C1", 1, "baseline1") not in resolved
+    llm = ScriptedLLM([llm_call("{}")] * 8)
+    run(cases, FakeBalancer(llm), out, run_id="r", repetitions=2, runners=runners, log=lambda _: None, resolved=resolved)
+
+    assert not llm.replies  # 8 llamadas: los 2 pendientes de la rep 1 y la rep 2 completa
+    records = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert len(records) == 2 * 2 * 3 * 2 and all(r["outcome"] == "executed" for r in records)
+    assert drop_pending(out) == 0
 
 
 def test_main_rejects_zero_repetitions() -> None:
     with pytest.raises(SystemExit):
         main(["run", "--repetitions", "0"])
+
+
+@pytest.mark.parametrize("value", ["-0.1", "2.5"])
+def test_main_rejects_temperature_out_of_range(value: str) -> None:
+    with pytest.raises(SystemExit):
+        main(["run", "--temperature", value])
 
 
 # --- De punta a punta, sin red: engine, sandbox y mypy reales --------------------
@@ -163,3 +229,39 @@ def test_main_without_credentials_skips_run(tmp_path: Path, monkeypatch: pytest.
     assert code == 0
     assert "sin credenciales" in capsys.readouterr().err
     assert list(tmp_path.iterdir()) == []
+
+
+def test_main_resume_needs_an_existing_run(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit):
+        main(["run", "--resume"])
+    with pytest.raises(SystemExit):
+        main(["run", "--resume", "--run-id", "no-existe", "--out-dir", str(tmp_path)])
+
+
+def test_run_file_round_trip_and_resume_spec(tmp_path: Path) -> None:
+    case = DEFAULT_CASES / "rule-001.json"
+    spec = RunSpec((case,), 5, "m", 0.0)
+    path = run_file(tmp_path, "r")
+    write_run_file(path, spec)
+    assert json.loads(path.read_text(encoding="utf-8"))["cases"] == ["contracts/fixtures/rule-001.json"]  # relativa al repo
+    saved = read_run_file(path)
+    assert saved == spec and read_run_file(tmp_path / "otra.run.json") is None
+
+    assert resume_spec(saved, None, None, None, None) == spec
+    assert resume_spec(saved, [case], 5, "m", 0) == spec  # repetir lo mismo está bien
+    for bad in ({"temperature": 0.7}, {"model": "otro"}, {"repetitions": 1}, {"cases": [DEFAULT_CASES]}):
+        args: dict[str, Any] = {"cases": None, "repetitions": None, "model": None, "temperature": None, **bad}
+        with pytest.raises(ValueError):
+            resume_spec(saved, **args)
+
+    legacy = resume_spec(None, [case], 3, None, None)  # corrida sin archivo: sin modelo ni temperatura
+    assert legacy == RunSpec((case,), 3, None, None)
+    with pytest.raises(ValueError, match="sin --model ni --temperature"):
+        resume_spec(None, [case], 3, None, 0.0)
+
+
+def test_main_resume_rejects_changing_the_conditions(tmp_path: Path) -> None:
+    (tmp_path / "r.jsonl").write_text("", encoding="utf-8")
+    write_run_file(run_file(tmp_path, "r"), RunSpec((DEFAULT_CASES / "rule-001.json",), 1, None, 0.0))
+    with pytest.raises(SystemExit):
+        main(["run", "--resume", "--run-id", "r", "--out-dir", str(tmp_path), "--temperature", "1"])

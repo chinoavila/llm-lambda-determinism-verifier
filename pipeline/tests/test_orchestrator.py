@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from decimal import Decimal
 import shutil
 import sys
@@ -24,8 +25,10 @@ from pipeline.orchestrator import (
     Verdict,
     append_jsonl,
     case_gamma,
+    drop_pending,
     load_case,
     read_case,
+    read_jsonl,
     build_messages,
     per_scenario,
     print_gamma,
@@ -106,8 +109,11 @@ def route(call: LLMCall, runner: Runner, case_id: str = "c", group: Group = "tre
 
 def assert_record_shape(record: Any) -> None:
     """Chequeo mínimo contra el contrato (sin dependencias de jsonschema)."""
-    assert set(record) == set(RECORD_SCHEMA["required"])
-    assert record["schema_version"] == "2.0"
+    required = RECORD_SCHEMA["allOf"][0]["then"]["required"]  # obligatorios desde 2.1
+    assert set(record) == set(RECORD_SCHEMA["required"]) | set(required)
+    assert record["schema_version"] == "2.1" and record["schema_version"] in RECORD_SCHEMA["properties"]["schema_version"]["enum"]
+    assert isinstance(record["request_params"], dict) and "messages" not in record["request_params"]
+    assert record["usage"] is None or isinstance(record["usage"], dict)
     assert isinstance(record["repetition"], int) and record["repetition"] >= 1
     assert isinstance(record["scenario_id"], str) and record["scenario_id"]
     if record["outcome"] == "executed":
@@ -278,6 +284,17 @@ def test_route_call_same_raw_output_against_each_scenario() -> None:
         assert_record_shape(record)
 
 
+def test_route_call_records_request_params_and_usage() -> None:
+    ok: Verdict = {"outcome": "executed", "stage": "execution", "result": {"type": "Int", "value": 1}, "error": None}
+    params = {"model": "m", "response_format": {"type": "json_object"}, "temperature": 0}
+    call = replace(llm_call(), request_params=params, usage={"total_tokens": 42})
+    for record in route(call, fixed_runner(ok, [])):
+        assert record["request_params"] == params and record["usage"] == {"total_tokens": 42}
+        assert_record_shape(record)
+    failed = route(replace(llm_call("quota_exhausted", None), request_params=params), fixed_runner(ok, []))
+    assert all(r["request_params"] == params and r["usage"] is None for r in failed)
+
+
 def test_route_call_rejects_runner_with_wrong_count() -> None:
     def short(llm_raw: str, envs: Any, gamma: Any) -> list[Any]:
         return [(OK_VERDICT, 0)]
@@ -412,6 +429,30 @@ def test_append_jsonl_writes_one_line_per_record_and_appends(tmp_path: Path) -> 
     assert "ñ" in lines[2]
     for line in lines[:4]:
         assert_record_shape(json.loads(line))
+
+
+def test_read_jsonl_skips_a_line_cut_by_cancel_and_keeps_unicode_breaks(tmp_path: Path) -> None:
+    out = tmp_path / "records.jsonl"
+    records = route(llm_call(content="a\u2028b\x85c"), fixed_runner(json.loads(EXECUTED), []))
+    append_jsonl(out, records)
+    with out.open("ab") as f:
+        f.write('{"case_id":"c3","llm_raw":"ñ'.encode("utf-8")[:-1])  # cortado a mitad de la ñ
+
+    assert read_jsonl(out) == records
+
+
+def test_drop_pending_removes_a_cut_line_so_the_next_record_starts_clean(tmp_path: Path) -> None:
+    out = tmp_path / "records.jsonl"
+    first = route(llm_call(), fixed_runner(json.loads(EXECUTED), []), case_id="c1")
+    second = route(llm_call(), fixed_runner(json.loads(EXECUTED), []), case_id="c2")
+    append_jsonl(out, first)
+    with out.open("ab") as f:
+        f.write(b'{"case_id":"c9","llm')
+
+    assert drop_pending(out) == 0
+    append_jsonl(out, second)
+    assert read_jsonl(out) == [*first, *second]
+    assert drop_pending(out) == 0 and out.read_bytes().endswith(b"\n")
 
 
 # --- Decimales exactos del corpus ---------------------------------------------

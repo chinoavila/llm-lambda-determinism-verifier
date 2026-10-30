@@ -89,6 +89,15 @@ eval env (BinaryOp op l r)
   where
     bool (VBase (VBool b)) = Right b
     bool _ = Left (StuckOp op)
+
+    -- SUGERENCIA: la condición "a == (op == Or)" del cortocircuito es correcta pero
+    -- difícil de leer. Una alternativa (no probada) que dice lo mismo de forma
+    -- explícita:
+    --   case (op, a) of
+    --     (And, False) -> Right (VBase (VBool False))  -- AND con false: ya es false
+    --     (Or, True) -> Right (VBase (VBool True))     -- OR con true: ya es true
+    --     _ -> VBase . VBool <$> (bool =<< eval env r) -- si no, decide el lado derecho
+
 eval env (In v opts) = do
   a <- base =<< eval env v
   anyEqual a opts
@@ -146,6 +155,13 @@ applyOp op x y = case (x, y) of
     compareWith _ = (<=)
     intResult n = if intInRange n then Right (VInt (fromInteger n)) else runtime NumericOverflow
     decimalResult q = if decimalInRange q then Right (VDecimal q) else runtime NumericOverflow
+
+-- OBSERVACIÓN: intArith, ratArith y compareWith terminan con un caso "_" que
+-- atrapa cualquier operador (por ejemplo, intArith _ = (*) multiplica con
+-- cualquier operador que no sea + o -). Hoy es seguro porque las guardas de
+-- arriba solo les pasan los operadores correctos, pero si alguien cambia esas
+-- guardas, un operador equivocado haría una cuenta equivocada sin dar error.
+-- Escribir el último caso explícito (Mul, Div, Lte) lo haría más seguro.
 
 -- | Eleva un error runtime al tipo común de errores del evaluador.
 runtime :: RuntimeError -> Either EvalError a

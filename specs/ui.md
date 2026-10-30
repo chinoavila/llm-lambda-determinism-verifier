@@ -6,7 +6,7 @@
 
 - Una SPA (React + Vite + TypeScript + Tailwind) en `ui/` y una API HTTP en `pipeline/pipeline/server.py`, servidas juntas por `python -m pipeline serve`.
 - Ejecuta las acciones del pipeline que hoy existen en la CLI: gestionar el corpus (`check-case`), correr el pipeline (`run`) y explorar los registros. No agrega lógica de dominio propia: la API llama a las mismas funciones que la CLI.
-- No calcula métricas ni agrega resultados (`mission.md` §2). Mostrar un registro, filtrarlo o ponerlo junto a su `expected` está permitido; contar, promediar o graficar `pass@1` no.
+- Las estadísticas de una corrida se calculan solo en la SPA, a partir de sus registros (§Estadísticas). La API no agrega ni resume: devuelve renglones (`mission.md` §2). El reporte con IA (§Reporte con IA) recibe esas estadísticas ya calculadas.
 
 ## API
 
@@ -21,13 +21,38 @@
   - `DELETE /api/rules/{id}?version=...` (409 si la versión no coincide). `POST /api/rules/{id}/check` verifica y completa `expected`; `POST /api/rules/check` verifica todas sin escribir.
   - `_version` y `_file` nunca se escriben en el archivo. `review` (`status`: `pendiente` | `aprobada` | `cambios`, `comments`: `[{author, text, at}]`) es un campo del corpus que la UI edita; `check-case` y el orquestador lo ignoran.
 - Corridas (`pipeline/pipeline/jobs.py`, clase `RunManager`):
-  - `POST /api/runs/estimate` con `{"source": "corpus" | "fixtures", "case_ids"?: [...], "repetitions": 1-20}` devuelve `{cases, repetitions, calls}`, con `calls = casos × 3 × repeticiones`.
+  - `POST /api/runs/estimate` con `{"source": "corpus" | "fixtures", "case_ids"?: [...], "repetitions": 1-20, "model"?: id | "auto", "temperature"?: 0-2, "resume"?: run_id, "wait_quota"?: bool}` devuelve `{cases, repetitions, calls, model, temperature, saved}`, con `calls = casos × 3 × repeticiones`. Con `resume`, casos, repeticiones, modelo y temperatura salen del `.run.json` de la corrida (`saved: true`) y el resto de la selección se ignora; sin ese archivo se usan los casos y repeticiones de la selección, sin modelo ni temperatura. `calls` cuenta solo las llamadas pendientes (`specs/orquestador.md`), y la corrida se lanza con `--resume` sobre el mismo `run_id`, agregando al log. `wait_quota` pasa como `--wait-quota`. `model` y `temperature` pasan como `--model` y `--temperature`; el modelo se valida contra `llm.toml` en la CLI.
   - `POST /api/runs` con la misma selección más `confirm_calls`: lanza `python -m pipeline run` como subproceso (`pipeline_command`), con `--run-id` y la salida en `out/<run_id>.log`. 409 si `confirm_calls` no es exactamente `calls`, si ya hay una corrida en curso o si faltan credenciales del LLM. A lo sumo una corrida a la vez.
   - `GET /api/runs`: `{active, runs}`, con las corridas de `out/` (registros, log, última escritura y, si se lanzó desde este servidor, su estado). `POST /api/runs/{id}/cancel` termina el subproceso (los casos ya escritos quedan). `GET /api/runs/{id}/log?offset=n` devuelve el log desde `n` para leerlo de a partes.
-  - `GET /api/runs/{id}/records`: los renglones del JSONL, filtrables por igualdad en `case_id`, `scenario_id`, `group`, `repetition`, `outcome`, `stage` y `model`, cada uno con el `expected` de su escenario si la regla está en `corpus/`. Nunca conteos, tasas ni resúmenes.
+  - `GET /api/runs/{id}/records`: los renglones del JSONL, filtrables por igualdad en `case_id`, `scenario_id`, `group`, `repetition`, `outcome`, `stage` y `model`, cada uno con el `expected` de su escenario si la regla está en `corpus/`. Nunca conteos, tasas ni resúmenes: eso lo calcula la SPA.
   - `run_id` solo admite letras, dígitos, `-` y `_`: no puede salir de `out/`.
+  - Exportar: cada fila de Corridas con registros ofrece JSONL, TXT, MD, CSV, Excel (.xlsx) y PDF. Se arma en el navegador (`ui/src/lib/export.ts`) a partir de `GET /api/runs/{id}/records` sin filtros; la API no cambia. El JSONL son los registros como en `out/` (sin `expected`); los demás formatos agregan el `expected` de cada escenario. XLSX (ZIP sin comprimir) y PDF (Courier, WinAnsi) se generan sin dependencias. Solo renglones: sin conteos, tasas ni resúmenes.
 - Errores de la verificación o de la corrida por el engine o el sandbox caídos: 503.
 - **Nunca** devolver una clave de API, ni parte de ella, ni el contenido de `.env`. De la configuración del LLM solo se expone si está lista, los nombres de modelo y el mensaje de `ConfigError` (que nombra la variable, no su valor). Lo verifica `test_health_never_returns_the_api_key`.
+
+## Estadísticas
+
+- Ruta `/estadisticas/<run_id>` (sección de la navegación, con selector de corrida como Registros). Cada fila del listado de Corridas con registros tiene "Ver estadísticas".
+- Se calculan en `ui/src/lib/stats.ts` (funciones puras con tests de vitest) sobre `GET /api/runs/{id}/records` y `GET /api/rules`. No hay endpoint de estadísticas ni dependencias de gráficos: tablas y barras con Tailwind y los tokens de color.
+- Generación: `(case_id, group, repetition)`, con un renglón por escenario (`docs/orquestador.md`).
+- Un renglón acierta si `outcome` es `executed`, tiene `result` y `expected`, y los dos coinciden en `type` y `value` (comparación estricta: `Int 5` contra `Decimal "5"` es fallo; los `Decimal` llegan en texto canónico, `contracts/README.md` §3).
+- Una generación pasa si aciertan todos sus renglones. Si a algún renglón le falta `expected` (fixtures, regla fuera del corpus), queda "sin expected" y fuera del denominador.
+- "Dónde se detecta cada falla" (`layersByCategory`): generaciones con expected por categoría, grupo y capa (sin respuesta del LLM, bloqueada antes de ejecutar, error de ejecución, resultado incorrecto, acierta). Muestra que los errores lógicos los atrapan los escenarios y no el motor. También va en la evidencia del reporte (`failure_layers_by_category`).
+- Filtro "Solo reglas con revisión aprobada": recalcula todo sobre las reglas con `review.status = aprobada`.
+- Una generación cortada por cuota o red (`llm_error` con `quota_exhausted` o `transport_error`) queda "pendiente": fuera del denominador, porque no es una falla del modelo. Se reintenta con "Reanudar" en Corridas.
+- `pass@1` de un grupo: generaciones que pasan / generaciones con `expected`.
+- Condiciones de la corrida (`runConditions`): modelos, temperatura (`request_params.temperature`; "no registrada" en registros 2.0, "del proveedor" si no se envió) y tokens (`usage.total_tokens`), contados una vez por generación. Avisa si hay más de un modelo, temperatura mixta o sin fijar, o una sola repetición.
+- Con 2+ repeticiones: `pass@k` por grupo para k en 1, 2, 3, 5, 10, 20 hasta las repeticiones (estimador insesgado de Chen et al. 2021, promediado entre las reglas con al menos k generaciones juzgadas), y reglas inestables (unas repeticiones aciertan y otras no).
+- Contenido: `pass@1` por grupo; desenlaces por grupo (renglones por `outcome`, y por `stage` en los bloqueos); desglose de `pass@1` por regla, categoría y dominio (las dos últimas salen de `corpus/`; un caso que no está ahí va a "fuera del corpus"); duración (n, media y mediana de `duration_ms`) y códigos de error por grupo.
+
+## Reporte con IA
+
+- Cada fila de Corridas con registros tiene "Generar reporte con IA". Pide confirmación dentro de la página (una llamada al LLM, consume cuota) y está deshabilitado si el LLM no está listo o si ya hay un reporte en curso. Un agente no lo usa sin pedido del desarrollador.
+- La SPA arma la evidencia en `ui/src/lib/report.ts` (funciones puras con tests) reutilizando `stats.ts`: metadata de la corrida (con la temperatura y los tokens de `runConditions`), `pass@k` y consistencia entre repeticiones, `pass@1` por grupo y su desglose por regla, categoría, dominio y modelo, la matriz modelo × categoría, desenlaces, bloqueos por etapa, errores y duración, los indicadores de las observaciones metodológicas (`report_methodology.md` §4) y una muestra acotada de fallos (`llm_raw` truncado), para no superar el límite de tokens del proveedor.
+- `POST /api/runs/{id}/report` con `{"evidence": {...}}` (`pipeline/pipeline/report.py`, clase `Reporter`). El servidor no calcula nada: arma el prompt con `report_methodology.md` y la evidencia, hace una sola llamada con el balanceador y valida la forma de la respuesta sin repararla. Responde `{report, model, usage, saved}`, con `report` = `{title, abstract, sections: [{heading, paragraphs}], observations: [{number 1-8, status: se_repite | no_se_repite | no_concluyente, text}], limitations, conclusions}`.
+- Errores: 400 si `evidence` no es un objeto; 404 si la corrida no tiene registros; 409 sin credenciales o sin metodología; 429 si se agotó la cuota; 502 si el LLM falla o el informe no tiene la forma pedida; 503 si no hay modelos disponibles.
+- Cada llamada guarda `out/<run_id>.report-<timestamp>.json` (evidencia, modelo, `request_params`, `usage`, respuesta cruda), también cuando el informe es inválido. No son corridas: `GET /api/runs` solo lista `*.jsonl` y `*.log`.
+- El PDF lo arma la SPA con `pdfmake` (`ui/src/lib/reportPdf.ts`, importado de forma dinámica, con las fuentes embebidas): portada, resumen, secciones, contraste con las observaciones, limitaciones, conclusiones, referencias fijas de la metodología, Anexo A con las tablas de la evidencia y Anexo B con la muestra de fallos. Las cifras de las tablas salen de la evidencia, nunca del texto del LLM, y el PDF dice qué modelo redactó el texto.
 
 ## Seguridad
 
@@ -41,6 +66,7 @@
 - La etapa `ui-build` del `Dockerfile` corre `npm ci`, `npm run check` (`tsc -p .` + `vitest run`) y `npm run build`. Si algo falla, la imagen `ui` no se construye.
 - Gates: `docker compose build ui` (SPA) y `docker compose run --rm pipeline sh -c "mypy . && pytest"` (API, en `tests/test_server.py`).
 - TypeScript en modo estricto (`strict`, `noUncheckedIndexedAccess`). La lógica que no es de presentación (formatos, validaciones, transformaciones) va en módulos `.ts` con tests de vitest.
+- Las tablas de datos de las vistas en `ui/src/pages/` usan paginación client-side común (`ui/src/components/pagination.tsx`): 25 filas por defecto, opciones 25/50/100/Todos y controles consistentes.
 
 ## Diseño
 
@@ -54,6 +80,10 @@
 1. Base: servidor, `GET /api/health`, SPA con navegación (Corpus, Corridas, Registros) y barra de estado. Hecha.
 2. Corpus: CRUD de `corpus/*.json` desde la UI, con `check-case` al guardar. Hecha.
 3. Corridas y registros: lanzar `run` con confirmación de cuota, log en vivo, cancelación y exploración de `out/<run_id>.jsonl`. Hecha.
+4. Estadísticas: pantalla por corrida calculada en la SPA (§Estadísticas). Hecha.
+5. Reporte con IA: informe en PDF de una corrida redactado por el LLM (§Reporte con IA). Hecha.
+6. Condiciones de corrida: modelo fijo (por defecto el primero de `llm.toml`; "Automático" avisa que mezcla modelos), temperatura (por defecto 0) y 5 repeticiones por defecto; "Reanudar" en cada corrida con registros; aviso de reglas sin review aprobada (`ui/src/lib/runs.ts`). Cada corrida guarda sus condiciones en `out/<run_id>.run.json`; "Reanudar" las reutiliza y "Esperar a que se libere la cuota" pasa `--wait-quota`.
+7. Revisión de expected: contador de aprobadas en Corpus; en la pestaña Revisión, aviso si todos los escenarios esperan lo mismo o si un umbral `Var op Literal` del AST canónico no tiene escenario en el borde (`scenarioCoverage`); revisión a ciegas en la pestaña Revisión (`ui/src/lib/review.ts`, `BlindReview.tsx`): el revisor anota el resultado de cada escenario viendo solo el enunciado y el `env`, se compara con el `expected` (decimales en texto canónico) y el resultado queda como comentario de `review`; filtro de aprobadas en Estadísticas.
 
 ## Relación con los generadores del corpus
 

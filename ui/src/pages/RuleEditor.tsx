@@ -3,6 +3,9 @@ import { useMemo, useState, type ReactNode } from "react";
 import { api, ApiError, errorText, type BaseType, type CheckReport, type ReviewStatus, type Rule } from "../api";
 import { AstPreview, Badge, Button, Confirm, Drawer, Errors, Field, fmtDate, inputClass, Notice, Tab } from "../components/ui";
 import { blankRule, defaultValue, parseCell, parseExpected, TYPES, validate, valueFits, type Errors as ErrorMap, type Tab as TabKey } from "../lib/rules";
+import { scenarioCoverage } from "../lib/review";
+import { BlindReview } from "./BlindReview";
+import { TablePagination, usePagination } from "../components/pagination";
 
 /** Dominios admitidos por el formulario y el contrato del corpus. */
 export const DOMAINS = ["fiscal", "salud", "credito", "seguros", "laboral"];
@@ -66,7 +69,10 @@ export function RuleEditor({
       return next;
     });
   const vars = Object.keys(draft.gamma);
+  const pagedVars = usePagination(vars, vars.join("|"));
+  const pagedScenarios = usePagination(draft.scenarios, rowKeys.join("|"));
   const review = draft.review ?? { status: "pendiente" as const, comments: [] };
+  const coverage = useMemo(() => scenarioCoverage(draft), [draft]);
 
   async function save() {
     const errs = validate(draft, isNew, existing, astError);
@@ -188,7 +194,7 @@ export function RuleEditor({
               </tr>
             </thead>
             <tbody>
-              {vars.map((name) => (
+              {pagedVars.items.map((name) => (
                 <tr key={name}>
                   <td className="border-b border-line p-1">
                     <input
@@ -231,6 +237,7 @@ export function RuleEditor({
             </tbody>
           </table>
         </div>
+        <TablePagination pagination={pagedVars} label="variables" />
         <div>
           <Button
             small
@@ -267,7 +274,8 @@ export function RuleEditor({
               </tr>
             </thead>
             <tbody>
-              {draft.scenarios.map((s, idx) => {
+              {pagedScenarios.items.map((s, pageIdx) => {
+                const idx = (pagedScenarios.start - 1) + pageIdx;
                 const key = rowKeys[idx] ?? idx;
                 return (
                   <tr key={key}>
@@ -330,6 +338,7 @@ export function RuleEditor({
             </tbody>
           </table>
         </div>
+        <TablePagination pagination={pagedScenarios} label="escenarios de la regla" />
         <div>
           <Button
             small
@@ -389,6 +398,34 @@ export function RuleEditor({
 
     revision: (
       <>
+        {(coverage.sameExpected || coverage.missingBorders.length > 0) && (
+          <Notice>
+            Los escenarios podrían no alcanzar para detectar errores lógicos (los atrapan los escenarios, no el motor):
+            <ul className="mt-1 list-disc pl-5">
+              {coverage.sameExpected && <li>todos esperan el mismo resultado, así que una regla constante también acertaría;</li>}
+              {coverage.missingBorders.length > 0 && (
+                <li>
+                  sin escenario justo en el umbral de{" "}
+                  {coverage.missingBorders.map((b, i) => (
+                    <span key={b}>
+                      {i > 0 && ", "}
+                      <code className="font-mono">{b}</code>
+                    </span>
+                  ))}
+                  .
+                </li>
+              )}
+            </ul>
+          </Notice>
+        )}
+        <BlindReview
+          key={draft.case_id}
+          rule={draft}
+          reviewer={reviewer}
+          onComment={(text) =>
+            edit((r) => void (r.review = { ...review, comments: [...review.comments, { author: reviewer.trim(), text, at: new Date().toISOString() }] }))
+          }
+        />
         <Field label="Estado de revisión" help="Aprobada: el AST es la única lectura del enunciado, el Python coincide, los escenarios prueban los bordes y los parámetros coinciden con la fuente.">
           {(id) => (
             <select id={id} className={inputClass} value={review.status} onChange={(e) => edit((r) => void (r.review = { ...review, status: e.target.value as ReviewStatus }))}>

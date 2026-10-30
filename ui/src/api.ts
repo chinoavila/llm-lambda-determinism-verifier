@@ -51,10 +51,28 @@ export type Health = {
   runs: number;
 };
 
-/** Selección para estimar o iniciar una corrida; case_ids restringe el corpus. */
-export type Selection = { source: "corpus" | "fixtures"; case_ids?: string[]; repetitions: number };
+/** Selección para estimar o iniciar una corrida; case_ids restringe el corpus; resume continúa una corrida existente. */
+export type Selection = {
+  source: "corpus" | "fixtures";
+  case_ids?: string[];
+  repetitions: number;
+  /** Id de modelo de llm.toml, o "auto" para el balanceo por prioridad. */
+  model?: string;
+  temperature?: number;
+  resume?: string;
+  /** Sin cuota, espera lo que pida el proveedor en vez de cortar la corrida. */
+  wait_quota?: boolean;
+};
 /** Estimación de volumen; `calls` es casos × grupos × repeticiones. */
-export type Estimate = { cases: number; repetitions: number; calls: number };
+export type Estimate = {
+  cases: number;
+  repetitions: number;
+  calls: number;
+  /** Condiciones que va a usar la corrida; al reanudar, las guardadas (`saved`) o ninguna si la corrida no las guardó. */
+  model: string | null;
+  temperature: number | null;
+  saved: boolean;
+};
 /** Estados terminales y activo del proceso de corrida. */
 export type JobStatus = "running" | "finished" | "failed" | "cancelled";
 /** Estado público del proceso de corrida administrado por la API. */
@@ -63,6 +81,11 @@ export type Job = {
   source: string;
   cases: string[];
   repetitions: number;
+  /** null = balanceo por prioridad / temperatura de llm.toml o del proveedor. */
+  model: string | null;
+  temperature: number | null;
+  resume: boolean;
+  wait_quota: boolean;
   calls: number;
   started_at: string;
   status: JobStatus;
@@ -77,7 +100,7 @@ export type LogChunk = { text: string; offset: number; status: JobStatus | null 
 
 /** Identificadores estables de los tres carriles experimentales. */
 export type Group = "treatment" | "baseline1" | "baseline2";
-/** Desenlaces admitidos por el registro de salida v2.0. */
+/** Desenlaces admitidos por el registro de salida (v2.0 y v2.1). */
 export type Outcome = "executed" | "blocked" | "runtime_error" | "timeout" | "llm_error";
 /** Registro JSONL, enriquecido por el servidor con expected del corpus si existe. */
 export type RecordRow = {
@@ -94,8 +117,25 @@ export type RecordRow = {
   result: Result | null;
   error: { code: string; message: string } | null;
   duration_ms: number | null;
+  /** Desde el registro 2.1: cuerpo enviado al LLM (temperature, etc.) y tokens que informó el proveedor. */
+  request_params?: Record<string, unknown>;
+  usage?: Record<string, unknown> | null;
   expected: Result | null;
 };
+
+/** Estado de cada observación metodológica en el reporte con IA. */
+export type ObservationStatus = "se_repite" | "no_se_repite" | "no_concluyente";
+/** Informe que redacta el LLM (specs/ui.md §Reporte con IA); el servidor valida su forma. */
+export type AiReport = {
+  title: string;
+  abstract: string;
+  sections: { heading: string; paragraphs: string[] }[];
+  observations: { number: number; status: ObservationStatus; text: string }[];
+  limitations: string[];
+  conclusions: string[];
+};
+/** Respuesta de POST /api/runs/{id}/report; `saved` es la traza en out/. */
+export type ReportResponse = { report: AiReport; model: string; usage: Record<string, unknown> | null; saved: string };
 
 export class ApiError extends Error {
   /** Error HTTP con status para que la UI distinga conflictos y fallos de servicio. */
@@ -160,6 +200,8 @@ export const api = {
     const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== "")).toString();
     return request<RecordRow[]>(`/api/runs/${enc(id)}/records${q ? `?${q}` : ""}`);
   },
+  /** Una llamada al LLM: redacta el informe de la corrida a partir de la evidencia. */
+  report: (id: string, evidence: unknown) => request<ReportResponse>(`/api/runs/${enc(id)}/report`, { method: "POST", body: { evidence } }),
 };
 
 export const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));

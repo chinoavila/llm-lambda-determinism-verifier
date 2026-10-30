@@ -1,26 +1,29 @@
-// Registros de una corrida, renglón por renglón. Sin conteos ni resúmenes: eso es
-// análisis y queda fuera del repo (specs/mission.md §2, specs/ui.md).
+// Registros de una corrida, renglón por renglón. Los resúmenes están en StatsPage.
 import { useEffect, useMemo, useState } from "react";
 import { api, errorText, type Outcome, type RecordRow, type Result, type RunInfo } from "../api";
 import { Badge, Card, Drawer, fmtDate, Notice, type Tone } from "../components/ui";
+import { TablePagination, usePagination } from "../components/pagination";
 import { showValue } from "../lib/rules";
 import { navigate } from "../router";
 
-const OUTCOME: Record<Outcome, { label: string; tone: Tone }> = {
+export const OUTCOME: Record<Outcome, { label: string; tone: Tone }> = {
   executed: { label: "ejecutó", tone: "accent" },
   blocked: { label: "bloqueado", tone: "warn" },
   runtime_error: { label: "error en ejecución", tone: "bad" },
   timeout: { label: "timeout", tone: "bad" },
   llm_error: { label: "error del LLM", tone: "neutral" },
 };
-const GROUP: Record<string, string> = { treatment: "Tratamiento", baseline1: "Baseline 1", baseline2: "Baseline 2" };
+export const GROUP: Record<string, string> = { treatment: "Tratamiento", baseline1: "Baseline 1", baseline2: "Baseline 2" };
 const FILTERS = [
   ["case_id", "Regla"],
   ["group", "Grupo"],
   ["outcome", "Desenlace"],
+  ["stage", "Etapa"],
+  ["repetition", "Repetición"],
   ["model", "Modelo"],
 ] as const;
 type FilterKey = (typeof FILTERS)[number][0];
+const NO_FILTERS = Object.fromEntries(FILTERS.map(([k]) => [k, ""])) as Record<FilterKey, string>;
 
 const result = (r: Result | null | undefined) => (r ? showValue(r.value) : "—");
 
@@ -29,7 +32,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
   const [runs, setRuns] = useState<RunInfo[] | null>(null);
   const [rows, setRows] = useState<RecordRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<Record<FilterKey, string>>({ case_id: "", group: "", outcome: "", model: "" });
+  const [filters, setFilters] = useState<Record<FilterKey, string>>(NO_FILTERS);
   const [detail, setDetail] = useState<RecordRow | null>(null);
 
   useEffect(() => {
@@ -43,6 +46,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
     if (!runId) return;
     setRows(null);
     setError(null);
+    setFilters(NO_FILTERS);
     api
       .records(runId, {})
       .then(setRows)
@@ -51,10 +55,12 @@ export function RecordsPage({ runId }: { runId: string | null }) {
 
   const options = useMemo(() => {
     const out = {} as Record<FilterKey, string[]>;
-    for (const [key] of FILTERS) out[key] = [...new Set((rows ?? []).map((r) => String(r[key])))].sort();
+    for (const [key] of FILTERS)
+      out[key] = [...new Set((rows ?? []).map((r) => String(r[key])))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     return out;
   }, [rows]);
   const visible = (rows ?? []).filter((r) => FILTERS.every(([k]) => !filters[k] || String(r[k]) === filters[k]));
+  const pagination = usePagination(visible, Object.values(filters).join("|") + (runId ?? ""));
 
   return (
     <div className="grid gap-4">
@@ -107,7 +113,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((r, i) => (
+                {pagination.items.map((r, i) => (
                   <tr
                     key={i}
                     tabIndex={0}
@@ -135,6 +141,7 @@ export function RecordsPage({ runId }: { runId: string | null }) {
             </table>
           </div>
         )}
+        {rows && <TablePagination pagination={pagination} label="registros de corrida" />}
       </Card>
 
       {detail && (

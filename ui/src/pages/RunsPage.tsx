@@ -1,7 +1,13 @@
 /** Vista para estimar, iniciar, consultar y cancelar corridas del pipeline. */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, errorText, type Estimate, type Health, type Job, type JobStatus, type Rule, type Runs, type Selection } from "../api";
+import { api, errorText, type Estimate, type Health, type Job, type JobStatus, type Rule, type RunInfo, type Runs, type Selection } from "../api";
 import { Badge, Button, Card, Confirm, fmtDate, inputClass, Notice, type Tone } from "../components/ui";
+import { TablePagination, usePagination } from "../components/pagination";
+import { EXPORT_FORMATS, exportRecords, type ExportFormat } from "../lib/export";
+import { buildReportData } from "../lib/report";
+import { downloadReportPdf, reportDocDefinition } from "../lib/reportPdf";
+import { AUTO_MODEL, runSelection, unreviewedRules } from "../lib/runs";
+import { generations, runConditions } from "../lib/stats";
 import { navigate } from "../router";
 
 /** Presentación de estados de job compartida por la vista de corridas. */
@@ -19,14 +25,47 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<Selection["source"]>("corpus");
   const [picked, setPicked] = useState<string[]>([]);
-  const [repetitions, setRepetitions] = useState(1);
+  const [repetitions, setRepetitions] = useState(5);
+  const [model, setModel] = useState(AUTO_MODEL);
+  const [temperature, setTemperature] = useState(0);
+  const [resume, setResume] = useState<string | null>(null);
+  const [waitQuota, setWaitQuota] = useState(false);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [estimateError, setEstimateError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<{ error: string | null; busy: boolean } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [logFor, setLogFor] = useState<string | null>(null);
+  const [reporting, setReporting] = useState<{ run: RunInfo; busy: boolean; error: string | null } | null>(null);
 
-  const selection: Selection = { source, repetitions, ...(source === "corpus" && picked.length ? { case_ids: picked } : {}) };
+  const selection = runSelection({ source, picked, repetitions, model, temperature, resume, waitQuota });
+  // Al reanudar, las condiciones las decide el servidor (las guardadas de la corrida, o ninguna).
+  const runModel = resume ? (estimate?.model ?? AUTO_MODEL) : model;
+  const runTemperature = resume ? (estimate?.temperature ?? null) : temperature;
+  const formLocked = !!resume && !!estimate?.saved;
+  const unreviewed = unreviewedRules(rules, { source, picked });
+
+  // Tokens por llamada de la corrida más reciente que los registra (registro 2.1), para estimar el gasto.
+  const [tokenRef, setTokenRef] = useState<{ runId: string; perCall: number } | null>(null);
+  const runIds = (runs?.runs ?? []).filter((r) => r.records > 0).map((r) => r.run_id).slice(0, 3).join(",");
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      for (const id of runIds ? runIds.split(",") : []) {
+        const perCall = runConditions(generations(await api.records(id, {}))).tokensPerCall;
+        if (perCall !== null) return alive && setTokenRef({ runId: id, perCall });
+      }
+    })().catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [runIds]);
+
+  // Por defecto, el primer modelo de llm.toml: el experimento pide un modelo fijo por corrida.
+  const modelTouched = useRef(false);
+  const firstModel = health?.llm.models[0];
+  useEffect(() => {
+    if (firstModel && !modelTouched.current) setModel(firstModel);
+  }, [firstModel]);
   const selectionKey = JSON.stringify(selection);
 
   const loadRuns = useCallback(() => {
@@ -64,6 +103,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
   }, [selectionKey]);
 
   const active = runs?.active ?? null;
+  const runPagination = usePagination(runs?.runs ?? []);
   useEffect(() => {
     if (!active) return;
     const t = setInterval(loadRuns, 2000);
@@ -81,6 +121,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
     try {
       const job = await api.startRun(selection, estimate.calls);
       setConfirming(null);
+      setResume(null);
       setLogFor(job.run_id);
       loadRuns();
     } catch (e) {
@@ -100,6 +141,21 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
     }
   }
 
+  // Una llamada al LLM: la evidencia la arma la SPA y el PDF también (specs/ui.md §Reporte con IA).
+  async function generateReport(run: RunInfo) {
+    setReporting({ run, busy: true, error: null });
+    try {
+      const rows = await api.records(run.run_id, {});
+      const data = buildReportData(run, rows, new Map(rules.map((r) => [r.case_id, r])));
+      const res = await api.report(run.run_id, data.evidence);
+      const doc = reportDocDefinition(res.report, data, { model: res.model, createdAt: new Date().toLocaleString("es-AR") });
+      await downloadReportPdf(doc, `${run.run_id}-reporte.pdf`);
+      setReporting(null);
+    } catch (e) {
+      setReporting({ run, busy: false, error: errorText(e) });
+    }
+  }
+
   const llmReady = health?.llm.ready ?? false;
 
   return (
@@ -115,7 +171,19 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
           </p>
         </div>
         {!llmReady && health && <Notice>Faltan las credenciales del LLM: {health.llm.error}. Completá .env y reiniciá el servicio ui.</Notice>}
-        <div className="flex flex-wrap gap-6">
+        {resume && (
+          <Notice>
+            Reanudando <code className="font-mono">{resume}</code>: se saltean las llamadas ya resueltas y se reintentan las cortadas por cuota o
+            red.{" "}
+            {estimate?.saved
+              ? `Usa las condiciones guardadas de la corrida: ${estimate.cases} casos, ${estimate.repetitions} repeticiones, modelo ${estimate.model ?? "automático"}, temperatura ${estimate.temperature ?? "del proveedor"}.`
+              : "Esta corrida no guardó sus condiciones: se reanuda sin modelo fijo ni temperatura, como se lanzó. Elegí los mismos casos y repeticiones que la original."}{" "}
+            <Button variant="link" onClick={() => setResume(null)}>
+              Volver a una corrida nueva
+            </Button>
+          </Notice>
+        )}
+        <fieldset disabled={formLocked} className="flex flex-wrap gap-6 disabled:opacity-60">
           <fieldset className="grid gap-1.5">
             <legend className="mb-1.5 text-[12.5px] font-medium text-muted">Casos</legend>
             {(
@@ -141,7 +209,61 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
               className={`${inputClass} w-28 tabular-nums`}
             />
           </label>
-        </div>
+          <label className="grid content-start gap-1.5">
+            <span className="text-[12.5px] font-medium text-muted">Modelo</span>
+            <select
+              value={model}
+              onChange={(e) => {
+                modelTouched.current = true;
+                setModel(e.target.value);
+              }}
+              disabled={!!resume}
+              className={`${inputClass} w-64`}
+            >
+              {health?.llm.models.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+              <option value={AUTO_MODEL}>Automático (cambia según la cuota; no recomendado para el experimento)</option>
+            </select>
+          </label>
+          <label className="grid content-start gap-1.5">
+            <span className="text-[12.5px] font-medium text-muted">Temperatura</span>
+            <input
+              type="number"
+              min={0}
+              max={2}
+              step={0.1}
+              value={temperature}
+              onChange={(e) => setTemperature(Math.max(0, Math.min(2, Number(e.target.value) || 0)))}
+              disabled={!!resume}
+              className={`${inputClass} w-28 tabular-nums`}
+            />
+          </label>
+        </fieldset>
+        <label className="flex items-start gap-2">
+          <input type="checkbox" className="mt-[3px] accent-accent" checked={waitQuota} onChange={(e) => setWaitQuota(e.target.checked)} />
+          <span>
+            Esperar a que se libere la cuota
+            <span className="block text-[12.5px] text-muted">
+              Sin cuota, la corrida espera lo que pida el proveedor (con la cuota diaria, horas) en vez de cortarse. Sirve para dejar una corrida
+              larga desatendida; se puede cancelar en cualquier momento.
+            </span>
+          </span>
+        </label>
+        {runModel === AUTO_MODEL && (
+          <Notice>
+            Con el modelo automático, cada caso puede ir a un modelo distinto según la cuota, y el modelo queda mezclado con la categoría. Para
+            el experimento, fijá un modelo.
+          </Notice>
+        )}
+        {unreviewed.length > 0 && (
+          <Notice>
+            {unreviewed.length} de las reglas elegidas no tienen la revisión manual aprobada: sus <code className="font-mono">expected</code>{" "}
+            los calculó el engine y nadie los validó todavía.
+          </Notice>
+        )}
         {source === "corpus" && rules.length > 0 && (
           <details className="rounded-lg border border-line px-3.5 py-2.5">
             <summary className="cursor-pointer text-muted">
@@ -172,12 +294,20 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
         )}
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="primary" disabled={!estimate || !llmReady || !!active} onClick={() => setConfirming({ error: null, busy: false })}>
-            Lanzar corrida…
+            {resume ? "Reanudar corrida…" : "Lanzar corrida…"}
           </Button>
           <span className={`text-[13px] ${estimateError ? "text-bad" : "text-muted"}`}>
             {estimateError ??
               (estimate &&
-                `${estimate.cases} casos × 3 grupos × ${estimate.repetitions} ${estimate.repetitions === 1 ? "repetición" : "repeticiones"} = ${estimate.calls} llamadas al LLM`)}
+                (resume
+                  ? `${estimate.calls} llamadas al LLM pendientes de ${estimate.cases * 3 * estimate.repetitions}`
+                  : `${estimate.cases} casos × 3 grupos × ${estimate.repetitions} ${estimate.repetitions === 1 ? "repetición" : "repeticiones"} = ${estimate.calls} llamadas al LLM`))}
+            {estimate && tokenRef && (
+              <span title={`Promedio de ${Math.round(tokenRef.perCall)} tokens por llamada en ${tokenRef.runId}`}>
+                {" "}
+                · ≈ {Math.round(estimate.calls * tokenRef.perCall).toLocaleString("es-AR")} tokens
+              </span>
+            )}
             {active && " · ya hay una corrida en curso"}
           </span>
         </div>
@@ -208,7 +338,7 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                   </td>
                 </tr>
               )}
-              {runs?.runs.map((r) => (
+              {runPagination.items.map((r) => (
                 <tr key={r.run_id} className="border-b border-line last:border-b-0">
                   <td className="px-4 py-3 font-mono text-[12.5px] font-medium whitespace-nowrap">{r.run_id}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-muted">{fmtDate(r.modified)}</td>
@@ -225,28 +355,148 @@ export function RunsPage({ health, onChanged }: { health: Health | null; onChang
                         Ver registros
                       </Button>
                     )}
+                    {r.records > 0 && (
+                      <Button variant="link" onClick={() => navigate(`/estadisticas/${r.run_id}`)}>
+                        Ver estadísticas
+                      </Button>
+                    )}
+                    {r.records > 0 && !active && (
+                      <Button
+                        variant="link"
+                        onClick={() => {
+                          setResume(r.run_id);
+                          if (r.job) {
+                            setSource(r.job.source === "fixtures" ? "fixtures" : "corpus");
+                            setRepetitions(r.job.repetitions);
+                          }
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      >
+                        Reanudar
+                      </Button>
+                    )}
+                    {r.records > 0 && <ExportMenu runId={r.run_id} onError={setError} />}
+                    {r.records > 0 && (
+                      <Button
+                        variant="link"
+                        disabled={!llmReady || !!reporting?.busy}
+                        title={llmReady ? undefined : "Faltan las credenciales del LLM"}
+                        onClick={() => setReporting({ run: r, busy: false, error: null })}
+                      >
+                        {reporting?.busy && reporting.run.run_id === r.run_id ? "Generando…" : "Generar reporte con IA"}
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <TablePagination pagination={runPagination} label="corridas" />
       </Card>
 
       {confirming && estimate && (
         <Confirm
-          title="¿Lanzar la corrida?"
-          confirmLabel={`Lanzar ${estimate.calls} llamadas`}
+          title={resume ? `¿Reanudar ${resume}?` : "¿Lanzar la corrida?"}
+          confirmLabel={`${resume ? "Reanudar" : "Lanzar"} ${estimate.calls} llamadas`}
           busy={confirming.busy}
           error={confirming.error}
           onConfirm={launch}
           onCancel={() => setConfirming(null)}
         >
-          Hace <b className="text-ink">{estimate.calls} llamadas</b> al LLM ({health?.llm.models.join(", ")}) y consume cuota del proveedor.
+          Hace <b className="text-ink">{estimate.calls} llamadas</b> al LLM con{" "}
+          <b className="text-ink">{runModel === AUTO_MODEL ? `balanceo entre ${health?.llm.models.join(", ")}` : runModel}</b> a temperatura{" "}
+          <b className="text-ink">{runTemperature ?? "del proveedor"}</b>, y consume cuota del proveedor.{waitQuota && " Sin cuota, espera a que el proveedor la libere (puede quedar horas en curso)."}
           Los registros se agregan a <code className="font-mono">out/</code> a medida que termina cada caso.
         </Confirm>
       )}
+
+      {reporting && (
+        <Confirm
+          title="¿Generar el reporte con IA?"
+          confirmLabel="Generar reporte (1 llamada)"
+          busy={reporting.busy}
+          error={reporting.error}
+          onConfirm={() => void generateReport(reporting.run)}
+          onCancel={() => !reporting.busy && setReporting(null)}
+        >
+          Hace <b className="text-ink">1 llamada</b> al LLM ({health?.llm.models.join(", ")}) con las estadísticas de{" "}
+          <code className="font-mono">{reporting.run.run_id}</code> y las bases metodológicas del proyecto, y consume cuota del proveedor. El
+          texto lo redacta el modelo; las tablas del PDF salen de los registros. La respuesta queda guardada en{" "}
+          <code className="font-mono">out/</code>.
+        </Confirm>
+      )}
     </div>
+  );
+}
+
+/** Menú por fila que descarga los registros de la corrida en el formato elegido. */
+function ExportMenu({ runId, onError }: { runId: string; onError: (message: string) => void }) {
+  const [at, setAt] = useState<{ top: number; right: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const root = useRef<HTMLSpanElement>(null);
+
+  // El menú es `fixed` para que no lo recorte el `overflow` de la tabla.
+  useEffect(() => {
+    if (!at) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !root.current?.contains(e.target as Node)) setAt(null);
+    };
+    const reset = () => setAt(null);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    window.addEventListener("scroll", reset, true);
+    window.addEventListener("resize", reset);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", close);
+      window.removeEventListener("scroll", reset, true);
+      window.removeEventListener("resize", reset);
+    };
+  }, [at]);
+
+  async function download(format: ExportFormat, mime: string) {
+    setAt(null);
+    setBusy(true);
+    try {
+      const rows = await api.records(runId, {});
+      const url = URL.createObjectURL(new Blob([exportRecords(runId, rows, format)], { type: mime }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${runId}.${format}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (e) {
+      onError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <span ref={root}>
+      <Button
+        variant="link"
+        disabled={busy}
+        aria-haspopup="menu"
+        aria-expanded={!!at}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setAt(at ? null : { top: r.bottom + 4, right: window.innerWidth - r.right });
+        }}
+      >
+        {busy ? "Exportando…" : "Exportar ▾"}
+      </Button>
+      {at && (
+        <span role="menu" style={at} className="fixed z-10 grid min-w-40 rounded-lg border border-line bg-surface py-1 text-left shadow-lg">
+          {EXPORT_FORMATS.map(({ format, label, mime }) => (
+            <button key={format} type="button" role="menuitem" onClick={() => void download(format, mime)} className="px-3 py-1.5 text-left hover:bg-hover">
+              Exportar {label}
+            </button>
+          ))}
+        </span>
+      )}
+    </span>
   );
 }
 
